@@ -9,6 +9,12 @@
   if (!canvas) return;
   const ctx = canvas.getContext('2d');
 
+  // Blocca il menu contestuale (long-press mobile, tasto destro desktop)
+  // così tenendo premuto sul vortice non escono "Copia/Condividi/Salva".
+  canvas.addEventListener('contextmenu', (e) => e.preventDefault());
+  canvas.style.webkitTouchCallout = 'none';
+  canvas.style.userSelect = 'none';
+
   let DPR = Math.min(window.devicePixelRatio || 1, 2);
   let W = 0, H = 0;
   let cx = 0, cy = 0;       // vortex center (fixed at canvas center)
