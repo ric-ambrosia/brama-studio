@@ -339,6 +339,11 @@
     let idx = null;
 
     const closeBtn = h('button', { class: 'close', 'aria-label': 'Chiudi' });
+    const fsBtn = h('button', { class: 'fs-btn', 'aria-label': 'Schermo intero' });
+    fsBtn.innerHTML =
+      '<svg viewBox="0 0 24 24" aria-hidden="true">' +
+        '<path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/>' +
+      '</svg>';
     const stageImg = h('img', { src: '', alt: '' });
     const stage = h('div', { class: 'stage' }, stageImg);
 
@@ -363,7 +368,7 @@
       h('div', { class: 'nav-btns' }, prevBtn, counter, nextBtn)
     );
 
-    const root = h('div', { class: 'lightbox' }, closeBtn, stage, info);
+    const root = h('div', { class: 'lightbox' }, closeBtn, fsBtn, stage, info);
 
     function paint() {
       if (idx == null) return;
@@ -387,7 +392,11 @@
     function close() {
       idx = null;
       root.classList.remove('open');
+      root.classList.remove('fullscreen');
       document.body.style.overflow = '';
+    }
+    function toggleFullscreen() {
+      root.classList.toggle('fullscreen');
     }
     function prev() {
       if (idx == null) return;
@@ -401,16 +410,24 @@
     }
 
     closeBtn.addEventListener('click', close);
+    fsBtn.addEventListener('click', toggleFullscreen);
     prevBtn.addEventListener('click', prev);
     nextBtn.addEventListener('click', next);
     root.addEventListener('click', e => {
+      // In fullscreen niente click-to-close: l'unica via d'uscita è il pulsante,
+      // così l'utente può zoomare/pannare l'immagine senza chiudere senza volerlo.
+      if (root.classList.contains('fullscreen')) return;
       if (e.target.classList.contains('lightbox') || e.target.classList.contains('stage')) close();
     });
     window.addEventListener('keydown', e => {
       if (!root.classList.contains('open')) return;
-      if (e.key === 'Escape')      close();
+      if (e.key === 'Escape') {
+        if (root.classList.contains('fullscreen')) toggleFullscreen();
+        else close();
+      }
       if (e.key === 'ArrowLeft')   prev();
       if (e.key === 'ArrowRight')  next();
+      if (e.key === 'f' || e.key === 'F') toggleFullscreen();
     });
 
     return { root, open };
@@ -467,12 +484,21 @@
   // Non aspetta che lo scroll si fermi: la prima rotellata o swipe nella
   // zona di transizione lancia subito l'animazione verso il target.
 
-  const TRANSITION_MS = 480; // durata percepita dello scroll smooth
+  const TRANSITION_MS = 480;
   let locked = false;
 
   function lock() {
     locked = true;
     setTimeout(() => { locked = false; }, TRANSITION_MS);
+  }
+
+  // Bordo reale tra hero e galleria. NON usare window.innerHeight:
+  // su mobile la barra dell'indirizzo cambia il viewport visibile,
+  // mentre il <section class="hero"> è alto un 100vh "grande" — la
+  // posizione di scroll che porta in cima alla galleria è quella.
+  function heroBottom() {
+    const el = document.querySelector('.hero');
+    return el ? Math.round(el.offsetTop + el.offsetHeight) : window.innerHeight;
   }
 
   function snapTo(target) {
@@ -482,23 +508,19 @@
   }
 
   // --- WHEEL (desktop / trackpad) ---
-  // Soglia bassa: anche un piccolo "tick" di rotella conta.
   let wheelAccum = 0;
   let wheelResetTimer = null;
   const WHEEL_THRESHOLD = 8;
 
   window.addEventListener('wheel', (e) => {
-    const vh = window.innerHeight;
+    const hb = heroBottom();
     const y  = window.scrollY;
-    // Zona di transizione: dall'hero fino a poco oltre l'inizio galleria.
-    const inHero       = y < vh - 2;
-    const atGalleryTop = y >= vh - 2 && y <= vh + 2;
-    if (!inHero && !atGalleryTop) return; // dentro la galleria: scroll libero
+    const inHero       = y < hb - 2;
+    const atGalleryTop = y >= hb - 2 && y <= hb + 2;
+    if (!inHero && !atGalleryTop) return;
 
     if (locked) { e.preventDefault(); return; }
 
-    // Accumula il delta — i trackpad mandano molti eventi piccolissimi,
-    // così ne basta uno significativo per far scattare lo snap.
     wheelAccum += e.deltaY;
     clearTimeout(wheelResetTimer);
     wheelResetTimer = setTimeout(() => { wheelAccum = 0; }, 120);
@@ -508,7 +530,7 @@
     if (wheelAccum > 0 && inHero) {
       e.preventDefault();
       wheelAccum = 0;
-      snapTo(vh);
+      snapTo(hb);
     } else if (wheelAccum < 0 && atGalleryTop) {
       e.preventDefault();
       wheelAccum = 0;
@@ -517,40 +539,61 @@
   }, { passive: false });
 
   // --- TOUCH (mobile) ---
+  // Lo swipe dell'utente fa scroll naturale; al rilascio decidiamo dove
+  // atterrare. Un fallback su 'scrollend' (o un timeout) ricontrolla
+  // dopo l'inerzia: se sei rimasto a metà, ti porta in cima a una delle
+  // due sezioni — non si può sostare nel mezzo.
   let touchStartY = 0;
-  let touchStartScroll = 0;
 
   window.addEventListener('touchstart', (e) => {
     touchStartY = e.touches[0].clientY;
-    touchStartScroll = window.scrollY;
   }, { passive: true });
+
+  function snapIfBetween() {
+    if (locked) return;
+    const hb = heroBottom();
+    const y  = window.scrollY;
+    if (y <= 2 || y >= hb - 2) return;       // già in cima o già in galleria
+    if (y > hb + 4) return;                   // dentro la galleria: libero
+    snapTo(y < hb * 0.5 ? 0 : hb);
+  }
 
   window.addEventListener('touchend', (e) => {
     if (locked) return;
-    const vh = window.innerHeight;
+    const hb = heroBottom();
     const y  = window.scrollY;
-    // Solo se siamo finiti in zona di confine
-    if (y <= 2 || y >= vh - 2) return;
-    if (y > vh + 4) return;
+    if (y <= 2 || y >= hb - 2) return;
+    if (y > hb + 4) return;
     const dy = touchStartY - e.changedTouches[0].clientY;
-    // direzione dello swipe; se troppo piccolo, decidi sulla posizione
     if (Math.abs(dy) > 20) {
-      snapTo(dy > 0 ? vh : 0);
+      snapTo(dy > 0 ? hb : 0);
     } else {
-      snapTo(y < vh * 0.5 ? 0 : vh);
+      snapTo(y < hb * 0.5 ? 0 : hb);
     }
   }, { passive: true });
 
-  // --- KEYBOARD (Page Down/Up, Space, Arrow) ---
+  // Rete di sicurezza: dopo l'inerzia (scrollend) o un breve timeout
+  // di pausa, se il viewport è ancora a metà strada, snap automatico.
+  let restTimer = null;
+  window.addEventListener('scroll', () => {
+    if (locked) return;
+    clearTimeout(restTimer);
+    restTimer = setTimeout(snapIfBetween, 120);
+  }, { passive: true });
+  if ('onscrollend' in window) {
+    window.addEventListener('scrollend', snapIfBetween);
+  }
+
+  // --- KEYBOARD ---
   window.addEventListener('keydown', (e) => {
     if (locked) return;
-    const vh = window.innerHeight;
+    const hb = heroBottom();
     const y  = window.scrollY;
-    const inHero       = y < vh - 2;
-    const atGalleryTop = y >= vh - 2 && y <= vh + 2;
+    const inHero       = y < hb - 2;
+    const atGalleryTop = y >= hb - 2 && y <= hb + 2;
     const down = e.key === 'PageDown' || e.key === 'ArrowDown' || e.key === ' ';
     const up   = e.key === 'PageUp'   || e.key === 'ArrowUp';
-    if (down && inHero) { e.preventDefault(); snapTo(vh); }
+    if (down && inHero) { e.preventDefault(); snapTo(hb); }
     else if (up && atGalleryTop) { e.preventDefault(); snapTo(0); }
   });
 })();

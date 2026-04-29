@@ -748,6 +748,31 @@ html {
 .lightbox .close::before { transform: rotate(45deg); }
 .lightbox .close::after { transform: rotate(-45deg); }
 
+/* Fullscreen toggle (accanto al close) */
+.lightbox .fs-btn {
+  position: absolute;
+  top: 24px; right: 76px;
+  width: 40px; height: 40px;
+  display: grid; place-items: center;
+  border: 1px solid var(--line);
+  z-index: 10;
+  transition: border-color 0.3s, background-color 0.3s;
+  background: transparent;
+}
+.lightbox .fs-btn:hover { border-color: var(--gold); }
+.lightbox .fs-btn svg { width: 16px; height: 16px; stroke: var(--ink); fill: none; stroke-width: 1.5; }
+
+/* Stato a schermo intero: nasconde l'info, lascia solo l'immagine */
+.lightbox.fullscreen { grid-template-columns: 1fr; grid-template-rows: 1fr; }
+.lightbox.fullscreen .info { display: none; }
+.lightbox.fullscreen .stage { padding: 8px; }
+.lightbox.fullscreen .stage img {
+  max-height: 100vh;
+  max-width: 100vw;
+  /* permette pinch-to-zoom nativo iOS/Android */
+  touch-action: pinch-zoom;
+}
+
 /* === FOOTER === */
 .footer {
   border-top: 1px solid var(--line);
@@ -793,9 +818,30 @@ html {
 /* responsive */
 @media (max-width: 900px) {
   .masonry { column-count: 2; }
-  .lightbox { grid-template-columns: 1fr; grid-template-rows: 1fr auto; }
-  .lightbox .info { border-left: 0; border-top: 1px solid var(--line); padding: 32px; }
-  .lightbox .info .title { font-size: 36px; margin-bottom: 16px; }
+  .lightbox {
+    grid-template-columns: 1fr;
+    grid-template-rows: minmax(0, 1fr) auto; /* minmax(0, 1fr) lascia che lo stage si rimpiccolisca */
+  }
+  .lightbox .stage {
+    padding: 12px 12px 0;
+    min-height: 0;
+  }
+  .lightbox .stage img {
+    max-height: 100%;
+    max-width: 100%;
+    width: auto;
+    height: auto;
+  }
+  .lightbox .info {
+    border-left: 0;
+    border-top: 1px solid var(--line);
+    padding: 20px 24px;
+    max-height: 45vh;
+    overflow-y: auto;
+  }
+  .lightbox .info .title { font-size: 32px; margin-bottom: 12px; }
+  .lightbox .fs-btn { top: 16px; right: 64px; width: 36px; height: 36px; }
+  .lightbox .close   { top: 16px; right: 16px; width: 36px; height: 36px; }
   .nav .links { display: none; }
   .hint-pointer { display: none; }
   .index-row { grid-template-columns: 40px 1fr auto; gap: 16px; }
