@@ -1,801 +1,926 @@
-/* === Brama — design tokens === */
-:root {
-  --bg: #050a1a;
-  --bg-2: #0a1430;
-  --ink: #f0f4ff;
-  --ink-dim: #9bb1d6;
-  --ink-mute: #5d76a3;
-  --line: rgba(240, 244, 255, 0.12);
-  --line-strong: rgba(240, 244, 255, 0.28);
-  --accent: #4a93e6;
-  --accent-soft: #2c6fd1;
-  --red: #c8281c;
-  --red-deep: #7a1010;
-  --foam: #f0f4ff;
-  --gold: #4a93e6;
-  --void: #000000;
-  --resin: rgba(74, 147, 230, 0.18);
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>brama — Riccardo Bramani</title>
+<meta name="description" content="Braminator — opere di Riccardo Bramani. Acrilici, resina, vetro, fibra ottica su tela." />
+<meta property="og:title" content="brama — Riccardo Bramani" />
+<meta property="og:description" content="Braminator — opere di Riccardo Bramani." />
+<meta property="og:type" content="website" />
+<meta property="og:url" content="https://brama.studio/" />
+<meta property="og:image" content="https://www.braminator.com/static/images/Vertigine.jpeg" />
+<meta name="twitter:card" content="summary_large_image" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,200;1,300;1,400&family=Fraunces:ital,opsz,wght@0,9..144,200;0,9..144,300;0,9..144,400;1,9..144,200;1,9..144,300&family=Playfair+Display:ital,wght@0,400;0,500;1,400;1,500&family=EB+Garamond:ital,wght@0,400;0,500;1,400;1,500&family=Italiana&family=Tenor+Sans&family=Spectral:ital,wght@0,300;1,300&family=Crimson+Pro:ital,wght@0,400;1,300;1,400&family=Inter+Tight:wght@400;500;600&family=JetBrains+Mono:wght@400&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="styles.css?v=53" />
+<script>
+  window.__BRAMA_TWEAK_DEFAULTS__ = /*EDITMODE-BEGIN*/{
+    "density": 400,
+    "butterfly": "glass",
+    "coreSize": 1.6,
+    "coreColor": "#1296de",
+    "overlapFade": 0.95,
+    "titleFont": "cormorant-roman"
+  }/*EDITMODE-END*/;
+  // Seed runtime globals so vertigine.js can read them as soon as it loads.
+  window.__brama_density   = window.__BRAMA_TWEAK_DEFAULTS__.density;
+  window.__brama_coreSize  = window.__BRAMA_TWEAK_DEFAULTS__.coreSize;
+  window.__brama_coreColor = window.__BRAMA_TWEAK_DEFAULTS__.coreColor;
+  // Apply persisted title-font choice to <html data-title-font="…"> as
+  // early as possible so the gallery doesn't flash the default first.
+  document.documentElement.dataset.titleFont = window.__BRAMA_TWEAK_DEFAULTS__.titleFont || 'cormorant';
+  document.documentElement.style.setProperty('--overlap-fade', String(window.__BRAMA_TWEAK_DEFAULTS__.overlapFade));
+  document.documentElement.style.setProperty('--overlap-fade', String(window.__BRAMA_TWEAK_DEFAULTS__.overlapFade ?? 0.5));
+</script>
+</head>
+<body class="grain">
+<div id="app"></div>
 
-  --serif: "Cormorant Garamond", "EB Garamond", Georgia, serif;
-  --display: "Fraunces", "Cormorant Garamond", Georgia, serif;
-  --sans: "Inter Tight", "Inter", system-ui, sans-serif;
-  --mono: "JetBrains Mono", ui-monospace, monospace;
+<!-- Vertigine canvas init runs after the canvas mounts; observed via MutationObserver -->
+<script>
+  // Wait for #vertigine to exist, then load the script once.
+  let loaded = false;
+  const obs = new MutationObserver(() => {
+    if (!loaded && document.getElementById('vertigine')) {
+      loaded = true;
+      const s = document.createElement('script');
+      s.src = 'vertigine.js?v=23';
+      document.body.appendChild(s);
+      obs.disconnect();
+    }
+  });
+  obs.observe(document.body, { childList: true, subtree: true });
+</script>
 
-  --grid: 8px;
-  --maxw: 1440px;
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<script type="text/babel">
+
+// tweaks-panel.jsx
+// Reusable Tweaks shell + form-control helpers.
+//
+// Owns the host protocol (listens for __activate_edit_mode / __deactivate_edit_mode,
+// posts __edit_mode_available / __edit_mode_set_keys / __edit_mode_dismissed) so
+// individual prototypes don't re-roll it. Ships a consistent set of controls so you
+// don't hand-draw <input type="range">, segmented radios, steppers, etc.
+//
+// Usage (in an HTML file that loads React + Babel):
+//
+//   const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
+//     "primaryColor": "#D97757",
+//     "fontSize": 16,
+//     "density": "regular",
+//     "dark": false
+//   }/*EDITMODE-END*/;
+//
+//   function App() {
+//     const [t, setTweak] = useTweaks(TWEAK_DEFAULTS);
+//     return (
+//       <div style={{ fontSize: t.fontSize, color: t.primaryColor }}>
+//         Hello
+//         <TweaksPanel>
+//           <TweakSection label="Typography" />
+//           <TweakSlider label="Font size" value={t.fontSize} min={10} max={32} unit="px"
+//                        onChange={(v) => setTweak('fontSize', v)} />
+//           <TweakRadio  label="Density" value={t.density}
+//                        options={['compact', 'regular', 'comfy']}
+//                        onChange={(v) => setTweak('density', v)} />
+//           <TweakSection label="Theme" />
+//           <TweakColor  label="Primary" value={t.primaryColor}
+//                        onChange={(v) => setTweak('primaryColor', v)} />
+//           <TweakToggle label="Dark mode" value={t.dark}
+//                        onChange={(v) => setTweak('dark', v)} />
+//         </TweaksPanel>
+//       </div>
+//     );
+//   }
+//
+// ─────────────────────────────────────────────────────────────────────────────
+
+const __TWEAKS_STYLE = `
+  .twk-panel{position:fixed;right:16px;bottom:16px;z-index:2147483646;width:280px;
+    max-height:calc(100vh - 32px);display:flex;flex-direction:column;
+    background:rgba(250,249,247,.78);color:#29261b;
+    -webkit-backdrop-filter:blur(24px) saturate(160%);backdrop-filter:blur(24px) saturate(160%);
+    border:.5px solid rgba(255,255,255,.6);border-radius:14px;
+    box-shadow:0 1px 0 rgba(255,255,255,.5) inset,0 12px 40px rgba(0,0,0,.18);
+    font:11.5px/1.4 ui-sans-serif,system-ui,-apple-system,sans-serif;overflow:hidden}
+  .twk-hd{display:flex;align-items:center;justify-content:space-between;
+    padding:10px 8px 10px 14px;cursor:move;user-select:none}
+  .twk-hd b{font-size:12px;font-weight:600;letter-spacing:.01em}
+  .twk-x{appearance:none;border:0;background:transparent;color:rgba(41,38,27,.55);
+    width:22px;height:22px;border-radius:6px;cursor:default;font-size:13px;line-height:1}
+  .twk-x:hover{background:rgba(0,0,0,.06);color:#29261b}
+  .twk-body{padding:2px 14px 14px;display:flex;flex-direction:column;gap:10px;
+    overflow-y:auto;overflow-x:hidden;min-height:0;
+    scrollbar-width:thin;scrollbar-color:rgba(0,0,0,.15) transparent}
+  .twk-body::-webkit-scrollbar{width:8px}
+  .twk-body::-webkit-scrollbar-track{background:transparent;margin:2px}
+  .twk-body::-webkit-scrollbar-thumb{background:rgba(0,0,0,.15);border-radius:4px;
+    border:2px solid transparent;background-clip:content-box}
+  .twk-body::-webkit-scrollbar-thumb:hover{background:rgba(0,0,0,.25);
+    border:2px solid transparent;background-clip:content-box}
+  .twk-row{display:flex;flex-direction:column;gap:5px}
+  .twk-row-h{flex-direction:row;align-items:center;justify-content:space-between;gap:10px}
+  .twk-lbl{display:flex;justify-content:space-between;align-items:baseline;
+    color:rgba(41,38,27,.72)}
+  .twk-lbl>span:first-child{font-weight:500}
+  .twk-val{color:rgba(41,38,27,.5);font-variant-numeric:tabular-nums}
+
+  .twk-sect{font-size:10px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;
+    color:rgba(41,38,27,.45);padding:10px 0 0}
+  .twk-sect:first-child{padding-top:0}
+
+  .twk-field{appearance:none;width:100%;height:26px;padding:0 8px;
+    border:.5px solid rgba(0,0,0,.1);border-radius:7px;
+    background:rgba(255,255,255,.6);color:inherit;font:inherit;outline:none}
+  .twk-field:focus{border-color:rgba(0,0,0,.25);background:rgba(255,255,255,.85)}
+  select.twk-field{padding-right:22px;
+    background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'><path fill='rgba(0,0,0,.5)' d='M0 0h10L5 6z'/></svg>");
+    background-repeat:no-repeat;background-position:right 8px center}
+
+  .twk-slider{appearance:none;-webkit-appearance:none;width:100%;height:4px;margin:6px 0;
+    border-radius:999px;background:rgba(0,0,0,.12);outline:none}
+  .twk-slider::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;
+    width:14px;height:14px;border-radius:50%;background:#fff;
+    border:.5px solid rgba(0,0,0,.12);box-shadow:0 1px 3px rgba(0,0,0,.2);cursor:default}
+  .twk-slider::-moz-range-thumb{width:14px;height:14px;border-radius:50%;
+    background:#fff;border:.5px solid rgba(0,0,0,.12);box-shadow:0 1px 3px rgba(0,0,0,.2);cursor:default}
+
+  .twk-seg{position:relative;display:flex;padding:2px;border-radius:8px;
+    background:rgba(0,0,0,.06);user-select:none}
+  .twk-seg-thumb{position:absolute;top:2px;bottom:2px;border-radius:6px;
+    background:rgba(255,255,255,.9);box-shadow:0 1px 2px rgba(0,0,0,.12);
+    transition:left .15s cubic-bezier(.3,.7,.4,1),width .15s}
+  .twk-seg.dragging .twk-seg-thumb{transition:none}
+  .twk-seg button{appearance:none;position:relative;z-index:1;flex:1;border:0;
+    background:transparent;color:inherit;font:inherit;font-weight:500;min-height:22px;
+    border-radius:6px;cursor:default;padding:4px 6px;line-height:1.2;
+    overflow-wrap:anywhere}
+
+  .twk-toggle{position:relative;width:32px;height:18px;border:0;border-radius:999px;
+    background:rgba(0,0,0,.15);transition:background .15s;cursor:default;padding:0}
+  .twk-toggle[data-on="1"]{background:#34c759}
+  .twk-toggle i{position:absolute;top:2px;left:2px;width:14px;height:14px;border-radius:50%;
+    background:#fff;box-shadow:0 1px 2px rgba(0,0,0,.25);transition:transform .15s}
+  .twk-toggle[data-on="1"] i{transform:translateX(14px)}
+
+  .twk-num{display:flex;align-items:center;height:26px;padding:0 0 0 8px;
+    border:.5px solid rgba(0,0,0,.1);border-radius:7px;background:rgba(255,255,255,.6)}
+  .twk-num-lbl{font-weight:500;color:rgba(41,38,27,.6);cursor:ew-resize;
+    user-select:none;padding-right:8px}
+  .twk-num input{flex:1;min-width:0;height:100%;border:0;background:transparent;
+    font:inherit;font-variant-numeric:tabular-nums;text-align:right;padding:0 8px 0 0;
+    outline:none;color:inherit;-moz-appearance:textfield}
+  .twk-num input::-webkit-inner-spin-button,.twk-num input::-webkit-outer-spin-button{
+    -webkit-appearance:none;margin:0}
+  .twk-num-unit{padding-right:8px;color:rgba(41,38,27,.45)}
+
+  .twk-btn{appearance:none;height:26px;padding:0 12px;border:0;border-radius:7px;
+    background:rgba(0,0,0,.78);color:#fff;font:inherit;font-weight:500;cursor:default}
+  .twk-btn:hover{background:rgba(0,0,0,.88)}
+  .twk-btn.secondary{background:rgba(0,0,0,.06);color:inherit}
+  .twk-btn.secondary:hover{background:rgba(0,0,0,.1)}
+
+  .twk-swatch{appearance:none;-webkit-appearance:none;width:56px;height:22px;
+    border:.5px solid rgba(0,0,0,.1);border-radius:6px;padding:0;cursor:default;
+    background:transparent;flex-shrink:0}
+  .twk-swatch::-webkit-color-swatch-wrapper{padding:0}
+  .twk-swatch::-webkit-color-swatch{border:0;border-radius:5.5px}
+  .twk-swatch::-moz-color-swatch{border:0;border-radius:5.5px}
+`;
+
+// ── useTweaks ───────────────────────────────────────────────────────────────
+// Single source of truth for tweak values. setTweak persists via the host
+// (__edit_mode_set_keys → host rewrites the EDITMODE block on disk).
+function useTweaks(defaults) {
+  const [values, setValues] = React.useState(defaults);
+  // Accepts either setTweak('key', value) or setTweak({ key: value, ... }) so a
+  // useState-style call doesn't write a "[object Object]" key into the persisted
+  // JSON block.
+  const setTweak = React.useCallback((keyOrEdits, val) => {
+    const edits = typeof keyOrEdits === 'object' && keyOrEdits !== null
+      ? keyOrEdits : { [keyOrEdits]: val };
+    setValues((prev) => ({ ...prev, ...edits }));
+    window.parent.postMessage({ type: '__edit_mode_set_keys', edits }, '*');
+  }, []);
+  return [values, setTweak];
 }
 
-* { box-sizing: border-box; margin: 0; padding: 0; }
-html, body { background: var(--bg); color: var(--ink); font-family: var(--sans); -webkit-font-smoothing: antialiased; }
-body { overflow-x: hidden; }
-img { display: block; max-width: 100%; }
-button { font: inherit; color: inherit; background: none; border: 0; cursor: pointer; }
-a { color: inherit; text-decoration: none; }
+// ── TweaksPanel ─────────────────────────────────────────────────────────────
+// Floating shell. Registers the protocol listener BEFORE announcing
+// availability — if the announce ran first, the host's activate could land
+// before our handler exists and the toolbar toggle would silently no-op.
+// The close button posts __edit_mode_dismissed so the host's toolbar toggle
+// flips off in lockstep; the host echoes __deactivate_edit_mode back which
+// is what actually hides the panel.
+function TweaksPanel({ title = 'Tweaks', children }) {
+  const [open, setOpen] = React.useState(false);
+  const dragRef = React.useRef(null);
+  const offsetRef = React.useRef({ x: 16, y: 16 });
+  const PAD = 16;
 
-/* film grain overlay (very subtle) */
-.grain::after {
-  content: "";
-  position: fixed; inset: 0;
-  pointer-events: none;
-  z-index: 100;
-  opacity: 0.06;
-  mix-blend-mode: overlay;
-  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 0.7 0'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
-}
+  const clampToViewport = React.useCallback(() => {
+    const panel = dragRef.current;
+    if (!panel) return;
+    const w = panel.offsetWidth, h = panel.offsetHeight;
+    const maxRight = Math.max(PAD, window.innerWidth - w - PAD);
+    const maxBottom = Math.max(PAD, window.innerHeight - h - PAD);
+    offsetRef.current = {
+      x: Math.min(maxRight, Math.max(PAD, offsetRef.current.x)),
+      y: Math.min(maxBottom, Math.max(PAD, offsetRef.current.y)),
+    };
+    panel.style.right = offsetRef.current.x + 'px';
+    panel.style.bottom = offsetRef.current.y + 'px';
+  }, []);
 
-/* === Top sig (top-left, anchored to page top — scrolls away) === */
-.nav-fixed {
-  position: absolute; top: 12px; left: 16px;
-  z-index: 50;
-  pointer-events: none;
-}
-.nav-sig {
-  height: 160px;
-  width: auto;
-  /* tint white signature -> deep blue #1e40a8 */
-  filter: brightness(0) saturate(100%) invert(19%) sepia(76%) saturate(3200%) hue-rotate(225deg) brightness(82%) contrast(108%);
-  opacity: 0;
-  user-select: none;
-  -webkit-user-drag: none;
-  /* nav signature fades in shortly after butterfly arrives */
-  animation: navSigIn 1.4s ease 1.5s forwards;
-}
-@keyframes navSigIn {
-  from { opacity: 0; transform: translateY(-8px); }
-  to   { opacity: 1; transform: translateY(0); }
-}
+  React.useEffect(() => {
+    if (!open) return;
+    clampToViewport();
+    if (typeof ResizeObserver === 'undefined') {
+      window.addEventListener('resize', clampToViewport);
+      return () => window.removeEventListener('resize', clampToViewport);
+    }
+    const ro = new ResizeObserver(clampToViewport);
+    ro.observe(document.documentElement);
+    return () => ro.disconnect();
+  }, [open, clampToViewport]);
 
-html {
-  /* JS-driven snap (see script at end of HTML) handles hero<->gallery.
-     CSS scroll-snap "proximity" doesn't fire when stopped exactly mid-page,
-     and "mandatory" breaks free scrolling inside the long gallery. */
-  scroll-behavior: smooth;
-}
-.hero {
-  position: relative;
-  height: 100vh;
-  width: 100%;
-  overflow: hidden;
-  background: var(--bg);
-}
-.hero::after {
-  /* soft fade-down at the bottom edge so the seam into the gallery dissolves */
-  content: "";
-  position: absolute;
-  inset: auto 0 0 0;
-  height: 28vh;
-  background: linear-gradient(to bottom, rgba(8, 16, 40, 0) 0%, rgba(8, 16, 40, 0.55) 55%, var(--bg) 100%);
-  pointer-events: none;
-  z-index: 2;
-}
-.hero canvas {
-  position: absolute; inset: 0;
-  width: 100%; height: 100%;
-  display: block;
-  cursor: crosshair;
-}
-.hint-pointer {
-  position: absolute;
-  /* Anchored to the bottom of the hero. */
-  bottom: 5vh;
-  left: 50%;
-  transform: translateX(-50%);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 10px;
-  color: rgba(240, 244, 255, 0.7);
-  text-decoration: none;
-  font-family: var(--sans);
-  font-size: 11px;
-  letter-spacing: 0.4em;
-  text-transform: uppercase;
-  opacity: 0;
-  pointer-events: auto;
-  z-index: 5;
-  animation: hintFadeIn 1.2s ease 2.6s forwards;
-  transition: color 0.3s ease;
-}
-.hint-pointer:hover { color: #4a93e6; }
-.hint-pointer .hint-label {
-  font-weight: 500;
-  text-shadow: 0 2px 12px rgba(0,0,0,0.6);
-}
-.hint-pointer svg {
-  width: 18px;
-  height: 28px;
-  filter: drop-shadow(0 2px 8px rgba(0,0,0,0.7));
-  animation: hintBob 2.4s ease-in-out infinite;
-}
-.hint-pointer:hover svg { color: #4a93e6; }
-@keyframes hintFadeIn {
-  from { opacity: 0; transform: translate(-50%, 12px); }
-  to   { opacity: 0.85; transform: translate(-50%, 0); }
-}
-@keyframes hintBob {
-  0%, 100% { transform: translateY(0); opacity: 0.85; }
-  50% { transform: translateY(6px); opacity: 1; }
-}
-.hero-mark {
-  position: absolute;
-  top: 50%; left: 50%;
-  transform: translate(-50%, -50%);
-  width: clamp(360px, 56vw, 720px);
-  height: auto;
-  display: grid; place-items: center;
-  pointer-events: none;
-}
-/* Common deep-blue tint applied to white signature */
-.brama-mark {
-  position: absolute;
-  width: clamp(360px, 56vw, 720px);
-  height: auto;
-  /* tint white signature -> deep blue */
-  filter: brightness(0) saturate(100%) invert(19%) sepia(76%) saturate(3200%) hue-rotate(225deg) brightness(82%) contrast(108%) drop-shadow(0 4px 24px rgba(8,18,48,0.55)) blur(14px);
-  opacity: 0;
-  transform: scale(1.04) translateY(-6px);
-  animation: bramaIntro 4.4s cubic-bezier(0.4, 0, 0.2, 1) forwards;
-  user-select: none;
-  -webkit-user-drag: none;
-  will-change: opacity, transform, filter;
-}
-@keyframes bramaIntro {
-  /* Phase 1 — fade in from blur (0 → 0.9s) */
-  0%   { opacity: 0;    transform: scale(1.04) translateY(-6px);
-         filter: brightness(0) saturate(100%) invert(19%) sepia(76%) saturate(3200%) hue-rotate(225deg) brightness(82%) contrast(108%) drop-shadow(0 4px 24px rgba(8,18,48,0)) blur(14px); }
-  20%  { opacity: 1;    transform: scale(1) translateY(0);
-         filter: brightness(0) saturate(100%) invert(19%) sepia(76%) saturate(3200%) hue-rotate(225deg) brightness(82%) contrast(108%) drop-shadow(0 4px 24px rgba(8,18,48,0.55)) blur(0); }
-  /* Phase 2 — held visible (0.9s → 2.4s) */
-  55%  { opacity: 1;    transform: scale(1) translateY(0);
-         filter: brightness(0) saturate(100%) invert(19%) sepia(76%) saturate(3200%) hue-rotate(225deg) brightness(82%) contrast(108%) drop-shadow(0 4px 24px rgba(8,18,48,0.55)) blur(0); }
-  /* Phase 3 — dissolve upward + blur (2.4s → 3.6s) */
-  82%  { opacity: 0;    transform: scale(1.18) translateY(-32px);
-         filter: brightness(0) saturate(100%) invert(19%) sepia(76%) saturate(3200%) hue-rotate(225deg) brightness(82%) contrast(108%) drop-shadow(0 4px 24px rgba(8,18,48,0)) blur(20px); }
-  100% { opacity: 0;    transform: scale(1.18) translateY(-32px);
-         filter: brightness(0) saturate(100%) invert(19%) sepia(76%) saturate(3200%) hue-rotate(225deg) brightness(82%) contrast(108%) drop-shadow(0 4px 24px rgba(8,18,48,0)) blur(20px); }
-}
+  React.useEffect(() => {
+    const onMsg = (e) => {
+      const t = e?.data?.type;
+      if (t === '__activate_edit_mode') setOpen(true);
+      else if (t === '__deactivate_edit_mode') setOpen(false);
+    };
+    window.addEventListener('message', onMsg);
+    window.parent.postMessage({ type: '__edit_mode_available' }, '*');
+    return () => window.removeEventListener('message', onMsg);
+  }, []);
 
-/* Butterfly bloom halo behind the SVG */
-.butterfly-wrap {
-  position: absolute;
-  display: grid;
-  place-items: center;
-  opacity: 0;
-  transform: scale(0.55);
-  animation: butterflyEnter 4s cubic-bezier(0.22, 1, 0.36, 1) forwards;
-  animation-delay: 0.6s;
-  will-change: opacity, transform;
-}
-.butterfly-bloom {
-  position: absolute;
-  width: 480px; height: 480px;
-  border-radius: 50%;
-  background: radial-gradient(circle, rgba(74,147,230,0.55) 0%, rgba(74,147,230,0.2) 30%, transparent 65%);
-  pointer-events: none;
-  opacity: 0;
-  animation: bloomBurst 1.6s cubic-bezier(0.22, 1, 0.36, 1) forwards;
-  animation-delay: 0.6s;
-  filter: blur(8px);
-}
-@keyframes bloomBurst {
-  0%   { opacity: 0; transform: scale(0.4); }
-  35%  { opacity: 0.9; transform: scale(1); }
-  100% { opacity: 0; transform: scale(1.4); }
-}
-@keyframes butterflyEnter {
-  0%   { opacity: 0; transform: scale(0.55) rotate(-4deg);
-         filter: drop-shadow(0 12px 28px rgba(5,10,30,0.85)) blur(6px); }
-  18%  { opacity: 0.4; transform: scale(0.92) rotate(2deg);
-         filter: drop-shadow(0 12px 28px rgba(5,10,30,0.85)) blur(2px); }
-  32%  { opacity: 1; transform: scale(1.06) rotate(-1deg);
-         filter: drop-shadow(0 14px 32px rgba(5,10,30,0.9)) blur(0); }
-  46%  { transform: scale(0.98) rotate(0.4deg); }
-  60%  { transform: scale(1.01) rotate(0deg); }
-  100% { opacity: 1; transform: scale(1) rotate(0); filter: drop-shadow(0 14px 32px rgba(5,10,30,0.9)) blur(0); }
-}
-.butterfly {
-  width: 260px;
-  height: auto;
-  filter: drop-shadow(0 12px 28px rgba(5,10,30,0.85));
-}
-.butterfly .wing {
-  transform-origin: 0 50%;
-  transform-box: fill-box;
-  animation: flapL 7s ease-in-out infinite;
-}
-.butterfly .wing-r {
-  animation-name: flapR;
-}
-@keyframes flapL {
-  0%, 100% { transform: scaleX(1) skewY(0deg); }
-  50% { transform: scaleX(0.18) skewY(-3deg); }
-}
-@keyframes flapR {
-  0%, 100% { transform: scaleX(1) skewY(0deg); }
-  50% { transform: scaleX(0.18) skewY(3deg); }
-}
-.butterfly .wing-l { transform-origin: 100% 50%; }
-.butterfly .wing-r { transform-origin: 0% 50%; }
+  const dismiss = () => {
+    setOpen(false);
+    window.parent.postMessage({ type: '__edit_mode_dismissed' }, '*');
+  };
 
-/* ── Glass butterfly ─────────────────────────────────────────────────── */
-.butterfly-glass {
-  position: relative;
-  display: block;
-  flex: 0 0 auto;
-  width: 360px;
-  height: 280px;
-  filter: drop-shadow(0 16px 36px rgba(5,10,30,0.65));
-}
-.g-wing {
-  position: absolute;
-  top: 0;
-  width: 50%;
-  height: 100%;
-  transform-origin: 100% 50%;
-  animation: flapL 7s ease-in-out infinite;
-}
-.g-wing-l { left: 0; }
-.g-wing-r {
-  left: 50%;
-  transform-origin: 0% 50%;
-  animation-name: flapR;
-}
-/* Mirror right-wing children using scaleX(-1) anchored on their own center,
-   so clip-paths produce the mirrored silhouette while staying in place. */
-.g-wing-r > .shard,
-.g-wing-r > .highlight {
-  transform: scaleX(-1);
-  transform-origin: 50% 50%;
-}
-/* Right wing is mirrored — the mask was authored for the LEFT wing (fade
-   right→body). After scaleX(-1) the geometry flips and the body is now on
-   the *left* in screen-space, so the same `to right` mask still happens to
-   point at the body for both wings. No mask override needed here. */
+  const onDragStart = (e) => {
+    const panel = dragRef.current;
+    if (!panel) return;
+    const r = panel.getBoundingClientRect();
+    const sx = e.clientX, sy = e.clientY;
+    const startRight = window.innerWidth - r.right;
+    const startBottom = window.innerHeight - r.bottom;
+    const move = (ev) => {
+      offsetRef.current = {
+        x: startRight - (ev.clientX - sx),
+        y: startBottom - (ev.clientY - sy),
+      };
+      clampToViewport();
+    };
+    const up = () => {
+      window.removeEventListener('mousemove', move);
+      window.removeEventListener('mouseup', up);
+    };
+    window.addEventListener('mousemove', move);
+    window.addEventListener('mouseup', up);
+  };
 
-.shard {
-  position: absolute;
-  inset: 0;
-  backdrop-filter: blur(6px) saturate(1.2);
-  -webkit-backdrop-filter: blur(6px) saturate(1.2);
-  border: 1px solid rgba(220, 240, 248, 0.6);
-  background: linear-gradient(135deg, rgba(195,230,240,0.4) 0%, rgba(255,255,255,0.22) 50%, rgba(180,220,232,0.4) 100%);
-  box-shadow: inset 0 0 30px rgba(220,240,248,0.25);
-  overflow: hidden;
-}
-/* Two separate glints per cycle:
-   ::before — sweep 1 — top→bottom — wings semi-open while CLOSING (~25%)
-   ::after  — sweep 2 — bottom→top — wings semi-open while OPENING (~75%)
-   Each cascades section-by-section in its own direction; intensity falls
-   off as the wave progresses (last shard barely visible). */
-.shard::before,
-.shard::after {
-  content: "";
-  position: absolute;
-  inset: -12% -22%;
-  background: linear-gradient(
-    180deg,
-    transparent 30%,
-    rgba(220, 235, 255, 0) 42%,
-    rgba(240, 248, 255, 1) 50%,
-    rgba(220, 235, 255, 0) 58%,
-    transparent 70%
+  if (!open) return null;
+  return (
+    <>
+      <style>{__TWEAKS_STYLE}</style>
+      <div ref={dragRef} className="twk-panel"
+           style={{ right: offsetRef.current.x, bottom: offsetRef.current.y }}>
+        <div className="twk-hd" onMouseDown={onDragStart}>
+          <b>{title}</b>
+          <button className="twk-x" aria-label="Close tweaks"
+                  onMouseDown={(e) => e.stopPropagation()}
+                  onClick={dismiss}>✕</button>
+        </div>
+        <div className="twk-body">{children}</div>
+      </div>
+    </>
   );
-  mix-blend-mode: screen;
-  pointer-events: none;
-  will-change: transform, opacity;
-  filter: brightness(var(--gi, 1));
-}
-.shard::before {
-  animation: shardGlintDown 7s linear var(--gd1, 0s) infinite;
-}
-.shard::after {
-  animation: shardGlintUp 7s linear var(--gd2, 0s) infinite;
 }
 
-/* Cascade order:
-   Sweep 1 (down): s-d → s-a → s-b → s-c → s-e
-   Sweep 2 (up):   s-e → s-c → s-b → s-a → s-d (reversed)
-   Intensity falloff applies to BOTH sweeps based on cascade position. */
-.shard.s-d::before { --gd1: 0s;    --gi: 1; }
-.shard.s-a::before { --gd1: 0.18s; --gi: 0.7; }
-.shard.s-b::before { --gd1: 0.36s; --gi: 0.45; }
-.shard.s-c::before { --gd1: 0.54s; --gi: 0.22; }
-.shard.s-e::before { --gd1: 0.72s; --gi: 0.08; }
+// ── Layout helpers ──────────────────────────────────────────────────────────
 
-.shard.s-e::after { --gd2: 0s;    }
-.shard.s-c::after { --gd2: 0.18s; }
-.shard.s-b::after { --gd2: 0.36s; }
-.shard.s-a::after { --gd2: 0.54s; }
-.shard.s-d::after { --gd2: 0.72s; }
-
-@keyframes shardGlintDown {
-  0%   { transform: translateY(-80%); opacity: 0; }
-  12%  { transform: translateY(-80%); opacity: 0; }
-  14%  { transform: translateY(-70%); opacity: 1; }
-  38%  { transform: translateY( 70%); opacity: 1; }
-  40%  { transform: translateY( 80%); opacity: 0; }
-  100% { transform: translateY( 80%); opacity: 0; }
-}
-@keyframes shardGlintUp {
-  0%   { transform: translateY( 80%); opacity: 0; }
-  62%  { transform: translateY( 80%); opacity: 0; }
-  64%  { transform: translateY( 70%); opacity: 1; }
-  86%  { transform: translateY(-70%); opacity: 1; }
-  88%  { transform: translateY(-80%); opacity: 0; }
-  100% { transform: translateY(-80%); opacity: 0; }
-}
-/* Light source: upper-left of the viewport. All shard glints sweep at the
-   same absolute angle so they read as ONE coordinated light, with small
-   stagger based on distance from the source (top-inner first, bottom-far
-   last). Right wing is scaleX(-1) mirrored, so its CSS angle is mirrored
-   too in viewer-space — set per-wing overrides accordingly. */
-/* Two distinct wings per side. Upper wing is bigger, slightly overlaps the
-   lower wing (which is narrower) — the right-edge body has a V-notch between
-   them. Z-index keeps the upper wing on top. */
-.shard.s-d { clip-path: polygon(100% 45%, 55% 12%, 22% 0, 14% 22%); backdrop-filter: blur(2px); background: linear-gradient(160deg, rgba(255,255,255,0.55), rgba(195,230,240,0.28)); opacity: 0.92; z-index: 2; }
-/* Upper wing — single merged shard covering both the main upper area and the
-   bottom strip down to where it meets the lower wing. Keeping it as one
-   prevents a visible seam during the glint sweep. */
-.shard.s-a { clip-path: polygon(100% 45%, 14% 22%, 0% 30%, 14% 48%, 22% 60%, 100% 52%); backdrop-filter: blur(3px) saturate(1.4); background: linear-gradient(120deg, rgba(195,230,240,0.55), rgba(255,255,255,0.18)); opacity: 0.95; z-index: 2; }
-/* s-b retained but no longer used in markup — kept here for back-compat; if
-   reintroduced, give it its own polygon and styling. */
-.shard.s-b { display: none; }
-.shard.s-c { clip-path: polygon(100% 52%, 22% 60%, 8% 72%, 30% 86%); backdrop-filter: blur(4px) saturate(1.3); background: linear-gradient(110deg, rgba(205,235,238,0.5), rgba(180,222,232,0.4)); opacity: 0.95; z-index: 1; }
-.shard.s-e { clip-path: polygon(100% 52%, 30% 86%, 50% 92%, 65% 76%); backdrop-filter: blur(8px) saturate(1.2); background: linear-gradient(140deg, rgba(180,220,232,0.55), rgba(255,255,255,0.2)); opacity: 0.95; z-index: 1; }
-
-/* Wing-wide ambient highlight removed — per-shard glints handle reflection now. */
-.highlight { display: none; }
-
-@keyframes glassSweep {
-  0%   { transform: translateX(-60%); opacity: 0; }
-  20%  { opacity: 0.8; }
-  60%  { opacity: 0.6; }
-  100% { transform: translateX(60%); opacity: 0; }
+function TweakSection({ label, children }) {
+  return (
+    <>
+      <div className="twk-sect">{label}</div>
+      {children}
+    </>
+  );
 }
 
-.g-body {
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  width: 60px;
-  height: 280px;
-  transform: translate(-50%, -50%);
-  filter: drop-shadow(0 4px 8px rgba(0,0,0,0.6));
-  overflow: visible;
+function TweakRow({ label, value, children, inline = false }) {
+  return (
+    <div className={inline ? 'twk-row twk-row-h' : 'twk-row'}>
+      <div className="twk-lbl">
+        <span>{label}</span>
+        {value != null && <span className="twk-val">{value}</span>}
+      </div>
+      {children}
+    </div>
+  );
 }
-/* Body glint sweeps — synced with wing shard glints (7s cycle).
-   The rect starts above the body (y=-60) and translates downward / upward
-   in SVG-local units. transform-origin matters less since we only translate. */
-.body-glint {
-  transform-box: fill-box;
+
+// ── Controls ────────────────────────────────────────────────────────────────
+
+function TweakSlider({ label, value, min = 0, max = 100, step = 1, unit = '', onChange }) {
+  return (
+    <TweakRow label={label} value={`${value}${unit}`}>
+      <input type="range" className="twk-slider" min={min} max={max} step={step}
+             value={value} onChange={(e) => onChange(Number(e.target.value))} />
+    </TweakRow>
+  );
 }
-.body-glint-down {
-  animation: bodyGlintDown 7s linear infinite;
+
+function TweakToggle({ label, value, onChange }) {
+  return (
+    <div className="twk-row twk-row-h">
+      <div className="twk-lbl"><span>{label}</span></div>
+      <button type="button" className="twk-toggle" data-on={value ? '1' : '0'}
+              role="switch" aria-checked={!!value}
+              onClick={() => onChange(!value)}><i /></button>
+    </div>
+  );
 }
-.body-glint-up {
-  animation: bodyGlintUp 7s linear 0.35s infinite;
+
+function TweakRadio({ label, value, options, onChange }) {
+  const trackRef = React.useRef(null);
+  const [dragging, setDragging] = React.useState(false);
+  const opts = options.map((o) => (typeof o === 'object' ? o : { value: o, label: o }));
+  const idx = Math.max(0, opts.findIndex((o) => o.value === value));
+  const n = opts.length;
+
+  // The active value is read by pointer-move handlers attached for the lifetime
+  // of a drag — ref it so a stale closure doesn't fire onChange for every move.
+  const valueRef = React.useRef(value);
+  valueRef.current = value;
+
+  const segAt = (clientX) => {
+    const r = trackRef.current.getBoundingClientRect();
+    const inner = r.width - 4;
+    const i = Math.floor(((clientX - r.left - 2) / inner) * n);
+    return opts[Math.max(0, Math.min(n - 1, i))].value;
+  };
+
+  const onPointerDown = (e) => {
+    setDragging(true);
+    const v0 = segAt(e.clientX);
+    if (v0 !== valueRef.current) onChange(v0);
+    const move = (ev) => {
+      if (!trackRef.current) return;
+      const v = segAt(ev.clientX);
+      if (v !== valueRef.current) onChange(v);
+    };
+    const up = () => {
+      setDragging(false);
+      window.removeEventListener('pointermove', move);
+      window.removeEventListener('pointerup', up);
+    };
+    window.addEventListener('pointermove', move);
+    window.addEventListener('pointerup', up);
+  };
+
+  return (
+    <TweakRow label={label}>
+      <div ref={trackRef} role="radiogroup" onPointerDown={onPointerDown}
+           className={dragging ? 'twk-seg dragging' : 'twk-seg'}>
+        <div className="twk-seg-thumb"
+             style={{ left: `calc(2px + ${idx} * (100% - 4px) / ${n})`,
+                      width: `calc((100% - 4px) / ${n})` }} />
+        {opts.map((o) => (
+          <button key={o.value} type="button" role="radio" aria-checked={o.value === value}>
+            {o.label}
+          </button>
+        ))}
+      </div>
+    </TweakRow>
+  );
 }
-@keyframes bodyGlintDown {
-  0%, 18%   { transform: translateY(-100px); opacity: 0; }
-  24%       { opacity: 1; }
-  38%       { opacity: 1; }
-  43%, 100% { transform: translateY(100px); opacity: 0; }
+
+function TweakSelect({ label, value, options, onChange }) {
+  return (
+    <TweakRow label={label}>
+      <select className="twk-field" value={value} onChange={(e) => onChange(e.target.value)}>
+        {options.map((o) => {
+          const v = typeof o === 'object' ? o.value : o;
+          const l = typeof o === 'object' ? o.label : o;
+          return <option key={v} value={v}>{l}</option>;
+        })}
+      </select>
+    </TweakRow>
+  );
 }
-@keyframes bodyGlintUp {
-  0%, 55%   { transform: translateY(100px); opacity: 0; }
-  61%       { opacity: 1; }
-  75%       { opacity: 1; }
-  80%, 100% { transform: translateY(-100px); opacity: 0; }
+
+function TweakText({ label, value, placeholder, onChange }) {
+  return (
+    <TweakRow label={label}>
+      <input className="twk-field" type="text" value={value} placeholder={placeholder}
+             onChange={(e) => onChange(e.target.value)} />
+    </TweakRow>
+  );
+}
+
+function TweakNumber({ label, value, min, max, step = 1, unit = '', onChange }) {
+  const clamp = (n) => {
+    if (min != null && n < min) return min;
+    if (max != null && n > max) return max;
+    return n;
+  };
+  const startRef = React.useRef({ x: 0, val: 0 });
+  const onScrubStart = (e) => {
+    e.preventDefault();
+    startRef.current = { x: e.clientX, val: value };
+    const decimals = (String(step).split('.')[1] || '').length;
+    const move = (ev) => {
+      const dx = ev.clientX - startRef.current.x;
+      const raw = startRef.current.val + dx * step;
+      const snapped = Math.round(raw / step) * step;
+      onChange(clamp(Number(snapped.toFixed(decimals))));
+    };
+    const up = () => {
+      window.removeEventListener('pointermove', move);
+      window.removeEventListener('pointerup', up);
+    };
+    window.addEventListener('pointermove', move);
+    window.addEventListener('pointerup', up);
+  };
+  return (
+    <div className="twk-num">
+      <span className="twk-num-lbl" onPointerDown={onScrubStart}>{label}</span>
+      <input type="number" value={value} min={min} max={max} step={step}
+             onChange={(e) => onChange(clamp(Number(e.target.value)))} />
+      {unit && <span className="twk-num-unit">{unit}</span>}
+    </div>
+  );
+}
+
+function TweakColor({ label, value, onChange }) {
+  return (
+    <div className="twk-row twk-row-h">
+      <div className="twk-lbl"><span>{label}</span></div>
+      <input type="color" className="twk-swatch" value={value}
+             onChange={(e) => onChange(e.target.value)} />
+    </div>
+  );
+}
+
+function TweakButton({ label, onClick, secondary = false }) {
+  return (
+    <button type="button" className={secondary ? 'twk-btn secondary' : 'twk-btn'}
+            onClick={onClick}>{label}</button>
+  );
+}
+
+Object.assign(window, {
+  useTweaks, TweaksPanel, TweakSection, TweakRow,
+  TweakSlider, TweakToggle, TweakRadio, TweakSelect,
+  TweakText, TweakNumber, TweakColor, TweakButton,
+});
+
+</script>
+<script type="text/babel">
+/* global React, ReactDOM */
+const { useState, useEffect, useRef, useCallback } = React;
+
+const BASE = "https://www.braminator.com/static/images/";
+const SIG = BASE + "signature.png";
+
+const WORKS = [
+  { id: "vertigine", title: "Vertigine", year: "2025", size: "150×100", materials: "Acrilici, pennarello, resina, vetro, carta, fibra ottica, acciaio su tela", file: "Vertigine.jpeg" },
+  { id: "abbandono", title: "Abbandono", year: "2025", size: "50×150", materials: "Acrilici, resina, ossidiana, fibra ottica su tela", file: "Abbandono.jpg" },
+  { id: "fuga", title: "Fuga", year: "2024", size: "50×50", materials: "Acrilici, resina su tela", file: "Escape.jpg" },
+  { id: "ti-devo-lasciare", title: "Ti devo lasciare", year: "2024", size: "100×70", materials: "Acrilici, resina, gesso, creta, oro su tela", file: "Ti_Devo_Lasciare.jpeg" },
+  { id: "pugno-nel-tempo", title: "Pugno nel tempo", year: "2024", size: "150×150", materials: "Acrilici, resina, gesso, creta, oro, pirite su tela", file: "Pugno_Nel_Tempo.jpeg" },
+  { id: "depressione", title: "Depressione", year: "2024", size: "120×70", materials: "Acrilici, resina, gesso, creta, ossidiana, oro su tela", file: "Depressione.jpeg" },
+  { id: "la-casa-di-mike", title: "La Casa di Mike", year: "2024", size: "50×70", materials: "Acrilici, resina, creta, vetro, fibra ottica, alluminio su legno", file: "La_Casa_Di_Mike.jpeg" },
+  { id: "lu", title: "Lu", year: "2024", size: "50×50", materials: "Acrilici, resina, vetro, fibra ottica su tela", file: "Lu.jpeg" }
+];
+
+function Nav() {
+  return (
+    <div className="nav-fixed">
+      <img className="nav-sig" src={SIG} alt="brama" />
+    </div>
+  );
+}
+
+function BramaButterfly({ variant }) {
+  return (
+    <div className="hero-mark">
+      <div className="butterfly-wrap">
+        <div className="butterfly-bloom" />
+        {variant === "glass" ? <ButterflyGlass /> : <ButterflyInk />}
+      </div>
+    </div>
+  );
+}
+
+/* ── Variant A — INK: heavy ink-on-cream, adapted from the artist's
+   geometric drawings (triangular peaks, hatched faces, banded ribbons). */
+function ButterflyInk() {
+  return (
+    <svg className="butterfly" viewBox="-180 -190 360 370" aria-hidden="true">
+      <defs>
+        <pattern id="hatchA" patternUnits="userSpaceOnUse" width="5" height="5" patternTransform="rotate(50)">
+          <line x1="0" y1="0" x2="0" y2="5" stroke="#0a0a0a" strokeWidth="1" />
+        </pattern>
+        <pattern id="hatchB" patternUnits="userSpaceOnUse" width="4" height="4" patternTransform="rotate(-40)">
+          <line x1="0" y1="0" x2="0" y2="4" stroke="#0a0a0a" strokeWidth="0.85" />
+        </pattern>
+        <pattern id="hatchDense" patternUnits="userSpaceOnUse" width="3" height="3" patternTransform="rotate(15)">
+          <line x1="0" y1="0" x2="0" y2="3" stroke="#0a0a0a" strokeWidth="0.7" />
+        </pattern>
+        {/* banded snake-ribbon — alternating black panels with little dots */}
+        <pattern id="band" patternUnits="userSpaceOnUse" width="22" height="14">
+          <rect width="11" height="14" fill="#0a0a0a" />
+          <circle cx="16" cy="7" r="1.4" fill="#0a0a0a" />
+        </pattern>
+      </defs>
+
+      {/* LEFT WING — triangular peaks like the drawing */}
+      <g className="wing wing-l" stroke="#0a0a0a" strokeLinejoin="miter" strokeLinecap="round">
+        {/* big upper triangle "peak" — solid hatched */}
+        <polygon points="-6,-4 -100,-160 -150,-50" fill="#f4f0e0" strokeWidth="1.8" />
+        <polygon points="-6,-4 -100,-160 -150,-50" fill="url(#hatchA)" strokeWidth="0" />
+        {/* second peak overlapping */}
+        <polygon points="-100,-160 -150,-50 -160,-110" fill="#f4f0e0" strokeWidth="1.8" />
+        <polygon points="-100,-160 -150,-50 -160,-110" fill="url(#hatchB)" strokeWidth="0" />
+        {/* white peak — left untextured */}
+        <polygon points="-6,-4 -150,-50 -90,-12" fill="#f4f0e0" strokeWidth="1.8" />
+        {/* solid black peak (like the dark-faced triangles in the drawing) */}
+        <polygon points="-100,-160 -160,-110 -120,-130" fill="#0a0a0a" strokeWidth="1.6" />
+        {/* tiny white triangles inside the dark face — like the "teeth" in drawing */}
+        <polygon points="-115,-130 -125,-140 -122,-122" fill="#f4f0e0" />
+        <polygon points="-135,-115 -145,-122 -140,-105" fill="#f4f0e0" />
+
+        {/* lower wing — smaller geometric peaks */}
+        <polygon points="-4,4 -50,30 -90,15 -75,68" fill="#f4f0e0" strokeWidth="1.6" />
+        <polygon points="-4,4 -50,30 -90,15 -75,68" fill="url(#hatchA)" strokeWidth="0" opacity="0.85" />
+        <polygon points="-75,68 -90,15 -115,75" fill="#0a0a0a" strokeWidth="1.4" />
+        <polygon points="-95,40 -100,52 -88,48" fill="#f4f0e0" />
+        <polygon points="-4,4 -75,68 -50,90 -15,90" fill="#f4f0e0" strokeWidth="1.6" />
+        <polygon points="-4,4 -75,68 -50,90 -15,90" fill="url(#hatchDense)" strokeWidth="0" opacity="0.8" />
+
+        {/* Banded ribbon curling from the inner wing edge — like the snake ribbon in the drawing */}
+        <path d="M -10 -8 Q -55 -35 -85 -22 Q -115 -10 -125 30 Q -132 65 -100 88"
+              fill="none" stroke="#0a0a0a" strokeWidth="11" strokeLinecap="round" />
+        <path d="M -10 -8 Q -55 -35 -85 -22 Q -115 -10 -125 30 Q -132 65 -100 88"
+              fill="none" stroke="#f4f0e0" strokeWidth="9" strokeLinecap="round"
+              strokeDasharray="9 9" />
+        <path d="M -10 -8 Q -55 -35 -85 -22 Q -115 -10 -125 30 Q -132 65 -100 88"
+              fill="none" stroke="#0a0a0a" strokeWidth="2" />
+
+        {/* small triangular markers (like the arrow nibs in drawing) */}
+        <polygon points="-150,-50 -158,-55 -155,-43" fill="#0a0a0a" />
+        <polygon points="-160,-110 -168,-108 -160,-100" fill="#0a0a0a" />
+      </g>
+
+      {/* RIGHT WING — mirror */}
+      <g className="wing wing-r" stroke="#0a0a0a" strokeLinejoin="miter" strokeLinecap="round">
+        <polygon points="6,-4 100,-160 150,-50" fill="#f4f0e0" strokeWidth="1.8" />
+        <polygon points="6,-4 100,-160 150,-50" fill="url(#hatchA)" strokeWidth="0" />
+        <polygon points="100,-160 150,-50 160,-110" fill="#f4f0e0" strokeWidth="1.8" />
+        <polygon points="100,-160 150,-50 160,-110" fill="url(#hatchB)" strokeWidth="0" />
+        <polygon points="6,-4 150,-50 90,-12" fill="#f4f0e0" strokeWidth="1.8" />
+        <polygon points="100,-160 160,-110 120,-130" fill="#0a0a0a" strokeWidth="1.6" />
+        <polygon points="115,-130 125,-140 122,-122" fill="#f4f0e0" />
+        <polygon points="135,-115 145,-122 140,-105" fill="#f4f0e0" />
+
+        <polygon points="4,4 50,30 90,15 75,68" fill="#f4f0e0" strokeWidth="1.6" />
+        <polygon points="4,4 50,30 90,15 75,68" fill="url(#hatchA)" strokeWidth="0" opacity="0.85" />
+        <polygon points="75,68 90,15 115,75" fill="#0a0a0a" strokeWidth="1.4" />
+        <polygon points="95,40 100,52 88,48" fill="#f4f0e0" />
+        <polygon points="4,4 75,68 50,90 15,90" fill="#f4f0e0" strokeWidth="1.6" />
+        <polygon points="4,4 75,68 50,90 15,90" fill="url(#hatchDense)" strokeWidth="0" opacity="0.8" />
+
+        <path d="M 10 -8 Q 55 -35 85 -22 Q 115 -10 125 30 Q 132 65 100 88"
+              fill="none" stroke="#0a0a0a" strokeWidth="11" strokeLinecap="round" />
+        <path d="M 10 -8 Q 55 -35 85 -22 Q 115 -10 125 30 Q 132 65 100 88"
+              fill="none" stroke="#f4f0e0" strokeWidth="9" strokeLinecap="round"
+              strokeDasharray="9 9" />
+        <path d="M 10 -8 Q 55 -35 85 -22 Q 115 -10 125 30 Q 132 65 100 88"
+              fill="none" stroke="#0a0a0a" strokeWidth="2" />
+
+        <polygon points="150,-50 158,-55 155,-43" fill="#0a0a0a" />
+        <polygon points="160,-110 168,-108 160,-100" fill="#0a0a0a" />
+      </g>
+
+      {/* BODY */}
+      <path d="M -3 -45 L 3 -45 L 5 78 L 0 92 L -5 78 Z" fill="#0a0a0a" />
+      <g stroke="#f4f0e0" strokeWidth="0.6" opacity="0.5">
+        <line x1="-3" y1="-20" x2="3" y2="-20" />
+        <line x1="-3" y1="0" x2="4" y2="0" />
+        <line x1="-3" y1="20" x2="4" y2="20" />
+        <line x1="-3" y1="40" x2="5" y2="40" />
+        <line x1="-3" y1="60" x2="5" y2="60" />
+      </g>
+      <circle cx="0" cy="-50" r="7" fill="#0a0a0a" />
+      {/* antennae — curled hooks like in the drawing */}
+      <path d="M -2 -56 Q -16 -86 -10 -118 Q -6 -130 -22 -132" fill="none" stroke="#0a0a0a" strokeWidth="1.8" strokeLinecap="round" />
+      <path d="M 2 -56 Q 16 -86 10 -118 Q 6 -130 22 -132" fill="none" stroke="#0a0a0a" strokeWidth="1.8" strokeLinecap="round" />
+      <polygon points="-22,-132 -28,-138 -18,-140" fill="#0a0a0a" />
+      <polygon points="22,-132 28,-138 18,-140" fill="#0a0a0a" />
+    </svg>
+  );
+}
+
+/* ── Variant B — GLASS: futuristic angular shards with backdrop blur,
+   varying opacity, animated highlight sweeps. */
+function ButterflyGlass() {
+  return (
+    <div className="butterfly butterfly-glass" aria-hidden="true">
+      {/* Each shard is a clipped div with backdrop-filter for refraction */}
+      <div className="g-wing g-wing-l">
+        <div className="shard s-a" />
+        <div className="shard s-b" />
+        <div className="shard s-c" />
+        <div className="shard s-d" />
+        <div className="shard s-e" />
+        <div className="highlight h-1" />
+        <div className="highlight h-2" />
+      </div>
+      <div className="g-wing g-wing-r">
+        <div className="shard s-a" />
+        <div className="shard s-b" />
+        <div className="shard s-c" />
+        <div className="shard s-d" />
+        <div className="shard s-e" />
+        <div className="highlight h-1" />
+        <div className="highlight h-2" />
+      </div>
+      {/* body — black-glass faceted rhombus, plus head + antennae */}
+      <svg className="g-body" viewBox="-30 -150 60 280" aria-hidden="true">
+        <defs>
+          <linearGradient id="glassFaceL" x1="0" y1="0" x2="1" y2="0.4">
+            <stop offset="0" stopColor="#3b4256" stopOpacity="1" />
+            <stop offset="0.45" stopColor="#0c0f1a" stopOpacity="1" />
+            <stop offset="1" stopColor="#020308" stopOpacity="1" />
+          </linearGradient>
+          <linearGradient id="glassFaceR" x1="1" y1="0" x2="0" y2="0.4">
+            <stop offset="0" stopColor="#2c3142" stopOpacity="1" />
+            <stop offset="0.45" stopColor="#0a0d18" stopOpacity="1" />
+            <stop offset="1" stopColor="#000104" stopOpacity="1" />
+          </linearGradient>
+          <linearGradient id="glassFaceTop" x1="0.5" y1="0" x2="0.5" y2="1">
+            <stop offset="0" stopColor="#5a6177" stopOpacity="1" />
+            <stop offset="1" stopColor="#0a0d18" stopOpacity="1" />
+          </linearGradient>
+          {/* Glint sweep gradients — angled bright bar that travels along body */}
+          <linearGradient id="bodyGlintGrad" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stopColor="#fff" stopOpacity="0" />
+            <stop offset="0.45" stopColor="#fff" stopOpacity="0" />
+            <stop offset="0.5" stopColor="#fff" stopOpacity="0.85" />
+            <stop offset="0.55" stopColor="#fff" stopOpacity="0" />
+            <stop offset="1" stopColor="#fff" stopOpacity="0" />
+          </linearGradient>
+          {/* Clip glints to the rhombus body silhouette */}
+          <clipPath id="bodyClip">
+            <polygon points="0,-50 7,22 0,92 -7,22" />
+          </clipPath>
+        </defs>
+        {/* Rhombus body — 4 facets sharing a vertical spine, polished-glass look.
+            Outline a diamond from y=-50 (top, near head) to y=92 (tail tip),
+            with side points at y=22 (mid). */}
+        {/* upper-left facet */}
+        <polygon points="0,-50 -7,22 0,22" fill="url(#glassFaceTop)" />
+        {/* upper-right facet */}
+        <polygon points="0,-50 7,22 0,22" fill="url(#glassFaceTop)" opacity="0.85" />
+        {/* lower-left facet */}
+        <polygon points="-7,22 0,92 0,22" fill="url(#glassFaceL)" />
+        {/* lower-right facet */}
+        <polygon points="7,22 0,92 0,22" fill="url(#glassFaceR)" />
+        {/* spine highlight — thin sharp reflection along center axis */}
+        <line x1="0" y1="-50" x2="0" y2="92" stroke="rgba(220,235,248,0.55)" strokeWidth="0.6" />
+        {/* tiny crisp highlight on upper-left facet */}
+        <polygon points="-1,-44 -4,12 -1,14" fill="rgba(230,240,250,0.18)" />
+        {/* outer rim */}
+        <polygon points="0,-50 7,22 0,92 -7,22" fill="none" stroke="#000" strokeWidth="0.8" strokeLinejoin="miter" />
+        {/* Glint sweeps — synced with wing shard glints */}
+        <g clipPath="url(#bodyClip)">
+          <rect className="body-glint body-glint-down" x="-12" y="-60" width="24" height="180" fill="url(#bodyGlintGrad)" />
+          <rect className="body-glint body-glint-up"   x="-12" y="-60" width="24" height="180" fill="url(#bodyGlintGrad)" />
+        </g>
+
+        {/* head */}
+        <circle cx="0" cy="-50" r="7" fill="#020617" />
+        <circle cx="-2" cy="-52" r="2" fill="rgba(220,235,248,0.35)" />
+        {/* antennae */}
+        <path d="M -2 -56 Q -14 -84 -22 -114" fill="none" stroke="#020617" strokeWidth="1.6" strokeLinecap="round" />
+        <path d="M 2 -56 Q 14 -84 22 -114" fill="none" stroke="#020617" strokeWidth="1.6" strokeLinecap="round" />
+        <circle cx="-22" cy="-114" r="2.2" fill="#bfe4f5" />
+        <circle cx="22" cy="-114" r="2.2" fill="#bfe4f5" />
+      </svg>
+    </div>
+  );
 }
 
 
-/* === GALLERY === */
-.gallery-section {
-  position: relative;
-  padding: 160px 0 120px;
-  background: var(--bg);
-}
-.section-head {
-  max-width: var(--maxw);
-  margin: 0 auto 80px;
-  padding: 0 5vw;
-  display: grid;
-  grid-template-columns: 1fr auto 1fr;
-  align-items: end;
-  gap: 24px;
-}
-.section-head .eyebrow {
-  font-family: var(--mono);
-  font-size: 10px;
-  letter-spacing: 0.32em;
-  text-transform: uppercase;
-  color: var(--ink-mute);
-}
-.section-head .title {
-  font-family: var(--display);
-  font-style: italic;
-  font-weight: 200;
-  font-size: clamp(48px, 9vw, 140px);
-  line-height: 0.9;
-  letter-spacing: -0.03em;
-  text-align: center;
-  white-space: nowrap;
-}
-.section-head .title em {
-  color: var(--ink);
-  font-style: italic;
-}
-.section-head .count {
-  text-align: right;
-  font-family: var(--mono);
-  font-size: 10px;
-  letter-spacing: 0.24em;
-  text-transform: uppercase;
-  color: var(--ink-mute);
-}
-.section-head .count b { color: var(--ink); font-weight: 400; }
+function Hero({ tweaks }) {
+  useEffect(() => {
+    window.__brama_density = tweaks.density;
+    if (window.__brama_rebuild) window.__brama_rebuild();
+  }, [tweaks.density]);
 
-/* index list (toggle) */
-.index-list {
-  max-width: var(--maxw);
-  margin: 0 auto 80px;
-  padding: 0 5vw;
-  display: grid;
-  gap: 0;
-  border-top: 1px solid var(--line);
+  return (
+    <section className="hero" data-screen-label="Hero — Vertigine">
+      <canvas id="vertigine"></canvas>
+      <BramaButterfly variant={tweaks.butterfly} />
+      <a className="hint-pointer" href="#opere" aria-label="Vai alle opere">
+        <span className="hint-label">opere</span>
+        <svg viewBox="0 0 24 36" aria-hidden="true">
+          <path d="M 12 2 L 12 28 M 4 20 L 12 30 L 20 20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      </a>
+    </section>
+  );
 }
-.index-row {
-  display: grid;
-  grid-template-columns: 60px 1fr auto auto;
-  gap: 32px;
-  align-items: center;
-  padding: 20px 0;
-  border-bottom: 1px solid var(--line);
-  cursor: pointer;
-  transition: padding 0.4s ease, background 0.4s ease;
-  position: relative;
-}
-.index-row:hover { padding-left: 24px; background: linear-gradient(to right, rgba(217,178,106,0.04), transparent); }
-.index-row .num {
-  font-family: var(--mono);
-  font-size: 11px;
-  color: var(--ink-mute);
-  letter-spacing: 0.18em;
-}
-.index-row .name {
-  font-family: var(--display);
-  font-style: italic;
-  font-weight: 200;
-  font-size: clamp(28px, 4vw, 56px);
-  line-height: 1;
-  letter-spacing: -0.02em;
-}
-.index-row .year {
-  font-family: var(--mono);
-  font-size: 11px;
-  letter-spacing: 0.18em;
-  color: var(--ink-dim);
-}
-.index-row .size {
-  font-family: var(--mono);
-  font-size: 11px;
-  letter-spacing: 0.18em;
-  color: var(--ink-mute);
-  min-width: 90px;
-  text-align: right;
-}
-.index-row .preview {
-  position: absolute;
-  pointer-events: none;
-  width: 240px;
-  height: 300px;
-  background-size: cover;
-  background-position: center;
-  z-index: 5;
-  opacity: 0;
-  transform: translate(-50%, -50%) scale(0.92);
-  transition: opacity 0.25s ease, transform 0.4s cubic-bezier(.2,.8,.2,1);
-  box-shadow: 0 30px 80px rgba(0,0,0,0.6);
-  filter: saturate(1.1) contrast(1.05);
-}
-.index-row:hover .preview { opacity: 1; transform: translate(-50%, -50%) scale(1); }
 
-/* masonry */
-.masonry {
-  max-width: var(--maxw);
-  margin: 0 auto;
-  padding: 0 5vw;
-  column-count: 2;
-  column-gap: 48px;
+function Masonry({ onOpen }) {
+  return (
+    <div className="masonry">
+      {WORKS.map((w, i) => (
+        <div className="tile" key={w.id} onClick={() => onOpen(i)}>
+          <div className="frame">
+            <img src={BASE + w.file} alt={w.title} loading="lazy" />
+            <div className="corner">{String(i + 1).padStart(2, "0")} / {WORKS.length}</div>
+          </div>
+          <div className="meta">
+            <span className="t">{w.title}</span>
+            <span className="y">{w.year}</span>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
 }
-.masonry .tile {
-  display: block;
-  break-inside: avoid;
-  margin-bottom: 32px;
-  position: relative;
-  cursor: pointer;
-  overflow: hidden;
-  background: var(--bg-2);
-}
-.masonry .tile .frame {
-  position: relative;
-  overflow: hidden;
-}
-.masonry .tile img {
-  width: 100%;
-  height: auto;
-  transition: transform 1.2s cubic-bezier(.2,.8,.2,1), filter 0.6s ease;
-  filter: brightness(0.92) saturate(1.05);
-}
-.masonry .tile:hover img { transform: scale(1.04); filter: brightness(1) saturate(1.15); }
-.masonry .tile .meta {
-  display: flex; justify-content: space-between; align-items: baseline;
-  padding: 16px 4px 4px;
-  gap: 16px;
-}
-/* Title font: switchable via [data-title-font] on <html>. Default is
-   Cormorant Garamond italic. Each option resets posture/weight/tracking
-   so the title still reads correctly when the family changes. */
-.masonry .tile .meta .t {
-  font-family: "Cormorant Garamond", serif;
-  font-style: italic;
-  font-weight: 300;
-  font-size: 22px;
-  letter-spacing: -0.01em;
-  text-transform: none;
-}
-:root[data-title-font="fraunces"]   .masonry .tile .meta .t { font-family: "Fraunces", serif; font-style: italic; font-weight: 300; letter-spacing: 0; }
-:root[data-title-font="playfair"]   .masonry .tile .meta .t { font-family: "Playfair Display", serif; font-style: italic; font-weight: 400; letter-spacing: 0; }
-:root[data-title-font="ebgaramond"] .masonry .tile .meta .t { font-family: "EB Garamond", serif; font-style: italic; font-weight: 400; letter-spacing: 0.005em; }
-:root[data-title-font="italiana"]   .masonry .tile .meta .t { font-family: "Italiana", serif; font-style: normal; font-weight: 400; letter-spacing: 0.04em; font-size: 24px; }
-/* "opere" style — sans-serif uppercase tracked, like the hero scroll hint */
-:root[data-title-font="inter-up"]   .masonry .tile .meta .t { font-family: "Inter Tight", system-ui, sans-serif; font-style: normal; font-weight: 500; font-size: 13px; letter-spacing: 0.4em; text-transform: uppercase; }
-/* Mono uppercase — like the section eyebrow "2024 — 2025" */
-:root[data-title-font="mono-up"]    .masonry .tile .meta .t { font-family: "JetBrains Mono", monospace; font-style: normal; font-weight: 400; font-size: 12px; letter-spacing: 0.32em; text-transform: uppercase; }
-/* Cormorant ROMAN (not italic) — softer, lapidary */
-:root[data-title-font="cormorant-roman"] .masonry .tile .meta .t { font-family: "Cormorant Garamond", serif; font-style: normal; font-weight: 400; letter-spacing: 0.01em; font-size: 22px; }
-/* Tenor Sans — humanist sans, slightly classical */
-:root[data-title-font="tenor"]      .masonry .tile .meta .t { font-family: "Tenor Sans", sans-serif; font-style: normal; font-weight: 400; letter-spacing: 0.04em; font-size: 20px; }
-/* Spectral italic — bookish, contemporary */
-:root[data-title-font="spectral"]   .masonry .tile .meta .t { font-family: "Spectral", serif; font-style: italic; font-weight: 300; letter-spacing: 0; font-size: 22px; }
-/* Crimson Pro italic — sharp, editorial */
-:root[data-title-font="crimson"]    .masonry .tile .meta .t { font-family: "Crimson Pro", serif; font-style: italic; font-weight: 300; letter-spacing: 0; font-size: 24px; }
-.masonry .tile .meta .y {
-  font-family: var(--mono);
-  font-size: 10px;
-  letter-spacing: 0.24em;
-  color: var(--ink-mute);
-}
-.masonry .tile .corner {
-  position: absolute;
-  top: 12px; left: 12px;
-  font-family: var(--mono);
-  font-size: 10px;
-  letter-spacing: 0.24em;
-  color: var(--ink);
-  background: rgba(10,9,8,0.5);
-  backdrop-filter: blur(10px);
-  padding: 6px 10px;
-  opacity: 0;
-  transform: translateY(-4px);
-  transition: opacity 0.3s ease, transform 0.3s ease;
-}
-.masonry .tile:hover .corner { opacity: 1; transform: translateY(0); }
 
-/* layout switcher */
-.view-switch {
-  max-width: var(--maxw);
-  margin: 0 auto 40px;
-  padding: 0 5vw;
-  display: flex;
-  justify-content: flex-end;
-  gap: 4px;
-}
-.view-switch button {
-  font-family: var(--mono);
-  font-size: 10px;
-  letter-spacing: 0.24em;
-  text-transform: uppercase;
-  color: var(--ink-mute);
-  padding: 8px 14px;
-  border: 1px solid var(--line);
-  transition: all 0.3s ease;
-}
-.view-switch button.active { color: var(--bg); background: var(--gold); border-color: var(--gold); }
-.view-switch button:not(.active):hover { color: var(--ink); border-color: var(--line-strong); }
+function Lightbox({ open, idx, onClose, onPrev, onNext }) {
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e) => {
+      if (e.key === "Escape") onClose();
+      if (e.key === "ArrowLeft") onPrev();
+      if (e.key === "ArrowRight") onNext();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [open, onClose, onPrev, onNext]);
 
-/* === LIGHTBOX === */
-.lightbox {
-  position: fixed; inset: 0;
-  z-index: 80;
-  background: rgba(8, 7, 6, 0.94);
-  backdrop-filter: blur(20px);
-  display: grid;
-  grid-template-columns: 1fr 380px;
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity 0.4s ease;
+  if (idx == null) return null;
+  const w = WORKS[idx];
+  return (
+    <div className={"lightbox" + (open ? " open" : "")} onClick={(e) => { if (e.target.classList.contains("lightbox") || e.target.classList.contains("stage")) onClose(); }}>
+      <button className="close" aria-label="Chiudi" onClick={onClose}></button>
+      <div className="stage">
+        <img key={w.id} src={BASE + w.file} alt={w.title} />
+      </div>
+      <aside className="info">
+        <div className="eyebrow">No. {String(idx + 1).padStart(3, "0")}</div>
+        <h2 className="title">{w.title}</h2>
+        <div className="specs">
+          <div className="row"><div className="k">Anno</div><div className="v">{w.year}</div></div>
+          <div className="row"><div className="k">Formato</div><div className="v">{w.size} cm</div></div>
+          <div className="row"><div className="k">Tecnica</div><div className="v">{w.materials}</div></div>
+        </div>
+        <div className="nav-btns">
+          <button className="prev" onClick={onPrev}>← Prec</button>
+          <span className="counter"><b>{String(idx + 1).padStart(2, "0")}</b> / {WORKS.length}</span>
+          <button className="next" onClick={onNext}>Succ →</button>
+        </div>
+      </aside>
+    </div>
+  );
 }
-.lightbox.open { opacity: 1; pointer-events: auto; }
-.lightbox .stage {
-  position: relative;
-  display: flex; align-items: center; justify-content: center;
-  padding: 80px 60px;
-  overflow: hidden;
-}
-.lightbox .stage img {
-  max-height: 84vh;
-  max-width: 100%;
-  width: auto;
-  object-fit: contain;
-  box-shadow: 0 40px 120px rgba(0,0,0,0.7);
-  transition: transform 0.6s cubic-bezier(.2,.8,.2,1), opacity 0.3s ease;
-}
-.lightbox .info {
-  border-left: 1px solid var(--line);
-  padding: 80px 48px;
-  display: flex; flex-direction: column;
-  background: linear-gradient(180deg, rgba(217,178,106,0.04), transparent 30%);
-}
-.lightbox .info .eyebrow {
-  font-family: var(--mono);
-  font-size: 10px;
-  letter-spacing: 0.32em;
-  text-transform: uppercase;
-  color: var(--gold);
-  margin-bottom: 24px;
-}
-.lightbox .info .title {
-  font-family: var(--display);
-  font-style: italic;
-  font-weight: 200;
-  font-size: 64px;
-  line-height: 0.95;
-  letter-spacing: -0.03em;
-  margin-bottom: 32px;
-}
-.lightbox .info .specs {
-  display: grid;
-  gap: 20px;
-  border-top: 1px solid var(--line);
-  padding-top: 24px;
-  margin-bottom: 32px;
-}
-.lightbox .info .specs .row { display: grid; grid-template-columns: 90px 1fr; gap: 12px; }
-.lightbox .info .specs .k {
-  font-family: var(--mono);
-  font-size: 10px;
-  letter-spacing: 0.24em;
-  text-transform: uppercase;
-  color: var(--ink-mute);
-  padding-top: 4px;
-}
-.lightbox .info .specs .v {
-  font-family: var(--serif);
-  font-size: 17px;
-  line-height: 1.5;
-  color: var(--ink);
-}
-.lightbox .info .nav-btns {
-  margin-top: auto;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  border-top: 1px solid var(--line);
-  padding-top: 24px;
-}
-.lightbox .info .nav-btns button {
-  font-family: var(--mono);
-  font-size: 10px;
-  letter-spacing: 0.32em;
-  text-transform: uppercase;
-  color: var(--ink-dim);
-  padding: 12px 0;
-  display: flex; align-items: center; gap: 12px;
-  transition: color 0.3s ease, transform 0.3s ease;
-}
-.lightbox .info .nav-btns button:hover { color: var(--gold); }
-.lightbox .info .nav-btns button.prev:hover { transform: translateX(-4px); }
-.lightbox .info .nav-btns button.next:hover { transform: translateX(4px); }
-.lightbox .info .counter {
-  font-family: var(--mono);
-  font-size: 10px;
-  letter-spacing: 0.24em;
-  color: var(--ink-mute);
-}
-.lightbox .info .counter b { color: var(--ink); font-weight: 400; }
-.lightbox .close {
-  position: absolute;
-  top: 24px; right: 24px;
-  width: 40px; height: 40px;
-  display: grid; place-items: center;
-  border: 1px solid var(--line);
-  z-index: 10;
-  transition: border-color 0.3s, transform 0.3s;
-}
-.lightbox .close:hover { border-color: var(--gold); transform: rotate(90deg); }
-.lightbox .close::before, .lightbox .close::after {
-  content: ""; position: absolute;
-  width: 16px; height: 1px; background: var(--ink);
-}
-.lightbox .close::before { transform: rotate(45deg); }
-.lightbox .close::after { transform: rotate(-45deg); }
 
-/* === FOOTER === */
-.footer {
-  border-top: 1px solid var(--line);
-  padding: 60px 5vw 32px;
-  display: grid;
-  grid-template-columns: 1fr auto 1fr;
-  align-items: center;
-  gap: 24px;
-}
-.footer .sig img {
-  height: 88px;
-  width: auto;
-  filter: brightness(0) saturate(100%) invert(19%) sepia(76%) saturate(3200%) hue-rotate(225deg) brightness(82%) contrast(108%);
-  opacity: 1;
-}
-.footer .ig:hover { color: #1e40a8; }
-.footer .center {
-  text-align: center;
-  font-family: var(--mono);
-  font-size: 10px;
-  letter-spacing: 0.32em;
-  text-transform: uppercase;
-  color: var(--ink-mute);
-}
-.footer .ig {
-  justify-self: end;
-  font-family: var(--mono);
-  font-size: 11px;
-  letter-spacing: 0.24em;
-  text-transform: uppercase;
-  color: var(--ink-dim);
-  display: flex; gap: 10px; align-items: center;
-  transition: color 0.3s;
-}
-.footer .ig:hover { color: var(--gold); }
-.footer .ig::after {
-  content: "→";
-  transition: transform 0.3s;
-}
-.footer .ig:hover::after { transform: translateX(4px); }
-/* remove duplicate gold hover override at end */
+function Gallery() {
+  const [idx, setIdx] = useState(null);
+  const open = idx != null;
+  const close = () => setIdx(null);
+  const prev = () => setIdx((i) => (i - 1 + WORKS.length) % WORKS.length);
+  const next = () => setIdx((i) => (i + 1) % WORKS.length);
 
-/* responsive */
-@media (max-width: 900px) {
-  .masonry { column-count: 2; }
-  .lightbox { grid-template-columns: 1fr; grid-template-rows: 1fr auto; }
-  .lightbox .info { border-left: 0; border-top: 1px solid var(--line); padding: 32px; }
-  .lightbox .info .title { font-size: 36px; margin-bottom: 16px; }
-  .nav .links { display: none; }
-  .hint-pointer { display: none; }
-  .index-row { grid-template-columns: 40px 1fr auto; gap: 16px; }
-  .index-row .size { display: none; }
+  return (
+    <section id="opere" className="gallery-section" data-screen-label="Galleria opere">
+      <div className="section-head">
+        <div className="eyebrow">2024 — 2025</div>
+        <div className="count"><b>{WORKS.length}</b> · VIII</div>
+      </div>
+      <Masonry onOpen={setIdx} />
+      <Lightbox open={open} idx={idx} onClose={close} onPrev={prev} onNext={next} />
+    </section>
+  );
 }
-@media (max-width: 560px) {
-  .masonry { column-count: 1; }
-  .section-head { grid-template-columns: 1fr; text-align: center; }
-  .section-head .count, .section-head .eyebrow { text-align: center; }
+
+function Footer() {
+  return (
+    <footer className="footer">
+      <div className="sig"><img src={SIG} alt="brama" /></div>
+      <div className="center">© 2026 — Tutte le opere sono originali</div>
+      <a className="ig" href="https://www.instagram.com/riccardo_bramani" target="_blank" rel="noreferrer">@riccardo_bramani</a>
+    </footer>
+  );
 }
+
+function Tweaks({ tweaks, setTweak }) {
+  const TP = window.TweaksPanel, TS = window.TweakSection, TSL = window.TweakSlider, TR = window.TweakRadio, TSEL = window.TweakSelect, TC = window.TweakColor;
+  if (!TP) return null;
+  return (
+    <TP title="Tweaks">
+      <TS title="Vertigine">
+        <TSL label="Densità particelle" value={tweaks.density} min={80} max={800} step={20} onChange={(v) => { setTweak("density", v); window.__brama_density = v; window.__brama_rebuild && window.__brama_rebuild(); }} />
+        <TSL label="Centro — grandezza" value={tweaks.coreSize} min={0.5} max={4} step={0.1} onChange={(v) => { setTweak("coreSize", v); window.__brama_coreSize = v; }} />
+        <TC label="Centro — colore" value={tweaks.coreColor} onChange={(v) => { setTweak("coreColor", v); window.__brama_coreColor = v; }} />
+      </TS>
+      <TS title="Farfalla">
+        <TR label="Stile" value={tweaks.butterfly || "ink"} options={[{value:"ink",label:"Inchiostro"},{value:"glass",label:"Vetro"}]} onChange={(v) => setTweak("butterfly", v)} />
+        <TSL label="Sovrapp. ali — opacità" value={tweaks.overlapFade} min={0} max={1} step={0.05} onChange={(v) => { setTweak("overlapFade", v); document.documentElement.style.setProperty('--overlap-fade', String(v)); }} />
+      </TS>
+      <TS title="Galleria">
+        <TSEL label="Font titoli" value={tweaks.titleFont || "cormorant"} options={[
+          {value:"inter-up",       label:"Inter Tight — UPPERCASE (come «opere»)"},
+          {value:"mono-up",        label:"JetBrains Mono — UPPERCASE (come eyebrow)"},
+          {value:"cormorant",      label:"Cormorant Garamond — italic"},
+          {value:"cormorant-roman",label:"Cormorant Garamond — roman"},
+          {value:"fraunces",       label:"Fraunces — italic"},
+          {value:"playfair",       label:"Playfair Display — italic"},
+          {value:"ebgaramond",     label:"EB Garamond — italic"},
+          {value:"spectral",       label:"Spectral — italic"},
+          {value:"crimson",        label:"Crimson Pro — italic"},
+          {value:"tenor",          label:"Tenor Sans"},
+          {value:"italiana",       label:"Italiana"},
+        ]} onChange={(v) => { setTweak("titleFont", v); document.documentElement.dataset.titleFont = v; }} />
+      </TS>
+    </TP>
+  );
+}
+
+function App() {
+  const useTweaks = window.useTweaks;
+  const defaults = window.__BRAMA_TWEAK_DEFAULTS__;
+  const [tweaks, setTweak] = useTweaks ? useTweaks(defaults) : [defaults, () => {}];
+
+  return (
+    <>
+      <Nav />
+      <Hero tweaks={tweaks} />
+      <Gallery />
+      <Footer />
+      <Tweaks tweaks={tweaks} setTweak={setTweak} />
+    </>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('app')).render(<App />);
+
+</script>
+</body>
+<script>
+/* Force-snap between hero and gallery whenever scrolling stops in the dead
+   zone. Uses scrollend (modern browsers) with a fallback timer. */
+(function () {
+  let snapping = false;
+  let scrollEndTimer = null;
+  let lastDir = 0;
+  let lastY = window.scrollY;
+
+  function snapNow() {
+    if (snapping) return;
+    const vh = window.innerHeight;
+    const y = window.scrollY;
+    if (y <= 2 || y >= vh - 2) return;          // already at a snap point
+    if (y > vh + 4) return;                     // inside the gallery, free scroll
+    let target;
+    if (lastDir > 0) target = vh;
+    else if (lastDir < 0) target = 0;
+    else target = (y < vh * 0.5) ? 0 : vh;
+    if (Math.abs(y - target) < 2) return;
+    snapping = true;
+    window.scrollTo({ top: target, behavior: 'smooth' });
+    setTimeout(() => { snapping = false; }, 500);
+  }
+
+  // Track direction every scroll tick.
+  window.addEventListener('scroll', () => {
+    const y = window.scrollY;
+    if (y > lastY) lastDir = 1;
+    else if (y < lastY) lastDir = -1;
+    lastY = y;
+    // Fallback for browsers without scrollend.
+    clearTimeout(scrollEndTimer);
+    scrollEndTimer = setTimeout(snapNow, 90);
+  }, { passive: true });
+
+  // Native scrollend (Chrome/Firefox) — fires the moment momentum settles.
+  if ('onscrollend' in window) {
+    window.addEventListener('scrollend', snapNow);
+  }
+})();
+</script>
+</html>
