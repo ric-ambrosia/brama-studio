@@ -484,12 +484,14 @@
   // Non aspetta che lo scroll si fermi: la prima rotellata o swipe nella
   // zona di transizione lancia subito l'animazione verso il target.
 
-  const TRANSITION_MS = 480;
   let locked = false;
+  let unlockTimer = null;
+  let rafId = 0;
 
-  function lock() {
+  function lock(ms) {
     locked = true;
-    setTimeout(() => { locked = false; }, TRANSITION_MS);
+    clearTimeout(unlockTimer);
+    unlockTimer = setTimeout(() => { locked = false; }, ms);
   }
 
   // Bordo reale tra hero e galleria. NON usare window.innerHeight:
@@ -501,10 +503,31 @@
     return el ? Math.round(el.offsetTop + el.offsetHeight) : window.innerHeight;
   }
 
-  function snapTo(target) {
+  // Animazione custom: durata controllabile (Instagram = ~200ms, snappy).
+  // Usata invece di window.scrollTo({behavior:'smooth'}) che è più lenta
+  // e su mobile combatte con l'inerzia del touch.
+  function animateScroll(target, duration) {
+    cancelAnimationFrame(rafId);
+    const start = window.scrollY;
+    const dist  = target - start;
+    if (Math.abs(dist) < 1) return;
+    const t0 = performance.now();
+    function step(now) {
+      const t = Math.min(1, (now - t0) / duration);
+      // ease-out quart: parte rapida, finisce morbida
+      const eased = 1 - Math.pow(1 - t, 4);
+      window.scrollTo(0, start + dist * eased);
+      if (t < 1) rafId = requestAnimationFrame(step);
+    }
+    rafId = requestAnimationFrame(step);
+  }
+
+  // fast = true → 200ms (touch). false → 380ms (wheel/keyboard).
+  function snapTo(target, fast) {
     if (Math.abs(window.scrollY - target) < 2) return;
-    lock();
-    window.scrollTo({ top: target, behavior: 'smooth' });
+    const dur = fast ? 200 : 380;
+    lock(dur + 60);
+    animateScroll(target, dur);
   }
 
   // --- WHEEL (desktop / trackpad) ---
@@ -530,59 +553,36 @@
     if (wheelAccum > 0 && inHero) {
       e.preventDefault();
       wheelAccum = 0;
-      snapTo(hb);
+      snapTo(hb, false);
     } else if (wheelAccum < 0 && atGalleryTop) {
       e.preventDefault();
       wheelAccum = 0;
-      snapTo(0);
+      snapTo(0, false);
     }
   }, { passive: false });
 
   // --- TOUCH (mobile) ---
-  // Lo swipe dell'utente fa scroll naturale; al rilascio decidiamo dove
-  // atterrare. Un fallback su 'scrollend' (o un timeout) ricontrolla
-  // dopo l'inerzia: se sei rimasto a metà, ti porta in cima a una delle
-  // due sezioni — non si può sostare nel mezzo.
+  // Allo swipe l'utente sposta la pagina liberamente. Appena alza il
+  // dito, snap istantaneo (200ms) verso hero o galleria. L'animazione
+  // custom via rAF sovrascrive l'inerzia iOS chiamando scrollTo ad
+  // ogni frame, quindi non c'è "deriva" prima dello snap.
   let touchStartY = 0;
 
   window.addEventListener('touchstart', (e) => {
     touchStartY = e.touches[0].clientY;
   }, { passive: true });
 
-  function snapIfBetween() {
-    if (locked) return;
-    const hb = heroBottom();
-    const y  = window.scrollY;
-    if (y <= 2 || y >= hb - 2) return;       // già in cima o già in galleria
-    if (y > hb + 4) return;                   // dentro la galleria: libero
-    snapTo(y < hb * 0.5 ? 0 : hb);
-  }
-
   window.addEventListener('touchend', (e) => {
-    if (locked) return;
     const hb = heroBottom();
     const y  = window.scrollY;
     if (y <= 2 || y >= hb - 2) return;
     if (y > hb + 4) return;
     const dy = touchStartY - e.changedTouches[0].clientY;
-    if (Math.abs(dy) > 20) {
-      snapTo(dy > 0 ? hb : 0);
-    } else {
-      snapTo(y < hb * 0.5 ? 0 : hb);
-    }
+    let target;
+    if (Math.abs(dy) > 20) target = (dy > 0 ? hb : 0);
+    else                    target = (y < hb * 0.5 ? 0 : hb);
+    snapTo(target, true);
   }, { passive: true });
-
-  // Rete di sicurezza: dopo l'inerzia (scrollend) o un breve timeout
-  // di pausa, se il viewport è ancora a metà strada, snap automatico.
-  let restTimer = null;
-  window.addEventListener('scroll', () => {
-    if (locked) return;
-    clearTimeout(restTimer);
-    restTimer = setTimeout(snapIfBetween, 120);
-  }, { passive: true });
-  if ('onscrollend' in window) {
-    window.addEventListener('scrollend', snapIfBetween);
-  }
 
   // --- KEYBOARD ---
   window.addEventListener('keydown', (e) => {
@@ -593,8 +593,8 @@
     const atGalleryTop = y >= hb - 2 && y <= hb + 2;
     const down = e.key === 'PageDown' || e.key === 'ArrowDown' || e.key === ' ';
     const up   = e.key === 'PageUp'   || e.key === 'ArrowUp';
-    if (down && inHero) { e.preventDefault(); snapTo(hb); }
-    else if (up && atGalleryTop) { e.preventDefault(); snapTo(0); }
+    if (down && inHero) { e.preventDefault(); snapTo(hb, false); }
+    else if (up && atGalleryTop) { e.preventDefault(); snapTo(0, false); }
   });
 })();
 </script>
