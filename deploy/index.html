@@ -460,42 +460,99 @@
 })();
 </script>
 
-<!-- Snap-scroll tra hero e galleria -->
+<!-- Snap-scroll tra hero e galleria (Instagram-like, no pausa) -->
 <script>
 (function () {
-  let snapping = false;
-  let scrollEndTimer = null;
-  let lastDir = 0;
-  let lastY = window.scrollY;
+  // Intercetta wheel/touch per passare hero <-> galleria in modo snappy.
+  // Non aspetta che lo scroll si fermi: la prima rotellata o swipe nella
+  // zona di transizione lancia subito l'animazione verso il target.
 
-  function snapNow() {
-    if (snapping) return;
-    const vh = window.innerHeight;
-    const y = window.scrollY;
-    if (y <= 2 || y >= vh - 2) return;
-    if (y > vh + 4) return;
-    let target;
-    if (lastDir > 0) target = vh;
-    else if (lastDir < 0) target = 0;
-    else target = (y < vh * 0.5) ? 0 : vh;
-    if (Math.abs(y - target) < 2) return;
-    snapping = true;
-    window.scrollTo({ top: target, behavior: 'smooth' });
-    setTimeout(() => { snapping = false; }, 500);
+  const TRANSITION_MS = 480; // durata percepita dello scroll smooth
+  let locked = false;
+
+  function lock() {
+    locked = true;
+    setTimeout(() => { locked = false; }, TRANSITION_MS);
   }
 
-  window.addEventListener('scroll', () => {
-    const y = window.scrollY;
-    if (y > lastY) lastDir = 1;
-    else if (y < lastY) lastDir = -1;
-    lastY = y;
-    clearTimeout(scrollEndTimer);
-    scrollEndTimer = setTimeout(snapNow, 90);
+  function snapTo(target) {
+    if (Math.abs(window.scrollY - target) < 2) return;
+    lock();
+    window.scrollTo({ top: target, behavior: 'smooth' });
+  }
+
+  // --- WHEEL (desktop / trackpad) ---
+  // Soglia bassa: anche un piccolo "tick" di rotella conta.
+  let wheelAccum = 0;
+  let wheelResetTimer = null;
+  const WHEEL_THRESHOLD = 8;
+
+  window.addEventListener('wheel', (e) => {
+    const vh = window.innerHeight;
+    const y  = window.scrollY;
+    // Zona di transizione: dall'hero fino a poco oltre l'inizio galleria.
+    const inHero       = y < vh - 2;
+    const atGalleryTop = y >= vh - 2 && y <= vh + 2;
+    if (!inHero && !atGalleryTop) return; // dentro la galleria: scroll libero
+
+    if (locked) { e.preventDefault(); return; }
+
+    // Accumula il delta — i trackpad mandano molti eventi piccolissimi,
+    // così ne basta uno significativo per far scattare lo snap.
+    wheelAccum += e.deltaY;
+    clearTimeout(wheelResetTimer);
+    wheelResetTimer = setTimeout(() => { wheelAccum = 0; }, 120);
+
+    if (Math.abs(wheelAccum) < WHEEL_THRESHOLD) return;
+
+    if (wheelAccum > 0 && inHero) {
+      e.preventDefault();
+      wheelAccum = 0;
+      snapTo(vh);
+    } else if (wheelAccum < 0 && atGalleryTop) {
+      e.preventDefault();
+      wheelAccum = 0;
+      snapTo(0);
+    }
+  }, { passive: false });
+
+  // --- TOUCH (mobile) ---
+  let touchStartY = 0;
+  let touchStartScroll = 0;
+
+  window.addEventListener('touchstart', (e) => {
+    touchStartY = e.touches[0].clientY;
+    touchStartScroll = window.scrollY;
   }, { passive: true });
 
-  if ('onscrollend' in window) {
-    window.addEventListener('scrollend', snapNow);
-  }
+  window.addEventListener('touchend', (e) => {
+    if (locked) return;
+    const vh = window.innerHeight;
+    const y  = window.scrollY;
+    // Solo se siamo finiti in zona di confine
+    if (y <= 2 || y >= vh - 2) return;
+    if (y > vh + 4) return;
+    const dy = touchStartY - e.changedTouches[0].clientY;
+    // direzione dello swipe; se troppo piccolo, decidi sulla posizione
+    if (Math.abs(dy) > 20) {
+      snapTo(dy > 0 ? vh : 0);
+    } else {
+      snapTo(y < vh * 0.5 ? 0 : vh);
+    }
+  }, { passive: true });
+
+  // --- KEYBOARD (Page Down/Up, Space, Arrow) ---
+  window.addEventListener('keydown', (e) => {
+    if (locked) return;
+    const vh = window.innerHeight;
+    const y  = window.scrollY;
+    const inHero       = y < vh - 2;
+    const atGalleryTop = y >= vh - 2 && y <= vh + 2;
+    const down = e.key === 'PageDown' || e.key === 'ArrowDown' || e.key === ' ';
+    const up   = e.key === 'PageUp'   || e.key === 'ArrowUp';
+    if (down && inHero) { e.preventDefault(); snapTo(vh); }
+    else if (up && atGalleryTop) { e.preventDefault(); snapTo(0); }
+  });
 })();
 </script>
 </body>
