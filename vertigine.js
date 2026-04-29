@@ -1,0 +1,801 @@
+/* === Brama — design tokens === */
+:root {
+  --bg: #050a1a;
+  --bg-2: #0a1430;
+  --ink: #f0f4ff;
+  --ink-dim: #9bb1d6;
+  --ink-mute: #5d76a3;
+  --line: rgba(240, 244, 255, 0.12);
+  --line-strong: rgba(240, 244, 255, 0.28);
+  --accent: #4a93e6;
+  --accent-soft: #2c6fd1;
+  --red: #c8281c;
+  --red-deep: #7a1010;
+  --foam: #f0f4ff;
+  --gold: #4a93e6;
+  --void: #000000;
+  --resin: rgba(74, 147, 230, 0.18);
+
+  --serif: "Cormorant Garamond", "EB Garamond", Georgia, serif;
+  --display: "Fraunces", "Cormorant Garamond", Georgia, serif;
+  --sans: "Inter Tight", "Inter", system-ui, sans-serif;
+  --mono: "JetBrains Mono", ui-monospace, monospace;
+
+  --grid: 8px;
+  --maxw: 1440px;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { background: var(--bg); color: var(--ink); font-family: var(--sans); -webkit-font-smoothing: antialiased; }
+body { overflow-x: hidden; }
+img { display: block; max-width: 100%; }
+button { font: inherit; color: inherit; background: none; border: 0; cursor: pointer; }
+a { color: inherit; text-decoration: none; }
+
+/* film grain overlay (very subtle) */
+.grain::after {
+  content: "";
+  position: fixed; inset: 0;
+  pointer-events: none;
+  z-index: 100;
+  opacity: 0.06;
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 0.7 0'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
+}
+
+/* === Top sig (top-left, anchored to page top — scrolls away) === */
+.nav-fixed {
+  position: absolute; top: 12px; left: 16px;
+  z-index: 50;
+  pointer-events: none;
+}
+.nav-sig {
+  height: 160px;
+  width: auto;
+  /* tint white signature -> deep blue #1e40a8 */
+  filter: brightness(0) saturate(100%) invert(19%) sepia(76%) saturate(3200%) hue-rotate(225deg) brightness(82%) contrast(108%);
+  opacity: 0;
+  user-select: none;
+  -webkit-user-drag: none;
+  /* nav signature fades in shortly after butterfly arrives */
+  animation: navSigIn 1.4s ease 1.5s forwards;
+}
+@keyframes navSigIn {
+  from { opacity: 0; transform: translateY(-8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+html {
+  /* JS-driven snap (see script at end of HTML) handles hero<->gallery.
+     CSS scroll-snap "proximity" doesn't fire when stopped exactly mid-page,
+     and "mandatory" breaks free scrolling inside the long gallery. */
+  scroll-behavior: smooth;
+}
+.hero {
+  position: relative;
+  height: 100vh;
+  width: 100%;
+  overflow: hidden;
+  background: var(--bg);
+}
+.hero::after {
+  /* soft fade-down at the bottom edge so the seam into the gallery dissolves */
+  content: "";
+  position: absolute;
+  inset: auto 0 0 0;
+  height: 28vh;
+  background: linear-gradient(to bottom, rgba(8, 16, 40, 0) 0%, rgba(8, 16, 40, 0.55) 55%, var(--bg) 100%);
+  pointer-events: none;
+  z-index: 2;
+}
+.hero canvas {
+  position: absolute; inset: 0;
+  width: 100%; height: 100%;
+  display: block;
+  cursor: crosshair;
+}
+.hint-pointer {
+  position: absolute;
+  /* Anchored to the bottom of the hero. */
+  bottom: 5vh;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  color: rgba(240, 244, 255, 0.7);
+  text-decoration: none;
+  font-family: var(--sans);
+  font-size: 11px;
+  letter-spacing: 0.4em;
+  text-transform: uppercase;
+  opacity: 0;
+  pointer-events: auto;
+  z-index: 5;
+  animation: hintFadeIn 1.2s ease 2.6s forwards;
+  transition: color 0.3s ease;
+}
+.hint-pointer:hover { color: #4a93e6; }
+.hint-pointer .hint-label {
+  font-weight: 500;
+  text-shadow: 0 2px 12px rgba(0,0,0,0.6);
+}
+.hint-pointer svg {
+  width: 18px;
+  height: 28px;
+  filter: drop-shadow(0 2px 8px rgba(0,0,0,0.7));
+  animation: hintBob 2.4s ease-in-out infinite;
+}
+.hint-pointer:hover svg { color: #4a93e6; }
+@keyframes hintFadeIn {
+  from { opacity: 0; transform: translate(-50%, 12px); }
+  to   { opacity: 0.85; transform: translate(-50%, 0); }
+}
+@keyframes hintBob {
+  0%, 100% { transform: translateY(0); opacity: 0.85; }
+  50% { transform: translateY(6px); opacity: 1; }
+}
+.hero-mark {
+  position: absolute;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  width: clamp(360px, 56vw, 720px);
+  height: auto;
+  display: grid; place-items: center;
+  pointer-events: none;
+}
+/* Common deep-blue tint applied to white signature */
+.brama-mark {
+  position: absolute;
+  width: clamp(360px, 56vw, 720px);
+  height: auto;
+  /* tint white signature -> deep blue */
+  filter: brightness(0) saturate(100%) invert(19%) sepia(76%) saturate(3200%) hue-rotate(225deg) brightness(82%) contrast(108%) drop-shadow(0 4px 24px rgba(8,18,48,0.55)) blur(14px);
+  opacity: 0;
+  transform: scale(1.04) translateY(-6px);
+  animation: bramaIntro 4.4s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  user-select: none;
+  -webkit-user-drag: none;
+  will-change: opacity, transform, filter;
+}
+@keyframes bramaIntro {
+  /* Phase 1 — fade in from blur (0 → 0.9s) */
+  0%   { opacity: 0;    transform: scale(1.04) translateY(-6px);
+         filter: brightness(0) saturate(100%) invert(19%) sepia(76%) saturate(3200%) hue-rotate(225deg) brightness(82%) contrast(108%) drop-shadow(0 4px 24px rgba(8,18,48,0)) blur(14px); }
+  20%  { opacity: 1;    transform: scale(1) translateY(0);
+         filter: brightness(0) saturate(100%) invert(19%) sepia(76%) saturate(3200%) hue-rotate(225deg) brightness(82%) contrast(108%) drop-shadow(0 4px 24px rgba(8,18,48,0.55)) blur(0); }
+  /* Phase 2 — held visible (0.9s → 2.4s) */
+  55%  { opacity: 1;    transform: scale(1) translateY(0);
+         filter: brightness(0) saturate(100%) invert(19%) sepia(76%) saturate(3200%) hue-rotate(225deg) brightness(82%) contrast(108%) drop-shadow(0 4px 24px rgba(8,18,48,0.55)) blur(0); }
+  /* Phase 3 — dissolve upward + blur (2.4s → 3.6s) */
+  82%  { opacity: 0;    transform: scale(1.18) translateY(-32px);
+         filter: brightness(0) saturate(100%) invert(19%) sepia(76%) saturate(3200%) hue-rotate(225deg) brightness(82%) contrast(108%) drop-shadow(0 4px 24px rgba(8,18,48,0)) blur(20px); }
+  100% { opacity: 0;    transform: scale(1.18) translateY(-32px);
+         filter: brightness(0) saturate(100%) invert(19%) sepia(76%) saturate(3200%) hue-rotate(225deg) brightness(82%) contrast(108%) drop-shadow(0 4px 24px rgba(8,18,48,0)) blur(20px); }
+}
+
+/* Butterfly bloom halo behind the SVG */
+.butterfly-wrap {
+  position: absolute;
+  display: grid;
+  place-items: center;
+  opacity: 0;
+  transform: scale(0.55);
+  animation: butterflyEnter 4s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  animation-delay: 0.6s;
+  will-change: opacity, transform;
+}
+.butterfly-bloom {
+  position: absolute;
+  width: 480px; height: 480px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(74,147,230,0.55) 0%, rgba(74,147,230,0.2) 30%, transparent 65%);
+  pointer-events: none;
+  opacity: 0;
+  animation: bloomBurst 1.6s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  animation-delay: 0.6s;
+  filter: blur(8px);
+}
+@keyframes bloomBurst {
+  0%   { opacity: 0; transform: scale(0.4); }
+  35%  { opacity: 0.9; transform: scale(1); }
+  100% { opacity: 0; transform: scale(1.4); }
+}
+@keyframes butterflyEnter {
+  0%   { opacity: 0; transform: scale(0.55) rotate(-4deg);
+         filter: drop-shadow(0 12px 28px rgba(5,10,30,0.85)) blur(6px); }
+  18%  { opacity: 0.4; transform: scale(0.92) rotate(2deg);
+         filter: drop-shadow(0 12px 28px rgba(5,10,30,0.85)) blur(2px); }
+  32%  { opacity: 1; transform: scale(1.06) rotate(-1deg);
+         filter: drop-shadow(0 14px 32px rgba(5,10,30,0.9)) blur(0); }
+  46%  { transform: scale(0.98) rotate(0.4deg); }
+  60%  { transform: scale(1.01) rotate(0deg); }
+  100% { opacity: 1; transform: scale(1) rotate(0); filter: drop-shadow(0 14px 32px rgba(5,10,30,0.9)) blur(0); }
+}
+.butterfly {
+  width: 260px;
+  height: auto;
+  filter: drop-shadow(0 12px 28px rgba(5,10,30,0.85));
+}
+.butterfly .wing {
+  transform-origin: 0 50%;
+  transform-box: fill-box;
+  animation: flapL 7s ease-in-out infinite;
+}
+.butterfly .wing-r {
+  animation-name: flapR;
+}
+@keyframes flapL {
+  0%, 100% { transform: scaleX(1) skewY(0deg); }
+  50% { transform: scaleX(0.18) skewY(-3deg); }
+}
+@keyframes flapR {
+  0%, 100% { transform: scaleX(1) skewY(0deg); }
+  50% { transform: scaleX(0.18) skewY(3deg); }
+}
+.butterfly .wing-l { transform-origin: 100% 50%; }
+.butterfly .wing-r { transform-origin: 0% 50%; }
+
+/* ── Glass butterfly ─────────────────────────────────────────────────── */
+.butterfly-glass {
+  position: relative;
+  display: block;
+  flex: 0 0 auto;
+  width: 360px;
+  height: 280px;
+  filter: drop-shadow(0 16px 36px rgba(5,10,30,0.65));
+}
+.g-wing {
+  position: absolute;
+  top: 0;
+  width: 50%;
+  height: 100%;
+  transform-origin: 100% 50%;
+  animation: flapL 7s ease-in-out infinite;
+}
+.g-wing-l { left: 0; }
+.g-wing-r {
+  left: 50%;
+  transform-origin: 0% 50%;
+  animation-name: flapR;
+}
+/* Mirror right-wing children using scaleX(-1) anchored on their own center,
+   so clip-paths produce the mirrored silhouette while staying in place. */
+.g-wing-r > .shard,
+.g-wing-r > .highlight {
+  transform: scaleX(-1);
+  transform-origin: 50% 50%;
+}
+/* Right wing is mirrored — the mask was authored for the LEFT wing (fade
+   right→body). After scaleX(-1) the geometry flips and the body is now on
+   the *left* in screen-space, so the same `to right` mask still happens to
+   point at the body for both wings. No mask override needed here. */
+
+.shard {
+  position: absolute;
+  inset: 0;
+  backdrop-filter: blur(6px) saturate(1.2);
+  -webkit-backdrop-filter: blur(6px) saturate(1.2);
+  border: 1px solid rgba(220, 240, 248, 0.6);
+  background: linear-gradient(135deg, rgba(195,230,240,0.4) 0%, rgba(255,255,255,0.22) 50%, rgba(180,220,232,0.4) 100%);
+  box-shadow: inset 0 0 30px rgba(220,240,248,0.25);
+  overflow: hidden;
+}
+/* Two separate glints per cycle:
+   ::before — sweep 1 — top→bottom — wings semi-open while CLOSING (~25%)
+   ::after  — sweep 2 — bottom→top — wings semi-open while OPENING (~75%)
+   Each cascades section-by-section in its own direction; intensity falls
+   off as the wave progresses (last shard barely visible). */
+.shard::before,
+.shard::after {
+  content: "";
+  position: absolute;
+  inset: -12% -22%;
+  background: linear-gradient(
+    180deg,
+    transparent 30%,
+    rgba(220, 235, 255, 0) 42%,
+    rgba(240, 248, 255, 1) 50%,
+    rgba(220, 235, 255, 0) 58%,
+    transparent 70%
+  );
+  mix-blend-mode: screen;
+  pointer-events: none;
+  will-change: transform, opacity;
+  filter: brightness(var(--gi, 1));
+}
+.shard::before {
+  animation: shardGlintDown 7s linear var(--gd1, 0s) infinite;
+}
+.shard::after {
+  animation: shardGlintUp 7s linear var(--gd2, 0s) infinite;
+}
+
+/* Cascade order:
+   Sweep 1 (down): s-d → s-a → s-b → s-c → s-e
+   Sweep 2 (up):   s-e → s-c → s-b → s-a → s-d (reversed)
+   Intensity falloff applies to BOTH sweeps based on cascade position. */
+.shard.s-d::before { --gd1: 0s;    --gi: 1; }
+.shard.s-a::before { --gd1: 0.18s; --gi: 0.7; }
+.shard.s-b::before { --gd1: 0.36s; --gi: 0.45; }
+.shard.s-c::before { --gd1: 0.54s; --gi: 0.22; }
+.shard.s-e::before { --gd1: 0.72s; --gi: 0.08; }
+
+.shard.s-e::after { --gd2: 0s;    }
+.shard.s-c::after { --gd2: 0.18s; }
+.shard.s-b::after { --gd2: 0.36s; }
+.shard.s-a::after { --gd2: 0.54s; }
+.shard.s-d::after { --gd2: 0.72s; }
+
+@keyframes shardGlintDown {
+  0%   { transform: translateY(-80%); opacity: 0; }
+  12%  { transform: translateY(-80%); opacity: 0; }
+  14%  { transform: translateY(-70%); opacity: 1; }
+  38%  { transform: translateY( 70%); opacity: 1; }
+  40%  { transform: translateY( 80%); opacity: 0; }
+  100% { transform: translateY( 80%); opacity: 0; }
+}
+@keyframes shardGlintUp {
+  0%   { transform: translateY( 80%); opacity: 0; }
+  62%  { transform: translateY( 80%); opacity: 0; }
+  64%  { transform: translateY( 70%); opacity: 1; }
+  86%  { transform: translateY(-70%); opacity: 1; }
+  88%  { transform: translateY(-80%); opacity: 0; }
+  100% { transform: translateY(-80%); opacity: 0; }
+}
+/* Light source: upper-left of the viewport. All shard glints sweep at the
+   same absolute angle so they read as ONE coordinated light, with small
+   stagger based on distance from the source (top-inner first, bottom-far
+   last). Right wing is scaleX(-1) mirrored, so its CSS angle is mirrored
+   too in viewer-space — set per-wing overrides accordingly. */
+/* Two distinct wings per side. Upper wing is bigger, slightly overlaps the
+   lower wing (which is narrower) — the right-edge body has a V-notch between
+   them. Z-index keeps the upper wing on top. */
+.shard.s-d { clip-path: polygon(100% 45%, 55% 12%, 22% 0, 14% 22%); backdrop-filter: blur(2px); background: linear-gradient(160deg, rgba(255,255,255,0.55), rgba(195,230,240,0.28)); opacity: 0.92; z-index: 2; }
+/* Upper wing — single merged shard covering both the main upper area and the
+   bottom strip down to where it meets the lower wing. Keeping it as one
+   prevents a visible seam during the glint sweep. */
+.shard.s-a { clip-path: polygon(100% 45%, 14% 22%, 0% 30%, 14% 48%, 22% 60%, 100% 52%); backdrop-filter: blur(3px) saturate(1.4); background: linear-gradient(120deg, rgba(195,230,240,0.55), rgba(255,255,255,0.18)); opacity: 0.95; z-index: 2; }
+/* s-b retained but no longer used in markup — kept here for back-compat; if
+   reintroduced, give it its own polygon and styling. */
+.shard.s-b { display: none; }
+.shard.s-c { clip-path: polygon(100% 52%, 22% 60%, 8% 72%, 30% 86%); backdrop-filter: blur(4px) saturate(1.3); background: linear-gradient(110deg, rgba(205,235,238,0.5), rgba(180,222,232,0.4)); opacity: 0.95; z-index: 1; }
+.shard.s-e { clip-path: polygon(100% 52%, 30% 86%, 50% 92%, 65% 76%); backdrop-filter: blur(8px) saturate(1.2); background: linear-gradient(140deg, rgba(180,220,232,0.55), rgba(255,255,255,0.2)); opacity: 0.95; z-index: 1; }
+
+/* Wing-wide ambient highlight removed — per-shard glints handle reflection now. */
+.highlight { display: none; }
+
+@keyframes glassSweep {
+  0%   { transform: translateX(-60%); opacity: 0; }
+  20%  { opacity: 0.8; }
+  60%  { opacity: 0.6; }
+  100% { transform: translateX(60%); opacity: 0; }
+}
+
+.g-body {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 60px;
+  height: 280px;
+  transform: translate(-50%, -50%);
+  filter: drop-shadow(0 4px 8px rgba(0,0,0,0.6));
+  overflow: visible;
+}
+/* Body glint sweeps — synced with wing shard glints (7s cycle).
+   The rect starts above the body (y=-60) and translates downward / upward
+   in SVG-local units. transform-origin matters less since we only translate. */
+.body-glint {
+  transform-box: fill-box;
+}
+.body-glint-down {
+  animation: bodyGlintDown 7s linear infinite;
+}
+.body-glint-up {
+  animation: bodyGlintUp 7s linear 0.35s infinite;
+}
+@keyframes bodyGlintDown {
+  0%, 18%   { transform: translateY(-100px); opacity: 0; }
+  24%       { opacity: 1; }
+  38%       { opacity: 1; }
+  43%, 100% { transform: translateY(100px); opacity: 0; }
+}
+@keyframes bodyGlintUp {
+  0%, 55%   { transform: translateY(100px); opacity: 0; }
+  61%       { opacity: 1; }
+  75%       { opacity: 1; }
+  80%, 100% { transform: translateY(-100px); opacity: 0; }
+}
+
+
+/* === GALLERY === */
+.gallery-section {
+  position: relative;
+  padding: 160px 0 120px;
+  background: var(--bg);
+}
+.section-head {
+  max-width: var(--maxw);
+  margin: 0 auto 80px;
+  padding: 0 5vw;
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: end;
+  gap: 24px;
+}
+.section-head .eyebrow {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.32em;
+  text-transform: uppercase;
+  color: var(--ink-mute);
+}
+.section-head .title {
+  font-family: var(--display);
+  font-style: italic;
+  font-weight: 200;
+  font-size: clamp(48px, 9vw, 140px);
+  line-height: 0.9;
+  letter-spacing: -0.03em;
+  text-align: center;
+  white-space: nowrap;
+}
+.section-head .title em {
+  color: var(--ink);
+  font-style: italic;
+}
+.section-head .count {
+  text-align: right;
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: var(--ink-mute);
+}
+.section-head .count b { color: var(--ink); font-weight: 400; }
+
+/* index list (toggle) */
+.index-list {
+  max-width: var(--maxw);
+  margin: 0 auto 80px;
+  padding: 0 5vw;
+  display: grid;
+  gap: 0;
+  border-top: 1px solid var(--line);
+}
+.index-row {
+  display: grid;
+  grid-template-columns: 60px 1fr auto auto;
+  gap: 32px;
+  align-items: center;
+  padding: 20px 0;
+  border-bottom: 1px solid var(--line);
+  cursor: pointer;
+  transition: padding 0.4s ease, background 0.4s ease;
+  position: relative;
+}
+.index-row:hover { padding-left: 24px; background: linear-gradient(to right, rgba(217,178,106,0.04), transparent); }
+.index-row .num {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--ink-mute);
+  letter-spacing: 0.18em;
+}
+.index-row .name {
+  font-family: var(--display);
+  font-style: italic;
+  font-weight: 200;
+  font-size: clamp(28px, 4vw, 56px);
+  line-height: 1;
+  letter-spacing: -0.02em;
+}
+.index-row .year {
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  color: var(--ink-dim);
+}
+.index-row .size {
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  color: var(--ink-mute);
+  min-width: 90px;
+  text-align: right;
+}
+.index-row .preview {
+  position: absolute;
+  pointer-events: none;
+  width: 240px;
+  height: 300px;
+  background-size: cover;
+  background-position: center;
+  z-index: 5;
+  opacity: 0;
+  transform: translate(-50%, -50%) scale(0.92);
+  transition: opacity 0.25s ease, transform 0.4s cubic-bezier(.2,.8,.2,1);
+  box-shadow: 0 30px 80px rgba(0,0,0,0.6);
+  filter: saturate(1.1) contrast(1.05);
+}
+.index-row:hover .preview { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+
+/* masonry */
+.masonry {
+  max-width: var(--maxw);
+  margin: 0 auto;
+  padding: 0 5vw;
+  column-count: 2;
+  column-gap: 48px;
+}
+.masonry .tile {
+  display: block;
+  break-inside: avoid;
+  margin-bottom: 32px;
+  position: relative;
+  cursor: pointer;
+  overflow: hidden;
+  background: var(--bg-2);
+}
+.masonry .tile .frame {
+  position: relative;
+  overflow: hidden;
+}
+.masonry .tile img {
+  width: 100%;
+  height: auto;
+  transition: transform 1.2s cubic-bezier(.2,.8,.2,1), filter 0.6s ease;
+  filter: brightness(0.92) saturate(1.05);
+}
+.masonry .tile:hover img { transform: scale(1.04); filter: brightness(1) saturate(1.15); }
+.masonry .tile .meta {
+  display: flex; justify-content: space-between; align-items: baseline;
+  padding: 16px 4px 4px;
+  gap: 16px;
+}
+/* Title font: switchable via [data-title-font] on <html>. Default is
+   Cormorant Garamond italic. Each option resets posture/weight/tracking
+   so the title still reads correctly when the family changes. */
+.masonry .tile .meta .t {
+  font-family: "Cormorant Garamond", serif;
+  font-style: italic;
+  font-weight: 300;
+  font-size: 22px;
+  letter-spacing: -0.01em;
+  text-transform: none;
+}
+:root[data-title-font="fraunces"]   .masonry .tile .meta .t { font-family: "Fraunces", serif; font-style: italic; font-weight: 300; letter-spacing: 0; }
+:root[data-title-font="playfair"]   .masonry .tile .meta .t { font-family: "Playfair Display", serif; font-style: italic; font-weight: 400; letter-spacing: 0; }
+:root[data-title-font="ebgaramond"] .masonry .tile .meta .t { font-family: "EB Garamond", serif; font-style: italic; font-weight: 400; letter-spacing: 0.005em; }
+:root[data-title-font="italiana"]   .masonry .tile .meta .t { font-family: "Italiana", serif; font-style: normal; font-weight: 400; letter-spacing: 0.04em; font-size: 24px; }
+/* "opere" style — sans-serif uppercase tracked, like the hero scroll hint */
+:root[data-title-font="inter-up"]   .masonry .tile .meta .t { font-family: "Inter Tight", system-ui, sans-serif; font-style: normal; font-weight: 500; font-size: 13px; letter-spacing: 0.4em; text-transform: uppercase; }
+/* Mono uppercase — like the section eyebrow "2024 — 2025" */
+:root[data-title-font="mono-up"]    .masonry .tile .meta .t { font-family: "JetBrains Mono", monospace; font-style: normal; font-weight: 400; font-size: 12px; letter-spacing: 0.32em; text-transform: uppercase; }
+/* Cormorant ROMAN (not italic) — softer, lapidary */
+:root[data-title-font="cormorant-roman"] .masonry .tile .meta .t { font-family: "Cormorant Garamond", serif; font-style: normal; font-weight: 400; letter-spacing: 0.01em; font-size: 22px; }
+/* Tenor Sans — humanist sans, slightly classical */
+:root[data-title-font="tenor"]      .masonry .tile .meta .t { font-family: "Tenor Sans", sans-serif; font-style: normal; font-weight: 400; letter-spacing: 0.04em; font-size: 20px; }
+/* Spectral italic — bookish, contemporary */
+:root[data-title-font="spectral"]   .masonry .tile .meta .t { font-family: "Spectral", serif; font-style: italic; font-weight: 300; letter-spacing: 0; font-size: 22px; }
+/* Crimson Pro italic — sharp, editorial */
+:root[data-title-font="crimson"]    .masonry .tile .meta .t { font-family: "Crimson Pro", serif; font-style: italic; font-weight: 300; letter-spacing: 0; font-size: 24px; }
+.masonry .tile .meta .y {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.24em;
+  color: var(--ink-mute);
+}
+.masonry .tile .corner {
+  position: absolute;
+  top: 12px; left: 12px;
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.24em;
+  color: var(--ink);
+  background: rgba(10,9,8,0.5);
+  backdrop-filter: blur(10px);
+  padding: 6px 10px;
+  opacity: 0;
+  transform: translateY(-4px);
+  transition: opacity 0.3s ease, transform 0.3s ease;
+}
+.masonry .tile:hover .corner { opacity: 1; transform: translateY(0); }
+
+/* layout switcher */
+.view-switch {
+  max-width: var(--maxw);
+  margin: 0 auto 40px;
+  padding: 0 5vw;
+  display: flex;
+  justify-content: flex-end;
+  gap: 4px;
+}
+.view-switch button {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: var(--ink-mute);
+  padding: 8px 14px;
+  border: 1px solid var(--line);
+  transition: all 0.3s ease;
+}
+.view-switch button.active { color: var(--bg); background: var(--gold); border-color: var(--gold); }
+.view-switch button:not(.active):hover { color: var(--ink); border-color: var(--line-strong); }
+
+/* === LIGHTBOX === */
+.lightbox {
+  position: fixed; inset: 0;
+  z-index: 80;
+  background: rgba(8, 7, 6, 0.94);
+  backdrop-filter: blur(20px);
+  display: grid;
+  grid-template-columns: 1fr 380px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.4s ease;
+}
+.lightbox.open { opacity: 1; pointer-events: auto; }
+.lightbox .stage {
+  position: relative;
+  display: flex; align-items: center; justify-content: center;
+  padding: 80px 60px;
+  overflow: hidden;
+}
+.lightbox .stage img {
+  max-height: 84vh;
+  max-width: 100%;
+  width: auto;
+  object-fit: contain;
+  box-shadow: 0 40px 120px rgba(0,0,0,0.7);
+  transition: transform 0.6s cubic-bezier(.2,.8,.2,1), opacity 0.3s ease;
+}
+.lightbox .info {
+  border-left: 1px solid var(--line);
+  padding: 80px 48px;
+  display: flex; flex-direction: column;
+  background: linear-gradient(180deg, rgba(217,178,106,0.04), transparent 30%);
+}
+.lightbox .info .eyebrow {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.32em;
+  text-transform: uppercase;
+  color: var(--gold);
+  margin-bottom: 24px;
+}
+.lightbox .info .title {
+  font-family: var(--display);
+  font-style: italic;
+  font-weight: 200;
+  font-size: 64px;
+  line-height: 0.95;
+  letter-spacing: -0.03em;
+  margin-bottom: 32px;
+}
+.lightbox .info .specs {
+  display: grid;
+  gap: 20px;
+  border-top: 1px solid var(--line);
+  padding-top: 24px;
+  margin-bottom: 32px;
+}
+.lightbox .info .specs .row { display: grid; grid-template-columns: 90px 1fr; gap: 12px; }
+.lightbox .info .specs .k {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: var(--ink-mute);
+  padding-top: 4px;
+}
+.lightbox .info .specs .v {
+  font-family: var(--serif);
+  font-size: 17px;
+  line-height: 1.5;
+  color: var(--ink);
+}
+.lightbox .info .nav-btns {
+  margin-top: auto;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-top: 1px solid var(--line);
+  padding-top: 24px;
+}
+.lightbox .info .nav-btns button {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.32em;
+  text-transform: uppercase;
+  color: var(--ink-dim);
+  padding: 12px 0;
+  display: flex; align-items: center; gap: 12px;
+  transition: color 0.3s ease, transform 0.3s ease;
+}
+.lightbox .info .nav-btns button:hover { color: var(--gold); }
+.lightbox .info .nav-btns button.prev:hover { transform: translateX(-4px); }
+.lightbox .info .nav-btns button.next:hover { transform: translateX(4px); }
+.lightbox .info .counter {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.24em;
+  color: var(--ink-mute);
+}
+.lightbox .info .counter b { color: var(--ink); font-weight: 400; }
+.lightbox .close {
+  position: absolute;
+  top: 24px; right: 24px;
+  width: 40px; height: 40px;
+  display: grid; place-items: center;
+  border: 1px solid var(--line);
+  z-index: 10;
+  transition: border-color 0.3s, transform 0.3s;
+}
+.lightbox .close:hover { border-color: var(--gold); transform: rotate(90deg); }
+.lightbox .close::before, .lightbox .close::after {
+  content: ""; position: absolute;
+  width: 16px; height: 1px; background: var(--ink);
+}
+.lightbox .close::before { transform: rotate(45deg); }
+.lightbox .close::after { transform: rotate(-45deg); }
+
+/* === FOOTER === */
+.footer {
+  border-top: 1px solid var(--line);
+  padding: 60px 5vw 32px;
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 24px;
+}
+.footer .sig img {
+  height: 88px;
+  width: auto;
+  filter: brightness(0) saturate(100%) invert(19%) sepia(76%) saturate(3200%) hue-rotate(225deg) brightness(82%) contrast(108%);
+  opacity: 1;
+}
+.footer .ig:hover { color: #1e40a8; }
+.footer .center {
+  text-align: center;
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.32em;
+  text-transform: uppercase;
+  color: var(--ink-mute);
+}
+.footer .ig {
+  justify-self: end;
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: var(--ink-dim);
+  display: flex; gap: 10px; align-items: center;
+  transition: color 0.3s;
+}
+.footer .ig:hover { color: var(--gold); }
+.footer .ig::after {
+  content: "→";
+  transition: transform 0.3s;
+}
+.footer .ig:hover::after { transform: translateX(4px); }
+/* remove duplicate gold hover override at end */
+
+/* responsive */
+@media (max-width: 900px) {
+  .masonry { column-count: 2; }
+  .lightbox { grid-template-columns: 1fr; grid-template-rows: 1fr auto; }
+  .lightbox .info { border-left: 0; border-top: 1px solid var(--line); padding: 32px; }
+  .lightbox .info .title { font-size: 36px; margin-bottom: 16px; }
+  .nav .links { display: none; }
+  .hint-pointer { display: none; }
+  .index-row { grid-template-columns: 40px 1fr auto; gap: 16px; }
+  .index-row .size { display: none; }
+}
+@media (max-width: 560px) {
+  .masonry { column-count: 1; }
+  .section-head { grid-template-columns: 1fr; text-align: center; }
+  .section-head .count, .section-head .eyebrow { text-align: center; }
+}
