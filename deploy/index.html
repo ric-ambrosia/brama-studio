@@ -393,21 +393,173 @@
       idx = null;
       root.classList.remove('open');
       root.classList.remove('fullscreen');
+      resetZoom();
       document.body.style.overflow = '';
     }
     function toggleFullscreen() {
       root.classList.toggle('fullscreen');
+      resetZoom();
     }
     function prev() {
       if (idx == null) return;
       idx = (idx - 1 + WORKS.length) % WORKS.length;
       paint();
+      resetZoom();
     }
     function next() {
       if (idx == null) return;
       idx = (idx + 1) % WORKS.length;
       paint();
+      resetZoom();
     }
+
+    // ── ZOOM + PAN (attivo in fullscreen) ────────────────────────
+    let scale = 1, tx = 0, ty = 0;
+    const MIN_SCALE = 1, MAX_SCALE = 5;
+
+    function applyTransform(animate) {
+      stageImg.style.transition = animate ? 'transform 0.22s cubic-bezier(.2,.8,.2,1)' : 'none';
+      stageImg.style.transform  = `translate3d(${tx}px, ${ty}px, 0) scale(${scale})`;
+      if (scale > 1.001) stageImg.classList.add('zoomed');
+      else stageImg.classList.remove('zoomed');
+    }
+    function resetZoom() {
+      const wasZoomed = scale > 1.001;
+      scale = 1; tx = 0; ty = 0;
+      applyTransform(wasZoomed);
+    }
+    function clampPan() {
+      const w = stageImg.offsetWidth  * scale;
+      const h = stageImg.offsetHeight * scale;
+      const cw = stage.clientWidth;
+      const ch = stage.clientHeight;
+      const maxX = Math.max(0, (w - cw) / 2);
+      const maxY = Math.max(0, (h - ch) / 2);
+      tx = Math.max(-maxX, Math.min(maxX, tx));
+      ty = Math.max(-maxY, Math.min(maxY, ty));
+    }
+    // Zoom centrato sul punto (px,py) in coord. di schermo
+    function zoomAt(newScale, px, py, animate) {
+      newScale = Math.max(MIN_SCALE, Math.min(MAX_SCALE, newScale));
+      if (Math.abs(newScale - scale) < 0.001) return;
+      const r = stage.getBoundingClientRect();
+      const dx = px - r.left - r.width  / 2;
+      const dy = py - r.top  - r.height / 2;
+      const ratio = newScale / scale;
+      tx = dx - (dx - tx) * ratio;
+      ty = dy - (dy - ty) * ratio;
+      scale = newScale;
+      clampPan();
+      applyTransform(animate);
+    }
+
+    // Pinch / pan (touch)
+    let pinchD = 0, pinchM = null;
+    let panX = 0, panY = 0, panActive = false;
+
+    stage.addEventListener('touchstart', (e) => {
+      if (!root.classList.contains('fullscreen')) return;
+      if (e.touches.length === 2) {
+        const a = e.touches[0], b = e.touches[1];
+        pinchD = Math.hypot(b.clientX - a.clientX, b.clientY - a.clientY);
+        pinchM = { x: (a.clientX + b.clientX) / 2, y: (a.clientY + b.clientY) / 2 };
+      } else if (e.touches.length === 1 && scale > 1.001) {
+        panActive = true;
+        panX = e.touches[0].clientX;
+        panY = e.touches[0].clientY;
+      }
+    }, { passive: false });
+
+    stage.addEventListener('touchmove', (e) => {
+      if (!root.classList.contains('fullscreen')) return;
+      if (e.touches.length === 2 && pinchD > 0 && pinchM) {
+        e.preventDefault();
+        const a = e.touches[0], b = e.touches[1];
+        const d = Math.hypot(b.clientX - a.clientX, b.clientY - a.clientY);
+        const m = { x: (a.clientX + b.clientX) / 2, y: (a.clientY + b.clientY) / 2 };
+        const sRatio  = d / pinchD;
+        const newScale = Math.max(MIN_SCALE, Math.min(MAX_SCALE, scale * sRatio));
+        // Zoom verso il midpoint corrente
+        const r = stage.getBoundingClientRect();
+        const dx = m.x - r.left - r.width  / 2;
+        const dy = m.y - r.top  - r.height / 2;
+        const ratio = newScale / scale;
+        tx = dx - (dx - tx) * ratio;
+        ty = dy - (dy - ty) * ratio;
+        scale = newScale;
+        // Pan dovuto allo spostamento del midpoint tra le due dita
+        tx += m.x - pinchM.x;
+        ty += m.y - pinchM.y;
+        clampPan();
+        applyTransform(false);
+        pinchD = d;
+        pinchM = m;
+      } else if (panActive && e.touches.length === 1 && scale > 1.001) {
+        e.preventDefault();
+        const t = e.touches[0];
+        tx += t.clientX - panX;
+        ty += t.clientY - panY;
+        panX = t.clientX;
+        panY = t.clientY;
+        clampPan();
+        applyTransform(false);
+      }
+    }, { passive: false });
+
+    stage.addEventListener('touchend', (e) => {
+      if (e.touches.length < 2) { pinchD = 0; pinchM = null; }
+      if (e.touches.length === 0) panActive = false;
+    }, { passive: true });
+
+    // Doppio tap → toggle 1x ↔ 2x verso il tap
+    let lastTap = 0;
+    stage.addEventListener('touchend', (e) => {
+      if (!root.classList.contains('fullscreen')) return;
+      if (e.changedTouches.length !== 1) return;
+      const now = performance.now();
+      if (now - lastTap < 300) {
+        const t = e.changedTouches[0];
+        if (scale > 1.001) zoomAt(1, t.clientX, t.clientY, true);
+        else                zoomAt(2, t.clientX, t.clientY, true);
+      }
+      lastTap = now;
+    }, { passive: true });
+
+    // Wheel su desktop → zoom verso il cursore
+    stage.addEventListener('wheel', (e) => {
+      if (!root.classList.contains('fullscreen')) return;
+      e.preventDefault();
+      const factor = e.deltaY < 0 ? 1.15 : 1 / 1.15;
+      zoomAt(scale * factor, e.clientX, e.clientY, false);
+    }, { passive: false });
+
+    // Mouse drag (desktop) quando zoomato
+    let mouseDragging = false, mouseStartX = 0, mouseStartY = 0;
+    stage.addEventListener('mousedown', (e) => {
+      if (!root.classList.contains('fullscreen')) return;
+      if (scale <= 1.001) return;
+      mouseDragging = true;
+      mouseStartX = e.clientX;
+      mouseStartY = e.clientY;
+      e.preventDefault();
+    });
+    window.addEventListener('mousemove', (e) => {
+      if (!mouseDragging) return;
+      tx += e.clientX - mouseStartX;
+      ty += e.clientY - mouseStartY;
+      mouseStartX = e.clientX;
+      mouseStartY = e.clientY;
+      clampPan();
+      applyTransform(false);
+    });
+    window.addEventListener('mouseup', () => { mouseDragging = false; });
+
+    // Doppio click desktop → toggle
+    stage.addEventListener('dblclick', (e) => {
+      if (!root.classList.contains('fullscreen')) return;
+      if (scale > 1.001) zoomAt(1, e.clientX, e.clientY, true);
+      else                zoomAt(2, e.clientX, e.clientY, true);
+    });
 
     closeBtn.addEventListener('click', close);
     fsBtn.addEventListener('click', toggleFullscreen);
