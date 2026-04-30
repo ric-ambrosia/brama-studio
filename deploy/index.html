@@ -633,19 +633,20 @@
   }
 
   // ── MOUNT ───────────────────────────────────────────────────
-  // Layout "due pagine": #pages contiene hero (alto 100vh) e
-  // #gallery-page (anch'esso 100vh ma con overflow interno per la
+  // Layout "due pagine": #pages contiene la nav, l'hero (100vh) e
+  // #gallery-page (anch'esso 100vh con overflow interno per la
   // galleria che può essere più lunga). Una classe .gallery su #pages
   // applica transform: translateY(-100vh) per scorrere alla pagina 2.
+  // La firma sta DENTRO #pages così trasla via insieme all'hero —
+  // come faceva prima quando era ancorata al documento.
   const app = document.getElementById('app');
-  app.appendChild(Nav());
-
   const lb = Lightbox();
   const galleryPage = h('div', { id: 'gallery-page' },
     Gallery(i => lb.open(i)),
     Footer()
   );
   const pages = h('div', { id: 'pages' },
+    Nav(),
     Hero(),
     galleryPage
   );
