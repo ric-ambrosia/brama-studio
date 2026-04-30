@@ -13,6 +13,11 @@
 <meta name="twitter:card" content="summary_large_image" />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<!-- Le immagini (firma + opere) vivono su braminator.com: scaldiamo subito
+     la connessione e prefetchiamo la firma, che serve appena monta la nav. -->
+<link rel="preconnect" href="https://www.braminator.com" crossorigin />
+<link rel="dns-prefetch" href="https://www.braminator.com" />
+<link rel="preload" as="image" href="https://www.braminator.com/static/images/signature.png" fetchpriority="high" />
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,200;1,300;1,400&family=Fraunces:ital,opsz,wght@0,9..144,200;0,9..144,300;0,9..144,400;1,9..144,200;1,9..144,300&family=Playfair+Display:ital,wght@0,400;0,500;1,400;1,500&family=EB+Garamond:ital,wght@0,400;0,500;1,400;1,500&family=Italiana&family=Tenor+Sans&family=Spectral:ital,wght@0,300;1,300&family=Crimson+Pro:ital,wght@0,400;1,300;1,400&family=Inter+Tight:wght@400;500;600&family=JetBrains+Mono:wght@400&display=swap" rel="stylesheet" />
 <link rel="stylesheet" href="styles.css?v=53" />
 <script>
@@ -319,9 +324,15 @@
         class: 'tile',
         onClick: () => onOpen(i)
       });
+      // Le prime 4 thumbnails partono subito (eager + alta priorità) così
+      // sono già pronte quando l'utente arriva in galleria; le altre lazy.
+      const eager = i < 4;
       tile.innerHTML = `
         <div class="frame">
-          <img src="${BASE + w.file}" alt="${w.title}" loading="lazy" />
+          <img src="${BASE + w.file}" alt="${w.title}"
+               loading="${eager ? 'eager' : 'lazy'}"
+               decoding="async"
+               fetchpriority="${eager ? 'high' : 'low'}" />
           <div class="corner">${pad2(i + 1)} / ${WORKS.length}</div>
         </div>
         <div class="meta">
