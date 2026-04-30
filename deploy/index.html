@@ -9,15 +9,13 @@
 <meta property="og:description" content="Braminator — opere di Riccardo Bramani." />
 <meta property="og:type" content="website" />
 <meta property="og:url" content="https://brama.studio/" />
-<meta property="og:image" content="https://www.braminator.com/static/images/Vertigine.jpeg" />
+<meta property="og:image" content="https://brama.studio/images/Vertigine.jpeg" />
 <meta name="twitter:card" content="summary_large_image" />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<!-- Le immagini (firma + opere) vivono su braminator.com: scaldiamo subito
-     la connessione e prefetchiamo la firma, che serve appena monta la nav. -->
-<link rel="preconnect" href="https://www.braminator.com" crossorigin />
-<link rel="dns-prefetch" href="https://www.braminator.com" />
-<link rel="preload" as="image" href="https://www.braminator.com/static/images/signature.png" fetchpriority="high" />
+<!-- Firma servita dalla CDN di Vercel (stesso host): preload con priorità alta
+     così è già pronta quando la nav la richiede. -->
+<link rel="preload" as="image" href="images/signature.png" fetchpriority="high" />
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,200;1,300;1,400&family=Fraunces:ital,opsz,wght@0,9..144,200;0,9..144,300;0,9..144,400;1,9..144,200;1,9..144,300&family=Playfair+Display:ital,wght@0,400;0,500;1,400;1,500&family=EB+Garamond:ital,wght@0,400;0,500;1,400;1,500&family=Italiana&family=Tenor+Sans&family=Spectral:ital,wght@0,300;1,300&family=Crimson+Pro:ital,wght@0,400;1,300;1,400&family=Inter+Tight:wght@400;500;600&family=JetBrains+Mono:wght@400&display=swap" rel="stylesheet" />
 <link rel="stylesheet" href="styles.css?v=53" />
 <script>
@@ -66,7 +64,9 @@
   'use strict';
 
   // ── DATI ────────────────────────────────────────────────────
-  const BASE = "https://www.braminator.com/static/images/";
+  // Le immagini ora sono servite dalla stessa CDN di Vercel (cartella
+  // /images), molto più veloce del vecchio host braminator.com.
+  const BASE = "images/";
   const SIG  = BASE + "signature.png";
 
   const WORKS = [
