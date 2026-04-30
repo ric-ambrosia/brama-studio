@@ -658,28 +658,45 @@
   // Animazione custom: durata controllabile (Instagram = ~200ms, snappy).
   // Usata invece di window.scrollTo({behavior:'smooth'}) che è più lenta
   // e su mobile combatte con l'inerzia del touch.
-  function animateScroll(target, duration) {
+  // Nota: scroll-behavior CSS è 'smooth' su <html>, quindi il browser
+  // farebbe interpolazione propria sopra alla nostra. Disattiviamolo
+  // per la durata dello snap usando 'auto' inline.
+  function animateScroll(target, duration, onDone) {
     cancelAnimationFrame(rafId);
     const start = window.scrollY;
     const dist  = target - start;
-    if (Math.abs(dist) < 1) return;
+    if (Math.abs(dist) < 1) { onDone && onDone(); return; }
     const t0 = performance.now();
+    const root = document.documentElement;
+    const prevBehavior = root.style.scrollBehavior;
+    root.style.scrollBehavior = 'auto';
     function step(now) {
       const t = Math.min(1, (now - t0) / duration);
       // ease-out quart: parte rapida, finisce morbida
       const eased = 1 - Math.pow(1 - t, 4);
       window.scrollTo(0, start + dist * eased);
-      if (t < 1) rafId = requestAnimationFrame(step);
+      if (t < 1) {
+        rafId = requestAnimationFrame(step);
+      } else {
+        root.style.scrollBehavior = prevBehavior;
+        onDone && onDone();
+      }
     }
     rafId = requestAnimationFrame(step);
   }
 
   // fast = true → 200ms (touch). false → 380ms (wheel/keyboard).
+  // Pausa il canvas Vertigine durante lo snap così la GPU è libera per
+  // lo scroll: senza questo, su Samsung/Android il loop del vortice e
+  // il riposizionamento del viewport competono per la stessa GPU.
   function snapTo(target, fast) {
     if (Math.abs(window.scrollY - target) < 2) return;
     const dur = fast ? 200 : 380;
     lock(dur + 60);
-    animateScroll(target, dur);
+    if (window.__brama_canvas_pause) window.__brama_canvas_pause();
+    animateScroll(target, dur, () => {
+      if (window.__brama_canvas_resume) window.__brama_canvas_resume();
+    });
   }
 
   // --- WHEEL (desktop / trackpad) ---

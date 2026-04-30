@@ -172,9 +172,13 @@
 
   let parts = [];
   function buildParticles() {
-    const total = window.__brama_density ?? 320;
+    let total = window.__brama_density ?? 320;
+    // Su mobile (< 768px) o GPU integrate dimezza le particelle: la differenza
+    // visiva è marginale, l'aiuto al frame rate è enorme.
+    if (window.matchMedia('(max-width: 768px)').matches) {
+      total = Math.round(total * 0.5);
+    }
     parts = [];
-    // ~70% water, 30% red shards
     const waterN = Math.round(total * 0.72);
     const shardN = total - waterN;
     for (let i = 0; i < waterN; i++) parts.push(new P('water', true));
@@ -372,7 +376,40 @@
     ctx.arc(cx, cy, coreR, 0, Math.PI * 2);
     ctx.fill();
 
-    requestAnimationFrame(frame);
+    if (shouldRun()) {
+      requestAnimationFrame(frame);
+    } else {
+      rafActive = false;
+    }
+  }
+
+  // Stato del loop: due flag indipendenti.
+  //   onscreen: vero quando l'hero è almeno parzialmente visibile.
+  //   externalPause: settato dal codice di scroll-snap durante la
+  //   transizione tra hero e galleria, per liberare la GPU.
+  let onscreen = true;
+  let externalPause = false;
+  let rafActive = true;
+  function shouldRun() { return onscreen && !externalPause; }
+  function maybeStart() {
+    if (shouldRun() && !rafActive) {
+      rafActive = true;
+      last = performance.now();
+      requestAnimationFrame(frame);
+    }
+  }
+  // API pubblica usata dallo snap-scroll
+  window.__brama_canvas_pause  = () => { externalPause = true; };
+  window.__brama_canvas_resume = () => { externalPause = false; maybeStart(); };
+
+  if ('IntersectionObserver' in window) {
+    const io = new IntersectionObserver((entries) => {
+      for (const ent of entries) {
+        onscreen = ent.isIntersecting;
+        maybeStart();
+      }
+    }, { threshold: 0 });
+    io.observe(canvas);
   }
 
   resize();

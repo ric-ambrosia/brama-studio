@@ -152,34 +152,28 @@ html {
   display: grid; place-items: center;
   pointer-events: none;
 }
-/* Common deep-blue tint applied to white signature */
+/* Common deep-blue tint applied to white signature.
+   IMPORTANTE: il filter è statico — viene rasterizzato una volta sola.
+   Ai keyframes animiamo solo opacity + transform, che la GPU gestisce
+   gratis. Animare anche `filter` con drop-shadow/blur lagga molto su
+   GPU mobile (Mali, Adreno entry-level). */
 .brama-mark {
   position: absolute;
   width: clamp(360px, 56vw, 720px);
   height: auto;
-  /* tint white signature -> deep blue */
-  filter: brightness(0) saturate(100%) invert(19%) sepia(76%) saturate(3200%) hue-rotate(225deg) brightness(82%) contrast(108%) drop-shadow(0 4px 24px rgba(8,18,48,0.55)) blur(14px);
+  filter: brightness(0) saturate(100%) invert(19%) sepia(76%) saturate(3200%) hue-rotate(225deg) brightness(82%) contrast(108%) drop-shadow(0 4px 24px rgba(8,18,48,0.55));
   opacity: 0;
   transform: scale(1.04) translateY(-6px);
-  animation: bramaIntro 4.4s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  animation: bramaIntro 2.6s cubic-bezier(0.4, 0, 0.2, 1) forwards;
   user-select: none;
   -webkit-user-drag: none;
-  will-change: opacity, transform, filter;
+  will-change: opacity, transform;
 }
 @keyframes bramaIntro {
-  /* Phase 1 — fade in from blur (0 → 0.9s) */
-  0%   { opacity: 0;    transform: scale(1.04) translateY(-6px);
-         filter: brightness(0) saturate(100%) invert(19%) sepia(76%) saturate(3200%) hue-rotate(225deg) brightness(82%) contrast(108%) drop-shadow(0 4px 24px rgba(8,18,48,0)) blur(14px); }
-  20%  { opacity: 1;    transform: scale(1) translateY(0);
-         filter: brightness(0) saturate(100%) invert(19%) sepia(76%) saturate(3200%) hue-rotate(225deg) brightness(82%) contrast(108%) drop-shadow(0 4px 24px rgba(8,18,48,0.55)) blur(0); }
-  /* Phase 2 — held visible (0.9s → 2.4s) */
-  55%  { opacity: 1;    transform: scale(1) translateY(0);
-         filter: brightness(0) saturate(100%) invert(19%) sepia(76%) saturate(3200%) hue-rotate(225deg) brightness(82%) contrast(108%) drop-shadow(0 4px 24px rgba(8,18,48,0.55)) blur(0); }
-  /* Phase 3 — dissolve upward + blur (2.4s → 3.6s) */
-  82%  { opacity: 0;    transform: scale(1.18) translateY(-32px);
-         filter: brightness(0) saturate(100%) invert(19%) sepia(76%) saturate(3200%) hue-rotate(225deg) brightness(82%) contrast(108%) drop-shadow(0 4px 24px rgba(8,18,48,0)) blur(20px); }
-  100% { opacity: 0;    transform: scale(1.18) translateY(-32px);
-         filter: brightness(0) saturate(100%) invert(19%) sepia(76%) saturate(3200%) hue-rotate(225deg) brightness(82%) contrast(108%) drop-shadow(0 4px 24px rgba(8,18,48,0)) blur(20px); }
+  0%   { opacity: 0; transform: scale(1.04) translateY(-6px); }
+  18%  { opacity: 1; transform: scale(1)    translateY(0); }
+  62%  { opacity: 1; transform: scale(1)    translateY(0); }
+  100% { opacity: 0; transform: scale(1.18) translateY(-32px); }
 }
 
 /* Butterfly bloom halo behind the SVG */
@@ -189,36 +183,36 @@ html {
   place-items: center;
   opacity: 0;
   transform: scale(0.55);
-  animation: butterflyEnter 4s cubic-bezier(0.22, 1, 0.36, 1) forwards;
-  animation-delay: 0.6s;
+  animation: butterflyEnter 2.4s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  animation-delay: 0.4s;
   will-change: opacity, transform;
 }
 .butterfly-bloom {
   position: absolute;
-  width: 480px; height: 480px;
+  width: 360px; height: 360px;
   border-radius: 50%;
-  background: radial-gradient(circle, rgba(74,147,230,0.55) 0%, rgba(74,147,230,0.2) 30%, transparent 65%);
+  background: radial-gradient(circle, rgba(74,147,230,0.45) 0%, rgba(74,147,230,0.18) 35%, transparent 70%);
   pointer-events: none;
   opacity: 0;
-  animation: bloomBurst 1.6s cubic-bezier(0.22, 1, 0.36, 1) forwards;
-  animation-delay: 0.6s;
-  filter: blur(8px);
+  animation: bloomBurst 1.2s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  animation-delay: 0.4s;
+  /* niente filter: blur — il radial-gradient è già morbido e blur su un
+     elemento di 360px è molto pesante da rasterizzare ogni frame su GPU mobile */
+  will-change: opacity, transform;
 }
 @keyframes bloomBurst {
-  0%   { opacity: 0; transform: scale(0.4); }
-  35%  { opacity: 0.9; transform: scale(1); }
-  100% { opacity: 0; transform: scale(1.4); }
+  0%   { opacity: 0;   transform: scale(0.4); }
+  35%  { opacity: 0.85; transform: scale(1); }
+  100% { opacity: 0;   transform: scale(1.4); }
 }
+/* Solo opacity + transform: niente animazione su filter (drop-shadow + blur)
+   per non ammazzare la GPU mobile durante l'entrata. */
 @keyframes butterflyEnter {
-  0%   { opacity: 0; transform: scale(0.55) rotate(-4deg);
-         filter: drop-shadow(0 12px 28px rgba(5,10,30,0.85)) blur(6px); }
-  18%  { opacity: 0.4; transform: scale(0.92) rotate(2deg);
-         filter: drop-shadow(0 12px 28px rgba(5,10,30,0.85)) blur(2px); }
-  32%  { opacity: 1; transform: scale(1.06) rotate(-1deg);
-         filter: drop-shadow(0 14px 32px rgba(5,10,30,0.9)) blur(0); }
-  46%  { transform: scale(0.98) rotate(0.4deg); }
-  60%  { transform: scale(1.01) rotate(0deg); }
-  100% { opacity: 1; transform: scale(1) rotate(0); filter: drop-shadow(0 14px 32px rgba(5,10,30,0.9)) blur(0); }
+  0%   { opacity: 0;    transform: scale(0.55) rotate(-4deg); }
+  20%  { opacity: 0.55; transform: scale(0.94) rotate(2deg); }
+  38%  { opacity: 1;    transform: scale(1.05) rotate(-1deg); }
+  60%  { transform: scale(0.99) rotate(0.3deg); }
+  100% { opacity: 1;    transform: scale(1) rotate(0); }
 }
 .butterfly {
   width: 260px;
