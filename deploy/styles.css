@@ -26,9 +26,40 @@
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
-html, body { background: var(--bg); color: var(--ink); font-family: var(--sans); -webkit-font-smoothing: antialiased; }
-body { overflow-x: hidden; }
+html, body {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--sans);
+  -webkit-font-smoothing: antialiased;
+  /* Layout a "due pagine": niente scroll naturale di pagina —
+     #pages trasla, #gallery-page ha il proprio scroll interno. */
+  height: 100%;
+  overflow: hidden;
+}
 img { display: block; max-width: 100%; }
+
+/* Contenitore delle due pagine. Alto 200vh in modo che la pagina 2
+   stia sotto l'hero pronta per essere "scrollata" via transform. */
+#pages {
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%;
+  height: 200vh;
+  transform: translate3d(0, 0, 0);
+  transition: transform 0.42s cubic-bezier(.2, .8, .2, 1);
+  will-change: transform;
+}
+#pages.gallery { transform: translate3d(0, -100vh, 0); }
+#gallery-page {
+  position: relative;
+  width: 100%;
+  height: 100vh;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  /* Su iOS / Android impedisce che lo scroll della galleria
+     "sfondi" verso la pagina chiamante via overscroll. */
+  overscroll-behavior: contain;
+}
 button { font: inherit; color: inherit; background: none; border: 0; cursor: pointer; }
 a { color: inherit; text-decoration: none; }
 
@@ -70,12 +101,6 @@ a { color: inherit; text-decoration: none; }
   to   { opacity: 1; transform: translateY(0); }
 }
 
-html {
-  /* JS-driven snap (see script at end of HTML) handles hero<->gallery.
-     CSS scroll-snap "proximity" doesn't fire when stopped exactly mid-page,
-     and "mandatory" breaks free scrolling inside the long gallery. */
-  scroll-behavior: smooth;
-}
 .hero {
   position: relative;
   height: 100vh;

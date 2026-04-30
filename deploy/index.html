@@ -596,23 +596,24 @@
     return { root, open };
   }
 
-  // ── GALLERY (sezione opere + lightbox) ──────────────────────
-  function Gallery() {
-    const lb = Lightbox();
+  // ── GALLERY (sezione opere) ─────────────────────────────────
+  // Il lightbox è montato a parte sul body, fuori da #pages, perché
+  // un genitore con transform crea un nuovo containing block anche
+  // per gli elementi position:fixed (e farebbe traslare anche il
+  // lightbox col cambio di pagina).
+  function Gallery(onOpen) {
     const head = h('div', { class: 'section-head' },
       h('div', { class: 'eyebrow' }, '2024 — 2025'),
       h('div', { class: 'count' }, h('b', null, String(WORKS.length)), ' · VIII')
     );
-    const section = h('section', {
+    return h('section', {
       id: 'opere',
       class: 'gallery-section',
       'data-screen-label': 'Galleria opere'
     },
       head,
-      Masonry(i => lb.open(i)),
-      lb.root
+      Masonry(onOpen)
     );
-    return section;
   }
 
   // ── FOOTER ──────────────────────────────────────────────────
@@ -632,149 +633,136 @@
   }
 
   // ── MOUNT ───────────────────────────────────────────────────
+  // Layout "due pagine": #pages contiene hero (alto 100vh) e
+  // #gallery-page (anch'esso 100vh ma con overflow interno per la
+  // galleria che può essere più lunga). Una classe .gallery su #pages
+  // applica transform: translateY(-100vh) per scorrere alla pagina 2.
   const app = document.getElementById('app');
   app.appendChild(Nav());
-  app.appendChild(Hero());
-  app.appendChild(Gallery());
-  app.appendChild(Footer());
+
+  const lb = Lightbox();
+  const galleryPage = h('div', { id: 'gallery-page' },
+    Gallery(i => lb.open(i)),
+    Footer()
+  );
+  const pages = h('div', { id: 'pages' },
+    Hero(),
+    galleryPage
+  );
+  app.appendChild(pages);
+  // Lightbox montato fuori da #pages (vedi commento in Gallery).
+  document.body.appendChild(lb.root);
 })();
 </script>
 
-<!-- Snap-scroll tra hero e galleria (Instagram-like, no pausa) -->
+<!-- Page state machine: hero ↔ galleria, nessun drag parziale -->
 <script>
 (function () {
-  // Intercetta wheel/touch per passare hero <-> galleria in modo snappy.
-  // Non aspetta che lo scroll si fermi: la prima rotellata o swipe nella
-  // zona di transizione lancia subito l'animazione verso il target.
+  // Modello: due "pagine" discrete impilate verticalmente.
+  //   - hero (fissa, 100vh) — sola posizione possibile in stato 'hero'
+  //   - galleria (interna scrollabile) — quando in stato 'gallery',
+  //     l'utente scorre liberamente dentro #gallery-page; in cima
+  //     uno swipe up porta indietro all'hero.
+  // Niente più snap a metà strada: la transizione è atomica via
+  // CSS transform, quindi è anche fluida (GPU-composited).
 
-  let locked = false;
-  let unlockTimer = null;
-  let rafId = 0;
+  const pages = document.getElementById('pages');
+  const galleryPage = document.getElementById('gallery-page');
+  const SWIPE_PX = 30; // soglia di swipe per scattare la transizione
+  let state = 'hero';
+  let busy  = false;
+  const TR_MS = 420; // durata della transizione CSS
 
-  function lock(ms) {
-    locked = true;
-    clearTimeout(unlockTimer);
-    unlockTimer = setTimeout(() => { locked = false; }, ms);
+  function pauseCanvas()  { if (window.__brama_canvas_pause)  window.__brama_canvas_pause(); }
+  function resumeCanvas() { if (window.__brama_canvas_resume) window.__brama_canvas_resume(); }
+
+  function goGallery() {
+    if (state !== 'hero' || busy) return;
+    busy = true;
+    pauseCanvas(); // libera GPU durante la transizione
+    pages.classList.add('gallery');
+    state = 'gallery';
+    setTimeout(() => { busy = false; }, TR_MS);
   }
 
-  // Bordo reale tra hero e galleria. NON usare window.innerHeight:
-  // su mobile la barra dell'indirizzo cambia il viewport visibile,
-  // mentre il <section class="hero"> è alto un 100vh "grande" — la
-  // posizione di scroll che porta in cima alla galleria è quella.
-  function heroBottom() {
-    const el = document.querySelector('.hero');
-    return el ? Math.round(el.offsetTop + el.offsetHeight) : window.innerHeight;
+  function goHero() {
+    if (state !== 'gallery' || busy) return;
+    busy = true;
+    pages.classList.remove('gallery');
+    state = 'hero';
+    // riportiamo lo scroll interno della galleria in cima così, se
+    // l'utente torna avanti, la trova dall'inizio.
+    galleryPage.scrollTop = 0;
+    setTimeout(() => {
+      busy = false;
+      resumeCanvas(); // hero di nuovo visibile → riavvia il vortice
+    }, TR_MS);
   }
 
-  // Animazione custom: durata controllabile (Instagram = ~200ms, snappy).
-  // Usata invece di window.scrollTo({behavior:'smooth'}) che è più lenta
-  // e su mobile combatte con l'inerzia del touch.
-  // Nota: scroll-behavior CSS è 'smooth' su <html>, quindi il browser
-  // farebbe interpolazione propria sopra alla nostra. Disattiviamolo
-  // per la durata dello snap usando 'auto' inline.
-  function animateScroll(target, duration, onDone) {
-    cancelAnimationFrame(rafId);
-    const start = window.scrollY;
-    const dist  = target - start;
-    if (Math.abs(dist) < 1) { onDone && onDone(); return; }
-    const t0 = performance.now();
-    const root = document.documentElement;
-    const prevBehavior = root.style.scrollBehavior;
-    root.style.scrollBehavior = 'auto';
-    function step(now) {
-      const t = Math.min(1, (now - t0) / duration);
-      // ease-out quart: parte rapida, finisce morbida
-      const eased = 1 - Math.pow(1 - t, 4);
-      window.scrollTo(0, start + dist * eased);
-      if (t < 1) {
-        rafId = requestAnimationFrame(step);
-      } else {
-        root.style.scrollBehavior = prevBehavior;
-        onDone && onDone();
-      }
-    }
-    rafId = requestAnimationFrame(step);
-  }
-
-  // fast = true → 200ms (touch). false → 380ms (wheel/keyboard).
-  // Pausa il canvas Vertigine durante lo snap così la GPU è libera per
-  // lo scroll: senza questo, su Samsung/Android il loop del vortice e
-  // il riposizionamento del viewport competono per la stessa GPU.
-  function snapTo(target, fast) {
-    if (Math.abs(window.scrollY - target) < 2) return;
-    const dur = fast ? 200 : 380;
-    lock(dur + 60);
-    if (window.__brama_canvas_pause) window.__brama_canvas_pause();
-    animateScroll(target, dur, () => {
-      if (window.__brama_canvas_resume) window.__brama_canvas_resume();
-    });
-  }
-
-  // --- WHEEL (desktop / trackpad) ---
+  // --- WHEEL (desktop) ---
+  // Sull'hero blocchiamo lo scroll naturale (body è già overflow:hidden,
+  // ma alcuni browser propagano comunque) e usiamo il delta come "intent".
   let wheelAccum = 0;
   let wheelResetTimer = null;
-  const WHEEL_THRESHOLD = 8;
-
   window.addEventListener('wheel', (e) => {
-    const hb = heroBottom();
-    const y  = window.scrollY;
-    const inHero       = y < hb - 2;
-    const atGalleryTop = y >= hb - 2 && y <= hb + 2;
-    if (!inHero && !atGalleryTop) return;
-
-    if (locked) { e.preventDefault(); return; }
-
-    wheelAccum += e.deltaY;
-    clearTimeout(wheelResetTimer);
-    wheelResetTimer = setTimeout(() => { wheelAccum = 0; }, 120);
-
-    if (Math.abs(wheelAccum) < WHEEL_THRESHOLD) return;
-
-    if (wheelAccum > 0 && inHero) {
+    if (busy) { e.preventDefault(); return; }
+    if (state === 'hero') {
       e.preventDefault();
-      wheelAccum = 0;
-      snapTo(hb, false);
-    } else if (wheelAccum < 0 && atGalleryTop) {
-      e.preventDefault();
-      wheelAccum = 0;
-      snapTo(0, false);
+      wheelAccum += e.deltaY;
+      clearTimeout(wheelResetTimer);
+      wheelResetTimer = setTimeout(() => { wheelAccum = 0; }, 140);
+      if (wheelAccum > 30) { wheelAccum = 0; goGallery(); }
+    } else {
+      // gallery: in cima allo scroll interno + rotella in su = back
+      if (galleryPage.scrollTop <= 0 && e.deltaY < -8) {
+        e.preventDefault();
+        goHero();
+      }
     }
   }, { passive: false });
 
-  // --- TOUCH (mobile) ---
-  // Allo swipe l'utente sposta la pagina liberamente. Appena alza il
-  // dito, snap istantaneo (200ms) verso hero o galleria. L'animazione
-  // custom via rAF sovrascrive l'inerzia iOS chiamando scrollTo ad
-  // ogni frame, quindi non c'è "deriva" prima dello snap.
-  let touchStartY = 0;
-
+  // --- TOUCH ---
+  let tStartY = 0;
+  let tStartScroll = 0;
   window.addEventListener('touchstart', (e) => {
-    touchStartY = e.touches[0].clientY;
+    tStartY = e.touches[0].clientY;
+    tStartScroll = galleryPage.scrollTop;
   }, { passive: true });
 
+  // In stato hero blocchiamo proprio il movimento del dito sulla pagina:
+  // così non si vede mai un drag parziale, solo lo snap atomico al rilascio.
+  window.addEventListener('touchmove', (e) => {
+    if (state === 'hero') e.preventDefault();
+  }, { passive: false });
+
   window.addEventListener('touchend', (e) => {
-    const hb = heroBottom();
-    const y  = window.scrollY;
-    if (y <= 2 || y >= hb - 2) return;
-    if (y > hb + 4) return;
-    const dy = touchStartY - e.changedTouches[0].clientY;
-    let target;
-    if (Math.abs(dy) > 20) target = (dy > 0 ? hb : 0);
-    else                    target = (y < hb * 0.5 ? 0 : hb);
-    snapTo(target, true);
+    if (busy) return;
+    const dy = tStartY - e.changedTouches[0].clientY;
+    if (state === 'hero') {
+      if (dy > SWIPE_PX) goGallery();
+    } else {
+      // gallery: torna all'hero solo se l'utente era in cima e ha
+      // fatto uno swipe verso il basso (dy negativo).
+      if (tStartScroll <= 0 && galleryPage.scrollTop <= 0 && dy < -SWIPE_PX) goHero();
+    }
   }, { passive: true });
 
   // --- KEYBOARD ---
   window.addEventListener('keydown', (e) => {
-    if (locked) return;
-    const hb = heroBottom();
-    const y  = window.scrollY;
-    const inHero       = y < hb - 2;
-    const atGalleryTop = y >= hb - 2 && y <= hb + 2;
+    if (busy) return;
     const down = e.key === 'PageDown' || e.key === 'ArrowDown' || e.key === ' ';
     const up   = e.key === 'PageUp'   || e.key === 'ArrowUp';
-    if (down && inHero) { e.preventDefault(); snapTo(hb, false); }
-    else if (up && atGalleryTop) { e.preventDefault(); snapTo(0, false); }
+    if (state === 'hero' && down) { e.preventDefault(); goGallery(); }
+    else if (state === 'gallery' && up && galleryPage.scrollTop <= 0) {
+      e.preventDefault(); goHero();
+    }
+  });
+
+  // Click sulla hint-pointer ("opere") nell'hero: invece dell'anchor #opere
+  // (che non funziona perché body è overflow:hidden), lancia la transizione.
+  document.addEventListener('click', (e) => {
+    const hint = e.target.closest('.hint-pointer');
+    if (hint) { e.preventDefault(); goGallery(); }
   });
 })();
 </script>
