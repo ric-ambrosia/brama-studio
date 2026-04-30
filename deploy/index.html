@@ -275,12 +275,13 @@
           <rect class="body-glint body-glint-down" x="-12" y="-60" width="24" height="180" fill="url(#bodyGlintGrad)" />
           <rect class="body-glint body-glint-up"   x="-12" y="-60" width="24" height="180" fill="url(#bodyGlintGrad)" />
         </g>
-        <circle cx="0" cy="-50" r="7" fill="#020617" />
-        <circle cx="-2" cy="-52" r="2" fill="rgba(220,235,248,0.35)" />
-        <path d="M -2 -56 Q -14 -84 -22 -114" fill="none" stroke="#020617" stroke-width="1.6" stroke-linecap="round" />
-        <path d="M 2 -56 Q 14 -84 22 -114" fill="none" stroke="#020617" stroke-width="1.6" stroke-linecap="round" />
-        <circle cx="-22" cy="-114" r="2.2" fill="#bfe4f5" />
-        <circle cx="22" cy="-114" r="2.2" fill="#bfe4f5" />
+        <!-- Testa spigolosa, niente antenne. Pentagono in stile "vetro
+             tagliato", coerente con il corpo a sfaccettature. -->
+        <polygon points="0,-65 -7,-58 -5,-50 5,-50 7,-58"
+                 fill="#020617" stroke="#000" stroke-width="0.5"
+                 stroke-linejoin="miter" />
+        <polygon points="-2,-60 -5,-56 -3,-54"
+                 fill="rgba(220,235,248,0.4)" />
       </svg>
     `;
     return wrap;
