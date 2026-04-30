@@ -413,15 +413,17 @@ a { color: inherit; text-decoration: none; }
   transform: translate(-50%, -50%);
   filter: drop-shadow(0 4px 8px rgba(0,0,0,0.6));
   overflow: visible;
-  /* Si assottiglia in sync con la chiusura delle ali, così il corpo
-     non sembra più "piatto" su un piano diverso. Curva ease-in-out
-     identica al wing flap per restare in fase. */
-  animation: bodyFlap 7s ease-in-out infinite;
+}
+/* Solo il gruppo del corpo (senza la testa) si assottiglia in sync
+   con le ali. Stessa curva ease-in-out 7s del wing flap. */
+.g-body-shape {
+  transform-box: fill-box;
   transform-origin: 50% 50%;
+  animation: bodyFlap 7s ease-in-out infinite;
 }
 @keyframes bodyFlap {
-  0%, 100% { transform: translate(-50%, -50%) scaleX(1); }
-  50%      { transform: translate(-50%, -50%) scaleX(0.38); }
+  0%, 100% { transform: scaleX(1); }
+  50%      { transform: scaleX(0.38); }
 }
 /* Body glint sweeps — synced with wing shard glints (7s cycle).
    The rect starts above the body (y=-60) and translates downward / upward
