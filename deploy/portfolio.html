@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="it" data-title-font="cormorant-roman">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Portfolio — Brama</title>
+<meta name="description" content="Portfolio artistico di Riccardo Bramani" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300..700;1,300..700&family=Fraunces:opsz,wght@9..144,200..700&family=Inter+Tight:wght@300..700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="styles.css" />
+<style>
+  /* Override del layout "due pagine" per la pagina portfolio:
+     qui vogliamo uno scroll verticale normale, non la traslazione. */
+  html, body { height: auto; overflow: visible; overflow-x: hidden; }
+  body { background: var(--bg); }
+
+  .pf-nav {
+    position: sticky; top: 0;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 16px 5vw;
+    background: rgba(5, 10, 26, 0.85);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--line);
+    z-index: 10;
+  }
+  .pf-nav a, .pf-nav .pf-title {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.24em;
+    text-transform: uppercase;
+    color: var(--ink-dim);
+    transition: color 0.3s;
+  }
+  .pf-nav a:hover { color: var(--gold); }
+  .pf-nav .pf-back::before { content: "← "; }
+  .pf-nav .pf-title { color: var(--ink-mute); }
+  .pf-nav .pf-dl { color: var(--ink); border: 1px solid var(--line); padding: 8px 14px; border-radius: 999px; }
+  .pf-nav .pf-dl:hover { border-color: var(--gold); color: var(--gold); }
+
+  .pf-pages {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 24px 5vw 40px;
+    display: flex; flex-direction: column; gap: 16px;
+  }
+  .pf-pages img {
+    width: 100%; height: auto;
+    display: block;
+    border-radius: 4px;
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4);
+    background: var(--bg-2);
+  }
+
+  .pf-end {
+    text-align: center;
+    padding: 40px 5vw 24px;
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.32em;
+    text-transform: uppercase;
+    color: var(--ink-mute);
+  }
+
+  @media (max-width: 560px) {
+    .pf-nav { padding: 12px 4vw; }
+    .pf-nav .pf-title { display: none; }
+    .pf-nav a { font-size: 10px; letter-spacing: 0.2em; }
+    .pf-nav .pf-dl { padding: 6px 10px; }
+    .pf-pages { padding: 12px 4vw calc(40px + env(safe-area-inset-bottom)); gap: 10px; }
+  }
+</style>
+</head>
+<body class="grain">
+  <nav class="pf-nav">
+    <a href="index.html" class="pf-back">Brama</a>
+    <span class="pf-title">Portfolio</span>
+    <a href="presentazione.pdf" download class="pf-dl">Scarica PDF</a>
+  </nav>
+
+  <main class="pf-pages">
+    <img src="portfolio/page-01.jpg" alt="Portfolio pagina 1" loading="eager" decoding="async" width="2304" height="1296" />
+    <img src="portfolio/page-03.jpg" alt="Portfolio pagina 3" loading="lazy" decoding="async" width="2304" height="1296" />
+    <img src="portfolio/page-04.jpg" alt="Portfolio pagina 4" loading="lazy" decoding="async" width="2304" height="1296" />
+    <img src="portfolio/page-05.jpg" alt="Portfolio pagina 5" loading="lazy" decoding="async" width="2304" height="1296" />
+    <img src="portfolio/page-06.jpg" alt="Portfolio pagina 6" loading="lazy" decoding="async" width="2304" height="1296" />
+    <img src="portfolio/page-07.jpg" alt="Portfolio pagina 7" loading="lazy" decoding="async" width="2304" height="1296" />
+    <img src="portfolio/page-08.jpg" alt="Portfolio pagina 8" loading="lazy" decoding="async" width="2304" height="1296" />
+    <img src="portfolio/page-09.jpg" alt="Portfolio pagina 9" loading="lazy" decoding="async" width="2304" height="1296" />
+    <img src="portfolio/page-10.jpg" alt="Portfolio pagina 10" loading="lazy" decoding="async" width="2304" height="1296" />
+    <img src="portfolio/page-11.jpg" alt="Portfolio pagina 11" loading="lazy" decoding="async" width="2304" height="1296" />
+    <img src="portfolio/page-12.jpg" alt="Portfolio pagina 12" loading="lazy" decoding="async" width="2304" height="1296" />
+    <img src="portfolio/page-13.jpg" alt="Portfolio pagina 13" loading="lazy" decoding="async" width="2304" height="1296" />
+    <img src="portfolio/page-14.jpg" alt="Portfolio pagina 14" loading="lazy" decoding="async" width="2304" height="1296" />
+    <img src="portfolio/page-16.jpg" alt="Portfolio pagina 16" loading="lazy" decoding="async" width="2304" height="1296" />
+  </main>
+
+  <footer class="pf-end">
+    riccardo@brama.studio · @riccardo_bramani
+  </footer>
+</body>
+</html>

@@ -965,6 +965,11 @@ a { color: inherit; text-decoration: none; }
     padding: 40px 5vw calc(80px + env(safe-area-inset-bottom));
     gap: 18px;
   }
-  .footer .links { justify-self: center; gap: 16px; }
+  .footer .links {
+    justify-self: center;
+    flex-direction: column;
+    gap: 14px;
+    align-items: center;
+  }
   .footer .sig img { height: 72px; }
 }
