@@ -225,8 +225,8 @@
 
     // Background — deep navy with subtle radial gradient (lighter at outer rim, darker at center where the void sits)
     ctx.globalCompositeOperation = 'source-over';
-    // Trail-fade overlay: opaque deep blue painted with low alpha so streaks linger briefly
-    ctx.fillStyle = 'rgba(8, 16, 40, 0.22)';
+    // Hard clear ogni frame — niente scia/motion blur sui pezzi
+    ctx.fillStyle = 'rgb(8, 16, 40)';
     ctx.fillRect(0, 0, W, H);
 
     // Painterly base wash (under everything) — re-applied each frame to keep overall blue tone

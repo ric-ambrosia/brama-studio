@@ -611,7 +611,6 @@
   // lightbox col cambio di pagina).
   function Gallery(onOpen) {
     const head = h('div', { class: 'section-head' },
-      h('div', { class: 'eyebrow' }, '2024 — 2025'),
       h('div', { class: 'count' }, h('b', null, String(WORKS.length)), ' · VIII')
     );
     return h('section', {
@@ -637,10 +636,25 @@
           href: 'portfolio.html'
         }, 'vedi portfolio'),
         h('a', {
-          class: 'pdf',
+          class: 'pdf pdf-icon',
           href: 'presentazione.pdf',
-          download: ''
-        }, 'scarica pdf'),
+          download: '',
+          'aria-label': 'Scarica il PDF'
+        },
+          h('svg', {
+            width: '18', height: '18',
+            viewBox: '0 0 24 24',
+            fill: 'none',
+            stroke: 'currentColor',
+            'stroke-width': '1.6',
+            'stroke-linecap': 'round',
+            'stroke-linejoin': 'round'
+          },
+            h('path', { d: 'M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4' }),
+            h('path', { d: 'M7 10l5 5 5-5' }),
+            h('path', { d: 'M12 15V3' })
+          )
+        ),
         h('a', {
           class: 'ig',
           href: 'https://www.instagram.com/riccardo_bramani',
