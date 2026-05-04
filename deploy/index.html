@@ -631,12 +631,20 @@
         h('img', { src: SIG, alt: 'brama' })
       ),
       h('a', { class: 'center', href: 'mailto:riccardo@brama.studio' }, 'riccardo@brama.studio'),
-      h('a', {
-        class: 'ig',
-        href: 'https://www.instagram.com/riccardo_bramani',
-        target: '_blank',
-        rel: 'noreferrer'
-      }, '@riccardo_bramani')
+      h('div', { class: 'links' },
+        h('a', {
+          class: 'pdf',
+          href: 'presentazione.pdf',
+          target: '_blank',
+          rel: 'noreferrer'
+        }, 'portfolio'),
+        h('a', {
+          class: 'ig',
+          href: 'https://www.instagram.com/riccardo_bramani',
+          target: '_blank',
+          rel: 'noreferrer'
+        }, '@riccardo_bramani')
+      )
     );
   }
 
