@@ -610,15 +610,11 @@
   // per gli elementi position:fixed (e farebbe traslare anche il
   // lightbox col cambio di pagina).
   function Gallery(onOpen) {
-    const head = h('div', { class: 'section-head' },
-      h('div', { class: 'count' }, h('b', null, String(WORKS.length)), ' · VIII')
-    );
     return h('section', {
       id: 'opere',
       class: 'gallery-section',
       'data-screen-label': 'Galleria opere'
     },
-      head,
       Masonry(onOpen)
     );
   }
