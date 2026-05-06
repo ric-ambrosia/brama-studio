@@ -15,7 +15,10 @@
   canvas.style.webkitTouchCallout = 'none';
   canvas.style.userSelect = 'none';
 
-  let DPR = Math.min(window.devicePixelRatio || 1, 2);
+  // Cap DPR aggressively on phones: difference at 1.5 vs 2.0 is invisible
+  // on a small screen but the GPU savings are large (≈30% fewer pixels).
+  const isPhone = window.matchMedia('(max-width: 768px)').matches;
+  let DPR = Math.min(window.devicePixelRatio || 1, isPhone ? 1.5 : 2);
   let W = 0, H = 0;
   let cx = 0, cy = 0;       // vortex center (fixed at canvas center)
   let mx = 0, my = 0;       // mouse pos
@@ -36,7 +39,7 @@
   const REDS = ['#a31818', '#c8281c', '#e64a2a', '#7a1010'];
 
   function resize() {
-    DPR = Math.min(window.devicePixelRatio || 1, 2);
+    DPR = Math.min(window.devicePixelRatio || 1, isPhone ? 1.5 : 2);
     const r = canvas.getBoundingClientRect();
     W = r.width; H = r.height;
     canvas.width = W * DPR;
