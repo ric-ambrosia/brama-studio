@@ -15,6 +15,11 @@
   canvas.style.webkitTouchCallout = 'none';
   canvas.style.userSelect = 'none';
 
+  // Rispetta "Riduci movimento" del sistema: in quel caso disegniamo un solo
+  // frame statico (vortice fermo, niente rAF), tenendo comunque l'estetica
+  // dell'hero. La canvas resta interattiva al click (shockwave una tantum).
+  const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
   // Cap DPR aggressively on phones: difference at 1.5 vs 2.0 is invisible
   // on a small screen but the GPU savings are large (≈30% fewer pixels).
   const isPhone = window.matchMedia('(max-width: 768px)').matches;
@@ -213,9 +218,12 @@
     last = now;
 
     // startup spin-up — ease from 0 to 1
+    // In reduced-motion la rampa è saltata: subito a regime, primo (e unico) frame.
     const elapsed = now - t0;
     const RAMP_MS = 2600;
-    if (elapsed < RAMP_MS) {
+    if (reducedMotion) {
+      startupRamp = 1;
+    } else if (elapsed < RAMP_MS) {
       const k = elapsed / RAMP_MS;
       // easeInOutCubic
       startupRamp = k < 0.5 ? 4 * k * k * k : 1 - Math.pow(-2 * k + 2, 3) / 2;
@@ -379,6 +387,11 @@
     ctx.arc(cx, cy, coreR, 0, Math.PI * 2);
     ctx.fill();
 
+    if (reducedMotion) {
+      // un frame e basta — niente animazione continua
+      rafActive = false;
+      return;
+    }
     if (shouldRun()) {
       requestAnimationFrame(frame);
     } else {

@@ -9,15 +9,21 @@
 <meta property="og:description" content="Braminator — opere di Riccardo Bramani." />
 <meta property="og:type" content="website" />
 <meta property="og:url" content="https://brama.studio/" />
-<meta property="og:image" content="https://brama.studio/images/Vertigine.jpeg" />
+<meta property="og:image" content="https://brama.studio/images/og-image.jpg" />
+<meta property="og:image:width" content="1200" />
+<meta property="og:image:height" content="630" />
 <meta name="twitter:card" content="summary_large_image" />
+<link rel="canonical" href="https://www.brama.studio/" />
+<link rel="icon" type="image/png" sizes="32x32" href="images/favicon-32.png" />
+<link rel="icon" type="image/png" sizes="192x192" href="images/favicon-192.png" />
+<link rel="apple-touch-icon" href="images/favicon-192.png" />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <!-- Firma servita dalla CDN di Vercel (stesso host): preload con priorità alta
      così è già pronta quando la nav la richiede. -->
 <link rel="preload" as="image" href="images/signature.png" fetchpriority="high" />
-<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,200;1,300;1,400&family=Fraunces:ital,opsz,wght@0,9..144,200;0,9..144,300;0,9..144,400;1,9..144,200;1,9..144,300&family=Playfair+Display:ital,wght@0,400;0,500;1,400;1,500&family=EB+Garamond:ital,wght@0,400;0,500;1,400;1,500&family=Italiana&family=Tenor+Sans&family=Spectral:ital,wght@0,300;1,300&family=Crimson+Pro:ital,wght@0,400;1,300;1,400&family=Inter+Tight:wght@400;500;600&family=JetBrains+Mono:wght@400&display=swap" rel="stylesheet" />
-<link rel="stylesheet" href="styles.css?v=53" />
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,200;1,300;1,400&family=Fraunces:ital,opsz,wght@0,9..144,200;0,9..144,300;0,9..144,400&family=Inter+Tight:wght@400;500;600&family=JetBrains+Mono:wght@400&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="styles.css?v=54" />
 <script>
   // Configurazione del sito (era il "Tweaks panel" in dev, qui sono valori fissi)
   window.__BRAMA_CONFIG__ = {
@@ -39,22 +45,6 @@
 </head>
 <body class="grain">
 <div id="app"></div>
-
-<!-- Vertigine canvas init: parte dopo che il canvas è nel DOM -->
-<script>
-  // Aspetta che #vertigine esista nel DOM, poi carica lo script una sola volta.
-  let _vertLoaded = false;
-  const _vertObs = new MutationObserver(() => {
-    if (!_vertLoaded && document.getElementById('vertigine')) {
-      _vertLoaded = true;
-      const s = document.createElement('script');
-      s.src = 'vertigine.js?v=23';
-      document.body.appendChild(s);
-      _vertObs.disconnect();
-    }
-  });
-  _vertObs.observe(document.body, { childList: true, subtree: true });
-</script>
 
 <!-- ===========================================================
      APP COMPLETA — HTML/JS puro, niente React, niente Babel
@@ -325,19 +315,52 @@
   }
 
   // ── MASONRY (griglia opere) ─────────────────────────────────
+  // Set di immagini per cui esistono thumbnail ottimizzate a 1200w
+  // (sotto images/thumbs/). Per gli altri 3 originali (Abbandono, Escape,
+  // La_Casa_Di_Mike) i file sono già piccoli e li serviamo direttamente.
+  const HAS_THUMB_1200 = new Set(['Vertigine.jpeg','Ti_Devo_Lasciare.jpeg','Pugno_Nel_Tempo.jpeg','Depressione.jpeg','Lu.jpeg']);
+  // Width approssimativa dell'originale (px) per i 3 quadri senza thumb-1200,
+  // così il srcset può scegliere intelligentemente anche su display retina.
+  const ORIG_W = { 'Abbandono.jpg': 785, 'Escape.jpg': 1080, 'La_Casa_Di_Mike.jpeg': 1037 };
+  function thumbBase(file) {
+    const dot = file.lastIndexOf('.');
+    return BASE + 'thumbs/' + file.slice(0, dot);
+  }
+  function buildSrcset(file) {
+    const base = thumbBase(file);
+    // 600w sempre disponibile come primo candidato.
+    const parts = [`${base}-600.jpg 600w`];
+    if (HAS_THUMB_1200.has(file)) {
+      parts.push(`${base}-1200.jpg 1200w`);
+    } else if (ORIG_W[file]) {
+      // Originale già piccolo: si usa lui come candidato "grande".
+      parts.push(`${BASE}${file} ${ORIG_W[file]}w`);
+    }
+    return parts.join(', ');
+  }
+
   function Masonry(onOpen) {
-    const grid = h('div', { class: 'masonry' });
+    const grid = h('div', { class: 'masonry', role: 'list' });
     WORKS.forEach((w, i) => {
-      const tile = h('div', {
+      // <button> al posto di <div> per accessibilità tastiera (Enter/Spazio).
+      const tile = h('button', {
         class: 'tile',
+        type: 'button',
+        role: 'listitem',
+        'aria-label': `${w.title}, ${w.year}`,
         onClick: () => onOpen(i)
       });
       // Le prime 4 thumbnails partono subito (eager + alta priorità) così
       // sono già pronte quando l'utente arriva in galleria; le altre lazy.
       const eager = i < 4;
+      // srcset: 600w per mobile, 1200w per desktop retina (quando disponibile).
+      // src fallback = originale, così funziona anche se il browser non capisce srcset.
       tile.innerHTML = `
         <div class="frame">
-          <img src="${BASE + w.file}" alt="${w.title}"
+          <img src="${BASE + w.file}"
+               srcset="${buildSrcset(w.file)}"
+               sizes="(max-width: 560px) 50vw, (max-width: 900px) 50vw, 720px"
+               alt="${w.title}"
                loading="${eager ? 'eager' : 'lazy'}"
                decoding="async"
                fetchpriority="${eager ? 'high' : 'low'}" />
@@ -357,8 +380,8 @@
   function Lightbox() {
     let idx = null;
 
-    const closeBtn = h('button', { class: 'close', 'aria-label': 'Chiudi' });
-    const fsBtn = h('button', { class: 'fs-btn', 'aria-label': 'Schermo intero' });
+    const closeBtn = h('button', { class: 'close', type: 'button', 'aria-label': 'Chiudi' });
+    const fsBtn = h('button', { class: 'fs-btn', type: 'button', 'aria-label': 'Schermo intero' });
     fsBtn.innerHTML =
       '<svg viewBox="0 0 24 24" aria-hidden="true">' +
         '<path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/>' +
@@ -373,8 +396,8 @@
     const matsV   = h('div', { class: 'v' });
     const counter = h('span', { class: 'counter' });
 
-    const prevBtn = h('button', { class: 'prev' }, '← Prec');
-    const nextBtn = h('button', { class: 'next' }, 'Succ →');
+    const prevBtn = h('button', { class: 'prev', type: 'button', 'aria-label': 'Opera precedente' }, '← Prec');
+    const nextBtn = h('button', { class: 'next', type: 'button', 'aria-label': 'Opera successiva' }, 'Succ →');
 
     const info = h('aside', { class: 'info' },
       eyebrow,
@@ -387,7 +410,15 @@
       h('div', { class: 'nav-btns' }, prevBtn, counter, nextBtn)
     );
 
-    const root = h('div', { class: 'lightbox' }, closeBtn, fsBtn, stage, info);
+    // Dialog ARIA: aria-labelledby punta al titolo dell'opera per gli screen reader.
+    title.id = 'lightbox-title';
+    const root = h('div', {
+      class: 'lightbox',
+      role: 'dialog',
+      'aria-modal': 'true',
+      'aria-labelledby': 'lightbox-title',
+      'aria-hidden': 'true'
+    }, closeBtn, fsBtn, stage, info);
 
     function paint() {
       if (idx == null) return;
@@ -402,18 +433,30 @@
       counter.innerHTML = `<b>${pad2(idx + 1)}</b> / ${WORKS.length}`;
     }
 
+    // Per il focus trap: ricordiamo l'elemento focused prima dell'apertura
+    // e lo ripristiniamo alla chiusura (così la tastiera torna alla tile cliccata).
+    let lastFocused = null;
     function open(i) {
       idx = i;
       paint();
+      lastFocused = document.activeElement;
       root.classList.add('open');
+      root.setAttribute('aria-hidden', 'false');
       document.body.style.overflow = 'hidden';
+      // sposta il focus sul pulsante chiudi: prima cosa che lo screen reader annuncia
+      setTimeout(() => closeBtn.focus(), 0);
     }
     function close() {
       idx = null;
       root.classList.remove('open');
       root.classList.remove('fullscreen');
+      root.setAttribute('aria-hidden', 'true');
       resetZoom();
       document.body.style.overflow = '';
+      if (lastFocused && typeof lastFocused.focus === 'function') {
+        lastFocused.focus();
+        lastFocused = null;
+      }
     }
     function toggleFullscreen() {
       root.classList.toggle('fullscreen');
@@ -599,6 +642,16 @@
       if (e.key === 'ArrowLeft')   prev();
       if (e.key === 'ArrowRight')  next();
       if (e.key === 'f' || e.key === 'F') toggleFullscreen();
+      // Focus trap: ciclo Tab solo tra i controlli del dialog.
+      if (e.key === 'Tab') {
+        const focusables = [closeBtn, fsBtn, prevBtn, nextBtn].filter(el => !el.disabled);
+        if (focusables.length === 0) return;
+        const idx = focusables.indexOf(document.activeElement);
+        e.preventDefault();
+        const dir = e.shiftKey ? -1 : 1;
+        const next = focusables[(Math.max(0, idx) + dir + focusables.length) % focusables.length];
+        next.focus();
+      }
     });
 
     return { root, open };
@@ -684,6 +737,9 @@
   document.body.appendChild(lb.root);
 })();
 </script>
+
+<!-- Vortice canvas: a questo punto #vertigine è già nel DOM (IIFE sopra è sincrono). -->
+<script src="vertigine.js?v=24"></script>
 
 <!-- Page state machine: hero ↔ galleria, nessun drag parziale -->
 <script>

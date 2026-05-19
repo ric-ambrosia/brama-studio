@@ -589,10 +589,23 @@ a { color: inherit; text-decoration: none; }
   cursor: pointer;
   overflow: hidden;
   background: var(--bg-2);
+  /* tile è un <button>: reset dei default per non rovinare il layout. */
+  width: 100%;
+  appearance: none;
+  border: 0;
+  padding: 0;
+  font: inherit;
+  color: inherit;
+  text-align: left;
   /* Skip painting tiles that are off-screen — riduce molto il jank
      dello scroll su mobile. */
   content-visibility: auto;
   contain-intrinsic-size: 480px;
+}
+/* Focus visibile per chi naviga da tastiera (Tab) — non per chi clicca col mouse. */
+.masonry .tile:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 4px;
 }
 .masonry .tile .frame {
   position: relative;
@@ -936,8 +949,10 @@ a { color: inherit; text-decoration: none; }
   .lightbox .info .title { font-size: 32px; margin-bottom: 12px; }
   .lightbox .fs-btn { top: 16px; right: 64px; width: 36px; height: 36px; }
   .lightbox .close   { top: 16px; right: 16px; width: 36px; height: 36px; }
-  .nav .links { display: none; }
-  .hint-pointer { display: none; }
+  /* Versione compatta dell'hint su mobile: solo freccia, senza testo. */
+  .hint-pointer .hint-label { display: none; }
+  .hint-pointer { bottom: 4vh; gap: 0; }
+  .hint-pointer svg { width: 16px; height: 24px; }
   .index-row { grid-template-columns: 40px 1fr auto; gap: 16px; }
   .index-row .size { display: none; }
   /* meno aria tra hero e galleria su tablet */
@@ -993,4 +1008,43 @@ a { color: inherit; text-decoration: none; }
     align-items: center;
   }
   .footer .sig img { height: 72px; }
+}
+
+/* === Accessibilità tastiera: focus visibile sui controlli interattivi.
+   :focus-visible si attiva solo per la tastiera, non per il mouse, quindi
+   gli utenti col mouse non vedono outline indesiderati. === */
+.lightbox button:focus-visible,
+.footer a:focus-visible,
+.pf-nav a:focus-visible,
+.hint-pointer:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 3px;
+}
+
+/* === Riduce il movimento per chi ha attivato "prefers-reduced-motion".
+   Spegniamo le animazioni decorative pesanti — battito d'ali, bloom,
+   sweep dei vetri, ramp di entrata. La canvas del vortice resta (il JS
+   gestisce a parte se necessario), ma fade-in e intro sono istantanei. === */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+  .butterfly .wing,
+  .g-wing,
+  .g-body-shape,
+  .shard::before,
+  .shard::after,
+  .body-glint,
+  .butterfly-bloom,
+  .hint-pointer svg,
+  .nav-sig {
+    animation: none !important;
+  }
+  /* Non nascondere l'hint pointer: solo la sua animazione di bob/fade. */
+  .hint-pointer { opacity: 0.85; }
 }
