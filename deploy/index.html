@@ -23,7 +23,7 @@
      così è già pronta quando la nav la richiede. -->
 <link rel="preload" as="image" href="images/signature.png" fetchpriority="high" />
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,200;1,300;1,400&family=Fraunces:ital,opsz,wght@0,9..144,200;0,9..144,300;0,9..144,400&family=Inter+Tight:wght@400;500;600&family=JetBrains+Mono:wght@400&display=swap" rel="stylesheet" />
-<link rel="stylesheet" href="styles.css?v=54" />
+<link rel="stylesheet" href="styles.css?v=55" />
 <script>
   // Configurazione del sito (era il "Tweaks panel" in dev, qui sono valori fissi)
   window.__BRAMA_CONFIG__ = {
@@ -60,14 +60,18 @@
   const SIG  = BASE + "signature.png";
 
   const WORKS = [
-    { id: "vertigine",       title: "Vertigine",       year: "2025", size: "150×100", materials: "Acrilici, pennarello, resina, vetro, carta, fibra ottica, acciaio su tela", file: "Vertigine.jpeg" },
-    { id: "abbandono",       title: "Abbandono",       year: "2025", size: "50×150",  materials: "Acrilici, resina, ossidiana, fibra ottica su tela", file: "Abbandono.jpg" },
+    { id: "vertigine",       title: "Vertigine",       year: "2025", size: "150×100", materials: "Acrilici, pennarello, resina, vetro, carta, fibra ottica, acciaio su tela", file: "Vertigine.jpeg",
+      interaction: "Sul lato destro corre una striscia di fibre ottiche lunga quanto l'altezza del quadro. Illuminala con una torcia — anche quella del telefono — per far accendere il vortice (la resa migliore è al buio). In alto al centro c'è un piccolo foro: se lo illumini, si accende un cerchio al centro del quadro. Tieni la torcia ferma in quel punto e il cerchio inizia a ruotare — un giro completo al minuto." },
+    { id: "abbandono",       title: "Abbandono",       year: "2025", size: "50×150",  materials: "Acrilici, resina, ossidiana, fibra ottica su tela", file: "Abbandono.jpg",
+      interaction: "Sul lato destro, a metà altezza, c'è una striscia di fibre ottiche lunga circa dieci centimetri. Illuminala con una torcia — anche quella del telefono — per accendere alcuni punti all'interno del quadro e rivelare lo specchio infinito al centro." },
     { id: "fuga",            title: "Fuga",            year: "2024", size: "50×50",   materials: "Acrilici, resina su tela", file: "Escape.jpg" },
     { id: "ti-devo-lasciare",title: "Ti devo lasciare",year: "2024", size: "100×70",  materials: "Acrilici, resina, gesso, creta, oro su tela", file: "Ti_Devo_Lasciare.jpeg" },
     { id: "pugno-nel-tempo", title: "Pugno nel tempo", year: "2024", size: "150×150", materials: "Acrilici, resina, gesso, creta, oro, pirite su tela", file: "Pugno_Nel_Tempo.jpeg" },
     { id: "depressione",     title: "Depressione",     year: "2024", size: "120×70",  materials: "Acrilici, resina, gesso, creta, ossidiana, oro su tela", file: "Depressione.jpeg" },
     { id: "la-casa-di-mike", title: "La Casa di Mike", year: "2024", size: "50×70",   materials: "Acrilici, resina, creta, vetro, fibra ottica, alluminio su legno", file: "La_Casa_Di_Mike.jpeg" },
-    { id: "lu",              title: "Lu",              year: "2024", size: "50×50",   materials: "Acrilici, resina, vetro, fibra ottica su tela", file: "Lu.jpeg" }
+    { id: "lu",              title: "Lu",              year: "2024", size: "50×50",   materials: "Acrilici, resina, vetro, fibra ottica su tela", file: "Lu.jpeg" },
+    { id: "avventura-di-una-vita", title: "Avventura di una vita", year: "2026", size: "—", materials: "In lavorazione", comingSoon: true,
+      interaction: "Un meccanismo a viti di Archimede fa ruotare la clessidra al centro. Si attiva avvicinandosi a meno di un metro e mezzo dal quadro e restando fermi per dieci secondi. Finché stai lì il meccanismo va avanti; quando ti allontani, completa altri due cicli di clessidra prima di fermarsi." }
   ];
 
   const CONFIG = window.__BRAMA_CONFIG__;
@@ -344,33 +348,49 @@
     WORKS.forEach((w, i) => {
       // <button> al posto di <div> per accessibilità tastiera (Enter/Spazio).
       const tile = h('button', {
-        class: 'tile',
+        class: 'tile' + (w.comingSoon ? ' coming-soon' : ''),
         type: 'button',
         role: 'listitem',
-        'aria-label': `${w.title}, ${w.year}`,
+        'aria-label': w.comingSoon
+          ? `${w.title}, ${w.year}, in lavorazione`
+          : `${w.title}, ${w.year}`,
         onClick: () => onOpen(i)
       });
-      // Le prime 4 thumbnails partono subito (eager + alta priorità) così
-      // sono già pronte quando l'utente arriva in galleria; le altre lazy.
-      const eager = i < 4;
-      // srcset: 600w per mobile, 1200w per desktop retina (quando disponibile).
-      // src fallback = originale, così funziona anche se il browser non capisce srcset.
-      tile.innerHTML = `
-        <div class="frame">
-          <img src="${BASE + w.file}"
-               srcset="${buildSrcset(w.file)}"
-               sizes="(max-width: 560px) 50vw, (max-width: 900px) 50vw, 720px"
-               alt="${w.title}"
-               loading="${eager ? 'eager' : 'lazy'}"
-               decoding="async"
-               fetchpriority="${eager ? 'high' : 'low'}" />
-          <div class="corner">${pad2(i + 1)} / ${WORKS.length}</div>
-        </div>
-        <div class="meta">
-          <span class="t">${w.title}</span>
-          <span class="y">${w.year}</span>
-        </div>
-      `;
+      if (w.comingSoon) {
+        // Tile senza immagine: placeholder testuale per opera in lavorazione.
+        tile.innerHTML = `
+          <div class="frame cs-frame">
+            <div class="cs-stamp">In lavorazione</div>
+            <div class="cs-sub">Prossimamente</div>
+          </div>
+          <div class="meta">
+            <span class="t">${w.title}</span>
+            <span class="y">${w.year}</span>
+          </div>
+        `;
+      } else {
+        // Le prime 4 thumbnails partono subito (eager + alta priorità) così
+        // sono già pronte quando l'utente arriva in galleria; le altre lazy.
+        const eager = i < 4;
+        // srcset: 600w per mobile, 1200w per desktop retina (quando disponibile).
+        // src fallback = originale, così funziona anche se il browser non capisce srcset.
+        tile.innerHTML = `
+          <div class="frame">
+            <img src="${BASE + w.file}"
+                 srcset="${buildSrcset(w.file)}"
+                 sizes="(max-width: 560px) 50vw, (max-width: 900px) 50vw, 720px"
+                 alt="${w.title}"
+                 loading="${eager ? 'eager' : 'lazy'}"
+                 decoding="async"
+                 fetchpriority="${eager ? 'high' : 'low'}" />
+            <div class="corner">${pad2(i + 1)} / ${WORKS.length}</div>
+          </div>
+          <div class="meta">
+            <span class="t">${w.title}</span>
+            <span class="y">${w.year}</span>
+          </div>
+        `;
+      }
       grid.appendChild(tile);
     });
     return grid;
@@ -387,7 +407,15 @@
         '<path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/>' +
       '</svg>';
     const stageImg = h('img', { src: '', alt: '' });
-    const stage = h('div', { class: 'stage' }, stageImg);
+    // Placeholder per opere in lavorazione (nessun file disponibile).
+    const stagePlaceholder = h('div', { class: 'stage-placeholder' });
+    stagePlaceholder.innerHTML = `
+      <div class="ph-frame">
+        <div class="ph-stamp">In lavorazione</div>
+        <div class="ph-sub">Prossimamente</div>
+      </div>
+    `;
+    const stage = h('div', { class: 'stage' }, stageImg, stagePlaceholder);
 
     const eyebrow = h('div', { class: 'eyebrow' });
     const title   = h('h2',  { class: 'title' });
@@ -395,6 +423,10 @@
     const sizeV   = h('div', { class: 'v' });
     const matsV   = h('div', { class: 'v' });
     const counter = h('span', { class: 'counter' });
+    // Sezione "come interagire": presente solo per opere con `interaction`.
+    const interactionTitle = h('div', { class: 'interaction-eyebrow' }, '↳ Come interagire');
+    const interactionBody  = h('p', { class: 'interaction-body' });
+    const interactionWrap  = h('div', { class: 'interaction' }, interactionTitle, interactionBody);
 
     const prevBtn = h('button', { class: 'prev', type: 'button', 'aria-label': 'Opera precedente' }, '← Prec');
     const nextBtn = h('button', { class: 'next', type: 'button', 'aria-label': 'Opera successiva' }, 'Succ →');
@@ -407,6 +439,7 @@
         h('div', { class: 'row' }, h('div', { class: 'k' }, 'Formato'), sizeV),
         h('div', { class: 'row' }, h('div', { class: 'k' }, 'Tecnica'), matsV)
       ),
+      interactionWrap,
       h('div', { class: 'nav-btns' }, prevBtn, counter, nextBtn)
     );
 
@@ -423,14 +456,30 @@
     function paint() {
       if (idx == null) return;
       const w = WORKS[idx];
-      stageImg.src = BASE + w.file;
-      stageImg.alt = w.title;
+      // Stage: foto vera per le opere terminate, placeholder per "in lavorazione".
+      if (w.comingSoon) {
+        stageImg.removeAttribute('src');
+        stageImg.style.display = 'none';
+        stagePlaceholder.style.display = '';
+      } else {
+        stageImg.src = BASE + w.file;
+        stageImg.alt = w.title;
+        stageImg.style.display = '';
+        stagePlaceholder.style.display = 'none';
+      }
       eyebrow.textContent = `No. ${pad3(idx + 1)}`;
       title.textContent = w.title;
       yearV.textContent = w.year;
-      sizeV.textContent = w.size + ' cm';
+      sizeV.textContent = w.size + (w.size === '—' ? '' : ' cm');
       matsV.textContent = w.materials;
       counter.innerHTML = `<b>${pad2(idx + 1)}</b> / ${WORKS.length}`;
+      // Sezione interazione: mostrata solo per opere con campo `interaction`.
+      if (w.interaction) {
+        interactionBody.textContent = w.interaction;
+        interactionWrap.style.display = '';
+      } else {
+        interactionWrap.style.display = 'none';
+      }
     }
 
     // Per il focus trap: ricordiamo l'elemento focused prima dell'apertura
@@ -443,6 +492,9 @@
       root.classList.add('open');
       root.setAttribute('aria-hidden', 'false');
       document.body.style.overflow = 'hidden';
+      // Aggiorna l'URL: l'hash diventa l'id dell'opera così la pagina è linkabile (QR).
+      // replaceState evita di accumulare entry nella history per ogni prev/next.
+      try { history.replaceState(null, '', '#' + WORKS[i].id); } catch (_) {}
       // sposta il focus sul pulsante chiudi: prima cosa che lo screen reader annuncia
       setTimeout(() => closeBtn.focus(), 0);
     }
@@ -453,6 +505,8 @@
       root.setAttribute('aria-hidden', 'true');
       resetZoom();
       document.body.style.overflow = '';
+      // Rimuove l'hash dall'URL alla chiusura.
+      try { history.replaceState(null, '', location.pathname + location.search); } catch (_) {}
       if (lastFocused && typeof lastFocused.focus === 'function') {
         lastFocused.focus();
         lastFocused = null;
@@ -735,6 +789,15 @@
   app.appendChild(pages);
   // Lightbox montato fuori da #pages (vedi commento in Gallery).
   document.body.appendChild(lb.root);
+  // API per il routing via hash (#vertigine, #abbandono, ...). Usata dal
+  // secondo IIFE che gestisce lo stato di pagina, e dai QR che linkano direttamente.
+  window.__brama_open_work = function (slug) {
+    const i = WORKS.findIndex(function (w) { return w.id === slug; });
+    if (i >= 0) lb.open(i);
+  };
+  window.__brama_has_work = function (slug) {
+    return WORKS.some(function (w) { return w.id === slug; });
+  };
 })();
 </script>
 
@@ -850,6 +913,37 @@
     const hint = e.target.closest('.hint-pointer');
     if (hint) { e.preventDefault(); goGallery(); }
   });
+
+  // --- HASH ROUTING (#<slug-opera>) ---
+  // Permette di linkare un'opera specifica via QR sull'origami: il visitatore
+  // apre brama.studio/#vertigine e atterra direttamente sul lightbox di quel quadro.
+  function jumpToGalleryInstant() {
+    // Stesso effetto di goGallery() ma senza animazione: utile all'avvio,
+    // così chi arriva da un QR non vede lo scorrimento hero→galleria.
+    if (state === 'gallery') return;
+    const prev = pages.style.transition;
+    pages.style.transition = 'none';
+    pages.classList.add('gallery');
+    // Forza un reflow per applicare il "salto" prima di ripristinare la transition.
+    void pages.offsetHeight;
+    pages.style.transition = prev;
+    state = 'gallery';
+    pauseCanvas();
+  }
+  function applyHashLocation(initial) {
+    const slug = (location.hash || '').replace(/^#/, '');
+    if (!slug || !window.__brama_has_work || !window.__brama_has_work(slug)) return;
+    if (state === 'hero') {
+      if (initial) jumpToGalleryInstant();
+      else goGallery();
+    }
+    if (window.__brama_open_work) window.__brama_open_work(slug);
+  }
+  // Iniziale: se l'URL ha già un hash valido all'avvio, apri quel quadro.
+  applyHashLocation(true);
+  // Dinamico: navigazione interna (click sulla tile aggiorna l'hash → niente
+  // re-render; ma se cambia da fuori, ad es. avanti/indietro del browser, reagisci).
+  window.addEventListener('hashchange', () => applyHashLocation(false));
 })();
 </script>
 </body>

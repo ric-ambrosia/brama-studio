@@ -607,6 +607,40 @@ a { color: inherit; text-decoration: none; }
   outline: 2px solid var(--gold);
   outline-offset: 4px;
 }
+
+/* === Tile "in lavorazione": niente foto, un cartiglio centrale.
+   Aspect ratio standard come gli altri tile, sfondo scuro con texture. === */
+.masonry .tile.coming-soon .frame.cs-frame {
+  aspect-ratio: 4 / 5;
+  background:
+    radial-gradient(circle at 50% 40%, rgba(74,147,230,0.10), transparent 60%),
+    linear-gradient(180deg, #0a1430 0%, #050a1a 100%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  border: 1px solid var(--line);
+}
+.masonry .tile.coming-soon .cs-stamp {
+  font-family: var(--display);
+  font-style: italic;
+  font-weight: 200;
+  font-size: clamp(18px, 2.4vw, 30px);
+  color: var(--ink-dim);
+  letter-spacing: -0.01em;
+}
+.masonry .tile.coming-soon .cs-sub {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.32em;
+  text-transform: uppercase;
+  color: var(--ink-mute);
+}
+/* Niente filtri hover sull'opera in lavorazione (no foto da scurire). */
+.masonry .tile.coming-soon:hover .cs-frame {
+  border-color: var(--line-strong);
+}
 .masonry .tile .frame {
   position: relative;
   overflow: hidden;
@@ -772,6 +806,60 @@ a { color: inherit; text-decoration: none; }
   line-height: 1.5;
   color: var(--ink);
 }
+/* "Come interagire" — sezione opzionale, presente solo per le opere
+   con un meccanismo (fibre ottiche, sensore di prossimità, ecc.). */
+.lightbox .info .interaction {
+  border-top: 1px solid var(--line);
+  padding-top: 20px;
+  margin-bottom: 28px;
+}
+.lightbox .info .interaction-eyebrow {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: var(--gold);
+  margin-bottom: 10px;
+}
+.lightbox .info .interaction-body {
+  font-family: var(--serif);
+  font-size: 15px;
+  line-height: 1.6;
+  color: var(--ink);
+}
+/* Placeholder dentro lo stage per opere in lavorazione (lightbox aperto
+   su un'opera senza file). Visivamente coerente col tile coming-soon. */
+.lightbox .stage-placeholder {
+  width: min(70vw, 600px);
+  max-height: 84vh;
+  aspect-ratio: 4 / 5;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
+  background:
+    radial-gradient(circle at 50% 40%, rgba(74,147,230,0.10), transparent 60%),
+    linear-gradient(180deg, #0a1430 0%, #050a1a 100%);
+  border: 1px solid var(--line);
+  box-shadow: 0 40px 120px rgba(0,0,0,0.7);
+}
+.lightbox .stage-placeholder .ph-stamp {
+  font-family: var(--display);
+  font-style: italic;
+  font-weight: 200;
+  font-size: clamp(28px, 5vw, 56px);
+  color: var(--ink-dim);
+  letter-spacing: -0.01em;
+}
+.lightbox .stage-placeholder .ph-sub {
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.32em;
+  text-transform: uppercase;
+  color: var(--ink-mute);
+}
+
 .lightbox .info .nav-btns {
   margin-top: auto;
   display: flex;
