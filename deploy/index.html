@@ -23,7 +23,7 @@
      così è già pronta quando la nav la richiede. -->
 <link rel="preload" as="image" href="images/signature.png" fetchpriority="high" />
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,200;1,300;1,400&family=Fraunces:ital,opsz,wght@0,9..144,200;0,9..144,300;0,9..144,400&family=Inter+Tight:wght@400;500;600&family=JetBrains+Mono:wght@400&display=swap" rel="stylesheet" />
-<link rel="stylesheet" href="styles.css?v=58" />
+<link rel="stylesheet" href="styles.css?v=59" />
 <script>
   // Configurazione del sito (era il "Tweaks panel" in dev, qui sono valori fissi)
   window.__BRAMA_CONFIG__ = {
@@ -960,6 +960,91 @@
   app.appendChild(pages);
   // Lightbox montato fuori da #pages (vedi commento in Gallery).
   document.body.appendChild(lb.root);
+
+  // ── MENU (hamburger top-right, panel a scorrimento dall'alto) ──────
+  // Persistente: visibile su hero, galleria e dentro al lightbox.
+  // Stilisticamente ispirato al menu di apple.com — l'icona burger
+  // morpha a X in modo fluido, il pannello scende con backdrop blur.
+  const menu = (function () {
+    const burger = h('button', {
+      class: 'menu-toggle',
+      type: 'button',
+      'aria-label': 'Apri menu',
+      'aria-expanded': 'false',
+      'aria-controls': 'menu-panel'
+    });
+    burger.innerHTML =
+      '<span class="burger-line"></span>' +
+      '<span class="burger-line"></span>' +
+      '<span class="burger-line"></span>';
+
+    const panel = h('div', {
+      class: 'menu-panel',
+      id: 'menu-panel',
+      'aria-hidden': 'true'
+    });
+    panel.innerHTML = `
+      <nav class="menu-nav" aria-label="Menu principale">
+        <section class="menu-section">
+          <div class="menu-section-title">Galleria</div>
+          <a href="#" class="menu-link" data-action="gallery">Vedi le opere</a>
+        </section>
+        <section class="menu-section">
+          <div class="menu-section-title">Opere interattive</div>
+          <a href="#vertigine" class="menu-link">Vertigine</a>
+          <a href="#abbandono" class="menu-link">Abbandono</a>
+          <a href="#avventura-di-una-vita" class="menu-link">Avventura di una vita</a>
+        </section>
+        <section class="menu-section">
+          <div class="menu-section-title">Portfolio</div>
+          <a href="portfolio.html" class="menu-link">Vedi portfolio</a>
+          <a href="presentazione.pdf" download class="menu-link">Scarica PDF</a>
+        </section>
+        <section class="menu-section">
+          <div class="menu-section-title">Contatti</div>
+          <a href="mailto:riccardo@brama.studio" class="menu-link">riccardo@brama.studio</a>
+          <a href="https://www.instagram.com/riccardo_bramani" target="_blank" rel="noreferrer" class="menu-link">@riccardo_bramani</a>
+        </section>
+      </nav>
+    `;
+
+    function isOpen() { return burger.classList.contains('open'); }
+    function openMenu() {
+      burger.classList.add('open');
+      panel.classList.add('open');
+      burger.setAttribute('aria-expanded', 'true');
+      burger.setAttribute('aria-label', 'Chiudi menu');
+      panel.setAttribute('aria-hidden', 'false');
+    }
+    function closeMenu() {
+      burger.classList.remove('open');
+      panel.classList.remove('open');
+      burger.setAttribute('aria-expanded', 'false');
+      burger.setAttribute('aria-label', 'Apri menu');
+      panel.setAttribute('aria-hidden', 'true');
+    }
+    burger.addEventListener('click', function () {
+      if (isOpen()) closeMenu(); else openMenu();
+    });
+    panel.addEventListener('click', function (e) {
+      const link = e.target.closest('.menu-link');
+      if (!link) return;
+      closeMenu();
+      if (link.dataset.action === 'gallery') {
+        e.preventDefault();
+        if (window.__brama_go_gallery) window.__brama_go_gallery();
+      }
+      // Altri link: navigazione naturale (hash, mailto, http esterno, download).
+    });
+    // Esc chiude il menu (se aperto).
+    window.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape' && isOpen()) closeMenu();
+    });
+    document.body.appendChild(burger);
+    document.body.appendChild(panel);
+    return { open: openMenu, close: closeMenu };
+  })();
+
   // API per il routing via hash (#vertigine, #abbandono, ...). Usata dal
   // secondo IIFE che gestisce lo stato di pagina, e dai QR che linkano direttamente.
   window.__brama_open_work = function (slug) {
@@ -1004,6 +1089,8 @@
     state = 'gallery';
     setTimeout(() => { busy = false; }, TR_MS);
   }
+  // Esposto per il menu: la voce "Vedi le opere" lo richiama direttamente.
+  window.__brama_go_gallery = goGallery;
 
   function goHero() {
     if (state !== 'gallery' || busy) return;
