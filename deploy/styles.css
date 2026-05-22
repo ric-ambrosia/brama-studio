@@ -806,14 +806,20 @@ a { color: inherit; text-decoration: none; }
   line-height: 1.5;
   color: var(--ink);
 }
-/* "Come interagire" — sezione opzionale, presente solo per le opere
-   con un meccanismo (fibre ottiche, sensore di prossimità, ecc.). */
+/* "Come interagire" — sezione opzionale, è la prima cosa che il visitatore
+   legge entrando: zero separatore sopra, solo un margine sotto.
+   "Descrizione" — sezione opzionale subito sotto: separata da un filino.
+   Le specs (anno/formato/tecnica) vengono poi sotto, già col loro border-top. */
 .lightbox .info .interaction {
+  margin-bottom: 28px;
+}
+.lightbox .info .description {
   border-top: 1px solid var(--line);
   padding-top: 20px;
   margin-bottom: 28px;
 }
-.lightbox .info .interaction-eyebrow {
+.lightbox .info .interaction-eyebrow,
+.lightbox .info .description-eyebrow {
   font-family: var(--mono);
   font-size: 10px;
   letter-spacing: 0.28em;
@@ -821,7 +827,8 @@ a { color: inherit; text-decoration: none; }
   color: var(--gold);
   margin-bottom: 10px;
 }
-.lightbox .info .interaction-body {
+.lightbox .info .interaction-body,
+.lightbox .info .description-body {
   font-family: var(--serif);
   font-size: 15px;
   line-height: 1.6;

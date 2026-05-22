@@ -23,7 +23,7 @@
      così è già pronta quando la nav la richiede. -->
 <link rel="preload" as="image" href="images/signature.png" fetchpriority="high" />
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,200;1,300;1,400&family=Fraunces:ital,opsz,wght@0,9..144,200;0,9..144,300;0,9..144,400&family=Inter+Tight:wght@400;500;600&family=JetBrains+Mono:wght@400&display=swap" rel="stylesheet" />
-<link rel="stylesheet" href="styles.css?v=55" />
+<link rel="stylesheet" href="styles.css?v=56" />
 <script>
   // Configurazione del sito (era il "Tweaks panel" in dev, qui sono valori fissi)
   window.__BRAMA_CONFIG__ = {
@@ -61,9 +61,11 @@
 
   const WORKS = [
     { id: "vertigine",       title: "Vertigine",       year: "2025", size: "150×100", materials: "Acrilici, pennarello, resina, vetro, carta, fibra ottica, acciaio su tela", file: "Vertigine.jpeg",
-      interaction: "Sul lato destro, per tutta l'altezza del quadro, corre una vena di fibre ottiche. Basta una torcia, anche quella del telefono, e il vortice si accende, con la resa migliore al buio. Più in alto, un piccolo foro può essere illuminato, facendo brillare un cerchio al centro del quadro che ruota lentamente." },
+      interaction: "Una torcia sulla striscia di fibre ottiche a destra accende il vortice. La stessa luce sul foro in alto al centro fa brillare il cerchio interno.",
+      description: "Un vortice blu profondo che inghiotte lo sguardo verso un vuoto centrale, attraversato da schegge rosse. Resina, vetro e fibre ottiche per tutta l'altezza del lato destro, un foro nascosto in alto, un cerchio al centro che gira lento. Eco della «vertigine della libertà» di Kierkegaard." },
     { id: "abbandono",       title: "Abbandono",       year: "2025", size: "50×150",  materials: "Acrilici, resina, ossidiana, fibra ottica su tela", file: "Abbandono.jpg",
-      interaction: "Sul lato destro, a metà altezza, una breve striscia di fibre ottiche aspetta la luce. Una torcia, anche quella del telefono, basta ad accendere punti dispersi all'interno del quadro, e al centro si rivela uno specchio infinito." },
+      interaction: "Una torcia sulla striscia di fibre ottiche a metà del lato destro accende punti dispersi nel quadro e svela uno specchio infinito al centro.",
+      description: "Un formato verticale e stretto dominato dall'ossidiana che assorbe la luce. Una linea di fibre ottiche pronta a richiamarla, e al centro uno specchio infinito che ripete l'immagine fino a perdersi. Riflesso della «Geworfenheit» di Heidegger, l'essere gettato come condizione originaria." },
     { id: "fuga",            title: "Fuga",            year: "2024", size: "50×50",   materials: "Acrilici, resina su tela", file: "Escape.jpg" },
     { id: "ti-devo-lasciare",title: "Ti devo lasciare",year: "2024", size: "100×70",  materials: "Acrilici, resina, gesso, creta, oro su tela", file: "Ti_Devo_Lasciare.jpeg" },
     { id: "pugno-nel-tempo", title: "Pugno nel tempo", year: "2024", size: "150×150", materials: "Acrilici, resina, gesso, creta, oro, pirite su tela", file: "Pugno_Nel_Tempo.jpeg" },
@@ -71,7 +73,8 @@
     { id: "la-casa-di-mike", title: "La Casa di Mike", year: "2024", size: "50×70",   materials: "Acrilici, resina, creta, vetro, fibra ottica, alluminio su legno", file: "La_Casa_Di_Mike.jpeg" },
     { id: "lu",              title: "Lu",              year: "2024", size: "50×50",   materials: "Acrilici, resina, vetro, fibra ottica su tela", file: "Lu.jpeg" },
     { id: "avventura-di-una-vita", title: "Avventura di una vita", year: "2026", size: "—", materials: "In lavorazione", comingSoon: true,
-      interaction: "Al centro del quadro una clessidra ruota, mossa da un meccanismo a viti di Archimede. Si risveglia con la presenza ferma di qualcuno a poca distanza, prosegue finché quella presenza resta, e per un breve tempo ancora, prima di fermarsi." }
+      interaction: "Fermarsi davanti al quadro attiva il meccanismo. La clessidra al centro ruota finché c'è presenza, e per un breve tempo ancora.",
+      description: "Al centro del quadro una clessidra, animata da viti di Archimede che si destano alla presenza di chi si ferma a guardare. Senza osservatori il tempo non scorre, con loro ricomincia. Una rilettura della «durée» di Bergson, il tempo come esperienza vissuta più che misura meccanica." }
   ];
 
   const CONFIG = window.__BRAMA_CONFIG__;
@@ -423,23 +426,33 @@
     const sizeV   = h('div', { class: 'v' });
     const matsV   = h('div', { class: 'v' });
     const counter = h('span', { class: 'counter' });
-    // Sezione "come interagire": presente solo per opere con `interaction`.
+    // Sezioni opzionali "come interagire" e "descrizione": entrambe popolate
+    // dal campo corrispondente sull'opera. Quando assente, l'intero wrap
+    // viene nascosto via display:none in paint().
     const interactionTitle = h('div', { class: 'interaction-eyebrow' }, '↳ Come interagire');
     const interactionBody  = h('p', { class: 'interaction-body' });
     const interactionWrap  = h('div', { class: 'interaction' }, interactionTitle, interactionBody);
 
+    const descriptionTitle = h('div', { class: 'description-eyebrow' }, '↳ Descrizione');
+    const descriptionBody  = h('p', { class: 'description-body' });
+    const descriptionWrap  = h('div', { class: 'description' }, descriptionTitle, descriptionBody);
+
     const prevBtn = h('button', { class: 'prev', type: 'button', 'aria-label': 'Opera precedente' }, '← Prec');
     const nextBtn = h('button', { class: 'next', type: 'button', 'aria-label': 'Opera successiva' }, 'Succ →');
 
+    // Ordine voluto: prima cosa che leggi è "come interagire" (l'utente è davanti
+    // al quadro e deve sapere cosa fare), poi la "descrizione" (cosa stai
+    // guardando, riferimento filosofico), poi le specifiche tecniche.
     const info = h('aside', { class: 'info' },
       eyebrow,
       title,
+      interactionWrap,
+      descriptionWrap,
       h('div', { class: 'specs' },
         h('div', { class: 'row' }, h('div', { class: 'k' }, 'Anno'), yearV),
         h('div', { class: 'row' }, h('div', { class: 'k' }, 'Formato'), sizeV),
         h('div', { class: 'row' }, h('div', { class: 'k' }, 'Tecnica'), matsV)
       ),
-      interactionWrap,
       h('div', { class: 'nav-btns' }, prevBtn, counter, nextBtn)
     );
 
@@ -473,12 +486,18 @@
       sizeV.textContent = w.size + (w.size === '—' ? '' : ' cm');
       matsV.textContent = w.materials;
       counter.innerHTML = `<b>${pad2(idx + 1)}</b> / ${WORKS.length}`;
-      // Sezione interazione: mostrata solo per opere con campo `interaction`.
+      // Sezioni opzionali: mostrate solo per opere con i rispettivi campi.
       if (w.interaction) {
         interactionBody.textContent = w.interaction;
         interactionWrap.style.display = '';
       } else {
         interactionWrap.style.display = 'none';
+      }
+      if (w.description) {
+        descriptionBody.textContent = w.description;
+        descriptionWrap.style.display = '';
+      } else {
+        descriptionWrap.style.display = 'none';
       }
     }
 
