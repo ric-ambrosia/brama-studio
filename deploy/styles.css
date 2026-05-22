@@ -735,32 +735,70 @@ a { color: inherit; text-decoration: none; }
 .view-switch button:not(.active):hover { color: var(--ink); border-color: var(--line-strong); }
 
 /* === LIGHTBOX — "reel" style alla Instagram =================================
-   Layout fullscreen senza colonne: lo stage occupa tutta la viewport, il
-   pannello info galleggia in basso sopra un gradiente scuro. Nessun tasto
-   visibile: tutte le azioni (chiudi, navigazione, zoom) sono gestuali. ===== */
+   Tutte le opere sono pre-costruite come slide impilate verticalmente dentro
+   .reel. Per navigare si trasla il reel di -idx * altezza-viewport. Il
+   lightbox stesso non si muove più (a parte la chiusura orizzontale), quindi
+   non si vede mai la galleria sotto. Layout per slide:
+     - .slide.vertical: immagine fullscreen, descrizione overlay in basso.
+     - .slide (resto): immagine sopra (area dedicata), descrizione sotto in
+       una zona separata (non copre l'opera). ====================================== */
 .lightbox {
   position: fixed; inset: 0;
   z-index: 80;
-  background: rgba(5, 8, 20, 0.96);
+  background: rgba(5, 8, 20, 1);
   opacity: 0;
   pointer-events: none;
   transition: opacity 0.3s ease;
   overflow: hidden;
-  /* will-change su transform/opacity così i swipe non causano re-layer ogni volta. */
   will-change: transform, opacity;
+  /* --vh = innerHeight, settato dal JS — usato per altezza esatta delle slide. */
+  --vh: 100vh;
 }
 .lightbox.open { opacity: 1; pointer-events: auto; }
 
-.lightbox .stage {
-  position: absolute; inset: 0;
-  display: flex; align-items: center; justify-content: center;
+/* Reel: flex column, slide impilate. Il reel cresce in altezza con N
+   slide (N * --vh) — il lightbox padre fa da finestra (overflow:hidden)
+   e il JS trasla il reel di -idx*innerHeight per mostrare l'opera corrente. */
+.lightbox .reel {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  display: flex;
+  flex-direction: column;
+  will-change: transform;
+}
+
+/* Una slide = una viewport intera. */
+.lightbox .slide {
+  flex: 0 0 auto;
+  width: 100vw;
+  height: var(--vh);
+  position: relative;
   overflow: hidden;
-  /* Tutti i gesti li gestiamo via JS: niente scroll/pan/zoom nativo del browser. */
+  display: flex;
+  flex-direction: column;
+  /* Tutti i gesti li gestiamo via JS sul root: niente scroll/pinch nativi. */
   touch-action: none;
 }
+
+/* Stage = contenitore dell'immagine. Per le slide ORIZZONTALI/QUADRATE
+   sta in flusso (flex:1) sopra l'info, che è in flusso anche lei. Quindi
+   immagine e descrizione hanno aree separate. */
+.lightbox .stage {
+  position: relative;
+  flex: 1 1 0;
+  min-height: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  padding: max(env(safe-area-inset-top), 16px) 12px 0;
+}
+
 .lightbox .stage img {
-  max-width: 100vw;
-  max-height: 100vh;
+  max-width: 100%;
+  max-height: 100%;
   width: auto;
   height: auto;
   object-fit: contain;
@@ -768,29 +806,18 @@ a { color: inherit; text-decoration: none; }
   will-change: transform;
   user-select: none;
   -webkit-user-drag: none;
-  cursor: zoom-in;
 }
 .lightbox .stage img.zoomed { cursor: grab; }
 .lightbox .stage img.zoomed:active { cursor: grabbing; }
 
-/* Pannello info: in basso, gradiente per leggibilità sopra l'immagine.
-   pointer-events:none lascia tutti i gesti passare allo stage anche
-   quando il dito è sopra al testo (sennò il pinch sull'area del testo non
-   funzionerebbe). */
+/* Info per default (non-vertical): in flusso, sotto l'immagine, area dedicata. */
 .lightbox .info {
-  position: absolute;
-  left: 0; right: 0; bottom: 0;
-  padding: 60px 24px calc(24px + env(safe-area-inset-bottom));
-  background: linear-gradient(180deg,
-    rgba(5, 8, 20, 0) 0%,
-    rgba(5, 8, 20, 0.55) 35%,
-    rgba(5, 8, 20, 0.88) 100%);
+  flex: 0 0 auto;
+  padding: 14px 22px calc(54px + env(safe-area-inset-bottom));
   display: flex;
   flex-direction: column;
-  gap: 14px;
-  pointer-events: none;
-  max-height: 70vh;
-  overflow: hidden;
+  gap: 10px;
+  transition: opacity 0.18s ease;
 }
 .lightbox .info .eyebrow {
   font-family: var(--mono);
@@ -804,42 +831,37 @@ a { color: inherit; text-decoration: none; }
   font-family: var(--display);
   font-style: italic;
   font-weight: 200;
-  font-size: clamp(30px, 5vw, 52px);
+  font-size: clamp(28px, 5vw, 48px);
   line-height: 0.98;
   letter-spacing: -0.03em;
   margin: 0;
 }
-.lightbox .info .interaction {
-  margin-top: 4px;
-}
+.lightbox .info .interaction { margin-top: 2px; }
 .lightbox .info .interaction-eyebrow {
   font-family: var(--mono);
   font-size: 13px;
   letter-spacing: 0.28em;
   text-transform: uppercase;
   color: var(--gold);
-  margin-bottom: 8px;
+  margin-bottom: 6px;
 }
 .lightbox .info .interaction-body {
   font-family: var(--serif);
-  font-size: 16px;
+  font-size: 15px;
   line-height: 1.5;
   color: var(--ink);
 }
-/* Specifiche tecniche compatte in fondo: anno · formato · tecnica
-   su una riga, fontsize piccolo. Sotto, il counter "01 / 09" è già
-   nell'eyebrow in alto. */
 .lightbox .info .specs {
   display: grid;
-  gap: 4px;
+  gap: 3px;
   font-family: var(--mono);
   font-size: 10px;
   letter-spacing: 0.18em;
   text-transform: uppercase;
   color: var(--ink-mute);
   border-top: 1px solid rgba(240, 244, 255, 0.10);
-  padding-top: 12px;
-  margin-top: 4px;
+  padding-top: 8px;
+  margin-top: 2px;
 }
 .lightbox .info .specs .row {
   display: grid;
@@ -856,10 +878,72 @@ a { color: inherit; text-decoration: none; }
   color: var(--ink-dim);
 }
 
-/* Placeholder dentro lo stage per opere in lavorazione. */
+/* === Slide verticale: layout overlay (l'immagine può coprire la descrizione). */
+.lightbox .slide.vertical .stage {
+  position: absolute;
+  inset: 0;
+  flex: none;
+  padding: 0;
+}
+.lightbox .slide.vertical .info {
+  position: absolute;
+  left: 0; right: 0; bottom: 0;
+  padding: 60px 22px calc(54px + env(safe-area-inset-bottom));
+  background: linear-gradient(180deg,
+    rgba(5, 8, 20, 0) 0%,
+    rgba(5, 8, 20, 0.55) 35%,
+    rgba(5, 8, 20, 0.88) 100%);
+  pointer-events: none;
+  max-height: 60%;
+  overflow: hidden;
+}
+
+/* === Freccia "successivo" in basso (uguale all'hero, ma più piccola). */
+.lightbox .slide .next-arrow {
+  position: absolute;
+  bottom: calc(10px + env(safe-area-inset-bottom));
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 5;
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  background: transparent;
+  border: 0;
+  color: rgba(240, 244, 255, 0.7);
+  cursor: pointer;
+  transition: color 0.3s ease, opacity 0.18s ease;
+  /* Anim "respiro" come la hint-pointer dell'hero. */
+  animation: arrowBob 2.4s ease-in-out infinite;
+}
+.lightbox .slide .next-arrow:hover { color: var(--gold); }
+.lightbox .slide .next-arrow svg {
+  width: 16px;
+  height: 26px;
+  filter: drop-shadow(0 2px 8px rgba(0,0,0,0.7));
+}
+@keyframes arrowBob {
+  0%, 100% { transform: translate(-50%, 0); opacity: 0.85; }
+  50%      { transform: translate(-50%, 5px); opacity: 1; }
+}
+
+/* === Stati: tap nasconde la descrizione; pinch nasconde descrizione+freccia. */
+.lightbox.text-hidden .info {
+  opacity: 0;
+  pointer-events: none;
+}
+.lightbox.pinching .info,
+.lightbox.pinching .next-arrow {
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* === Placeholder per opera in lavorazione (dentro stage). */
 .lightbox .stage-placeholder {
   width: min(70vw, 600px);
-  max-height: 70vh;
+  max-height: 100%;
   aspect-ratio: 4 / 5;
   display: flex;
   flex-direction: column;
@@ -961,12 +1045,14 @@ a { color: inherit; text-decoration: none; }
 /* responsive */
 @media (max-width: 900px) {
   .masonry { column-count: 2; }
-  /* Su mobile l'info ha più gradiente sotto e meno padding laterale.
-     Il layout principale del lightbox (.stage absolute, .info fixed bottom)
-     funziona già per mobile e desktop allo stesso modo. */
+  /* Mobile: padding più compatto sull'info per dare più aria all'immagine.
+     Per le slide verticali (overlay), aumento la quota di gradiente. */
   .lightbox .info {
-    padding: 80px 18px calc(20px + env(safe-area-inset-bottom));
-    gap: 12px;
+    padding: 12px 18px calc(54px + env(safe-area-inset-bottom));
+    gap: 8px;
+  }
+  .lightbox .slide.vertical .info {
+    padding: 60px 18px calc(54px + env(safe-area-inset-bottom));
   }
   .lightbox .info .interaction-body { font-size: 15px; }
   /* Versione compatta dell'hint su mobile: solo freccia, senza testo. */

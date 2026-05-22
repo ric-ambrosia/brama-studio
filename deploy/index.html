@@ -23,7 +23,7 @@
      così è già pronta quando la nav la richiede. -->
 <link rel="preload" as="image" href="images/signature.png" fetchpriority="high" />
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,200;1,300;1,400&family=Fraunces:ital,opsz,wght@0,9..144,200;0,9..144,300;0,9..144,400&family=Inter+Tight:wght@400;500;600&family=JetBrains+Mono:wght@400&display=swap" rel="stylesheet" />
-<link rel="stylesheet" href="styles.css?v=57" />
+<link rel="stylesheet" href="styles.css?v=58" />
 <script>
   // Configurazione del sito (era il "Tweaks panel" in dev, qui sono valori fissi)
   window.__BRAMA_CONFIG__ = {
@@ -400,415 +400,486 @@
   }
 
   // ── LIGHTBOX ────────────────────────────────────────────────
-  // Layout "reel" tipo Instagram: foto a tutto schermo, overlay con testi
-  // in basso. Niente tasti (chiudi/fullscreen/prev/next): la navigazione è
-  // solo gestuale — swipe verticale fra le opere, swipe destra per chiudere,
-  // pinch nativa per zoomare.
+  // Architettura "reel" tipo Instagram: tutte le slide sono pre-costruite
+  // e impilate verticalmente dentro un container `.reel`. Per navigare si
+  // trasla il reel di -idx * altezza_viewport, senza mai mostrare quello
+  // che sta sotto al lightbox. Le slide verticali coprono l'intera viewport
+  // (descrizione sopra l'immagine); quelle orizzontali/quadrate hanno
+  // immagine in alto e descrizione sotto, in zone separate.
   function Lightbox() {
+    const NAV_MS = 320;
+    const SPRING = 'cubic-bezier(.22, .8, .22, 1)';
+    const MIN_SCALE = 1, MAX_SCALE = 5;
+    // Gesto orizzontale (back): basta un piccolo movimento per chiudere.
+    const CLOSE_PX = 60;
+    // Gesto verticale (next/prev): ~12% dell'altezza viewport.
+    const NAV_FRAC = 0.12;
+    // Tap: niente movimento e tocco breve.
+    const TAP_MOVE_PX = 8;
+    const TAP_MS = 400;
+
+    // Distinzione formato del quadro: vertical = altezza > larghezza.
+    // "Vertical": layout overlay (descrizione galleggia sopra l'immagine).
+    // Resto: layout split (immagine in alto, descrizione in zona dedicata sotto).
+    function isVertical(w) {
+      if (!w.size) return false;
+      const m = w.size.match(/(\d+)\s*[×x]\s*(\d+)/);
+      if (!m) return false;
+      return parseInt(m[2], 10) > parseInt(m[1], 10);
+    }
+
     let idx = null;
+    let scale = 1, tx = 0, ty = 0;
+    let descHidden = false;
+    let pinching = false;
+    let navBusy = false;
+    let lastFocused = null;
+    // Dopo un touchend (mobile), il browser sintetizza un evento "click".
+    // Per evitare che il tap-toggle dentro touchend venga annullato dal
+    // click-toggle che lo segue, ignoriamo il click per ~500ms dopo touch.
+    let touchClickGuard = 0;
+    function isTouchClickSuppressed() {
+      return performance.now() - touchClickGuard < 500;
+    }
 
-    const stageImg = h('img', { src: '', alt: '' });
-    // Placeholder per opere in lavorazione (nessun file disponibile).
-    const stagePlaceholder = h('div', { class: 'stage-placeholder' });
-    stagePlaceholder.innerHTML = `
-      <div class="ph-frame">
-        <div class="ph-stamp">In lavorazione</div>
-        <div class="ph-sub">Prossimamente</div>
-      </div>
-    `;
-    const stage = h('div', { class: 'stage' }, stageImg, stagePlaceholder);
+    // Costruisce una slide (immagine + info + freccia) per ogni opera.
+    const slides = WORKS.map(function (w, i) {
+      const titleId = 'lightbox-title-' + i;
+      const eyebrow = h('div', { class: 'eyebrow' });
+      eyebrow.textContent = 'No. ' + pad3(i + 1) + ' · ' + pad2(i + 1) + ' / ' + WORKS.length;
+      const titleEl = h('h2', { class: 'title', id: titleId });
+      titleEl.textContent = w.title;
 
-    const eyebrow = h('div', { class: 'eyebrow' });
-    const title   = h('h2',  { class: 'title' });
-    const yearV   = h('div', { class: 'v' });
-    const sizeV   = h('div', { class: 'v' });
-    const matsV   = h('div', { class: 'v' });
-    // Sezione "come interagire": presente solo per opere con `interaction`.
-    const interactionTitle = h('div', { class: 'interaction-eyebrow' }, '↳ Come interagire');
-    const interactionBody  = h('p', { class: 'interaction-body' });
-    const interactionWrap  = h('div', { class: 'interaction' }, interactionTitle, interactionBody);
+      let stageChild = null;
+      let img = null;
+      if (w.comingSoon) {
+        stageChild = h('div', { class: 'stage-placeholder' });
+        stageChild.innerHTML =
+          '<div class="ph-frame">' +
+            '<div class="ph-stamp">In lavorazione</div>' +
+            '<div class="ph-sub">Prossimamente</div>' +
+          '</div>';
+      } else {
+        img = h('img', {
+          src: BASE + w.file,
+          srcset: buildSrcset(w.file),
+          sizes: '100vw',
+          alt: w.title,
+          loading: 'lazy',
+          decoding: 'async'
+        });
+        stageChild = img;
+      }
+      const stage = h('div', { class: 'stage' }, stageChild);
 
-    // Ordine voluto: prima cosa che leggi è "come interagire" (l'utente è davanti
-    // al quadro e deve sapere cosa fare), poi le specifiche tecniche.
-    const info = h('aside', { class: 'info' },
-      eyebrow,
-      title,
-      interactionWrap,
-      h('div', { class: 'specs' },
-        h('div', { class: 'row' }, h('div', { class: 'k' }, 'Anno'), yearV),
-        h('div', { class: 'row' }, h('div', { class: 'k' }, 'Formato'), sizeV),
-        h('div', { class: 'row' }, h('div', { class: 'k' }, 'Tecnica'), matsV)
-      )
-    );
+      const infoChildren = [eyebrow, titleEl];
+      if (w.interaction) {
+        const intEy = h('div', { class: 'interaction-eyebrow' }, '↳ Come interagire');
+        const intBd = h('p', { class: 'interaction-body' });
+        intBd.textContent = w.interaction;
+        infoChildren.push(h('div', { class: 'interaction' }, intEy, intBd));
+      }
+      function specsRow(k, v) {
+        return h('div', { class: 'row' },
+          h('div', { class: 'k' }, k),
+          h('div', { class: 'v' }, v)
+        );
+      }
+      infoChildren.push(h('div', { class: 'specs' },
+        specsRow('Anno', String(w.year)),
+        specsRow('Formato', w.size + (w.size === '—' ? '' : ' cm')),
+        specsRow('Tecnica', w.materials)
+      ));
+      const info = h('aside', { class: 'info' }, ...infoChildren);
 
-    // Dialog ARIA: aria-labelledby punta al titolo dell'opera per gli screen reader.
-    title.id = 'lightbox-title';
+      // Freccia in basso: identica nello stile a quella dell'hero (homepage).
+      // Click → opera successiva, stesso effetto dello swipe verso l'alto.
+      const arrow = h('button', {
+        class: 'next-arrow',
+        type: 'button',
+        'aria-label': 'Opera successiva'
+      });
+      arrow.innerHTML =
+        '<svg viewBox="0 0 24 36" aria-hidden="true">' +
+          '<path d="M 12 2 L 12 28 M 4 20 L 12 30 L 20 20" ' +
+                'fill="none" stroke="currentColor" stroke-width="2" ' +
+                'stroke-linecap="round" stroke-linejoin="round" />' +
+        '</svg>';
+      arrow.addEventListener('click', function (ev) {
+        ev.stopPropagation();
+        animateNav(+1);
+      });
+
+      const slide = h('div', { class: 'slide' + (isVertical(w) ? ' vertical' : '') });
+      slide.appendChild(stage);
+      slide.appendChild(info);
+      slide.appendChild(arrow);
+      return { root: slide, img: img, info: info, arrow: arrow, titleId: titleId };
+    });
+
+    const reel = h('div', { class: 'reel' });
+    slides.forEach(function (s) { reel.appendChild(s.root); });
+
     const root = h('div', {
       class: 'lightbox',
       role: 'dialog',
       'aria-modal': 'true',
-      'aria-labelledby': 'lightbox-title',
-      'aria-hidden': 'true'
-    }, stage, info);
+      'aria-hidden': 'true',
+      tabIndex: -1
+    }, reel);
 
-    function paint() {
-      if (idx == null) return;
-      const w = WORKS[idx];
-      // Stage: foto vera per le opere terminate, placeholder per "in lavorazione".
-      if (w.comingSoon) {
-        stageImg.removeAttribute('src');
-        stageImg.style.display = 'none';
-        stagePlaceholder.style.display = '';
-      } else {
-        stageImg.src = BASE + w.file;
-        stageImg.alt = w.title;
-        stageImg.style.display = '';
-        stagePlaceholder.style.display = 'none';
-      }
-      eyebrow.textContent = `No. ${pad3(idx + 1)} · ${pad2(idx + 1)} / ${WORKS.length}`;
-      title.textContent = w.title;
-      yearV.textContent = w.year;
-      sizeV.textContent = w.size + (w.size === '—' ? '' : ' cm');
-      matsV.textContent = w.materials;
-      // Sezione interazione: mostrata solo per opere con campo `interaction`.
-      if (w.interaction) {
-        interactionBody.textContent = w.interaction;
-        interactionWrap.style.display = '';
-      } else {
-        interactionWrap.style.display = 'none';
-      }
+    // Variabile CSS --vh per altezza slide affidabile anche con la barra URL
+    // di iOS Safari che mostra/nasconde durante lo scroll.
+    function updateVH() {
+      root.style.setProperty('--vh', window.innerHeight + 'px');
+    }
+    updateVH();
+    window.addEventListener('resize', updateVH);
+    window.addEventListener('orientationchange', updateVH);
+
+    function currentImg() { return slides[idx] && slides[idx].img; }
+
+    function applyZoom(animate) {
+      const img = currentImg();
+      if (!img) return;
+      img.style.transition = animate ? 'transform 0.22s ' + SPRING : 'none';
+      img.style.transform = 'translate3d(' + tx + 'px, ' + ty + 'px, 0) scale(' + scale + ')';
+      if (scale > 1.001) img.classList.add('zoomed');
+      else img.classList.remove('zoomed');
+    }
+    function resetZoomOnImg(img) {
+      if (!img) return;
+      img.style.transition = 'none';
+      img.style.transform = '';
+      img.classList.remove('zoomed');
+    }
+    function clampPan() {
+      const img = currentImg();
+      if (!img) return;
+      const w = img.offsetWidth * scale;
+      const hh = img.offsetHeight * scale;
+      const cw = window.innerWidth;
+      const ch = window.innerHeight;
+      const maxX = Math.max(0, (w - cw) / 2);
+      const maxY = Math.max(0, (hh - ch) / 2);
+      tx = Math.max(-maxX, Math.min(maxX, tx));
+      ty = Math.max(-maxY, Math.min(maxY, ty));
     }
 
-    // Root focusable per ricevere la tastiera senza un pulsante visibile.
-    root.tabIndex = -1;
-
-    let lastFocused = null;
-    function open(i) {
+    function setReelTo(i, animate) {
+      const slideH = window.innerHeight;
+      reel.style.transition = animate ? ('transform ' + NAV_MS + 'ms ' + SPRING) : 'none';
+      reel.style.transform = 'translate3d(0, ' + (-i * slideH) + 'px, 0)';
+      if (!animate) {
+        // force reflow per uno stato pulito di transition successive
+        void reel.offsetHeight;
+      }
+    }
+    function setIndex(i, animate) {
+      if (idx != null && idx !== i) resetZoomOnImg(slides[idx].img);
       idx = i;
-      paint();
+      scale = 1; tx = 0; ty = 0;
+      setReelTo(i, animate);
+      try { history.replaceState(null, '', '#' + WORKS[i].id); } catch (_) {}
+      if (slides[i]) root.setAttribute('aria-labelledby', slides[i].titleId);
+    }
+    function animateNav(dir) {
+      if (navBusy || idx == null) return;
+      const newIdx = (idx + dir + WORKS.length) % WORKS.length;
+      navBusy = true;
+      // Resetta tap-state: dopo navigazione la descrizione è di nuovo visibile.
+      descHidden = false;
+      root.classList.remove('text-hidden');
+      setIndex(newIdx, true);
+      setTimeout(function () { navBusy = false; }, NAV_MS + 30);
+    }
+    function animateClose() {
+      if (navBusy) return;
+      navBusy = true;
+      root.style.transition = 'transform ' + NAV_MS + 'ms ' + SPRING + ', opacity ' + NAV_MS + 'ms ease';
+      root.style.transform = 'translate3d(100vw, 0, 0)';
+      root.style.opacity = '0';
+      setTimeout(function () { navBusy = false; close(); }, NAV_MS + 30);
+    }
+    function resetRootTransform() {
+      root.style.transition = 'none';
+      root.style.transform = '';
+      root.style.opacity = '';
+      void root.offsetHeight;
+      root.style.transition = '';
+    }
+
+    function open(i) {
       lastFocused = document.activeElement;
-      resetTransform();
+      resetRootTransform();
+      setIndex(i, false);
       root.classList.add('open');
+      root.classList.remove('text-hidden', 'pinching');
+      descHidden = false;
+      pinching = false;
       root.setAttribute('aria-hidden', 'false');
       document.body.style.overflow = 'hidden';
-      try { history.replaceState(null, '', '#' + WORKS[i].id); } catch (_) {}
-      setTimeout(() => root.focus({ preventScroll: true }), 0);
+      setTimeout(function () { root.focus({ preventScroll: true }); }, 0);
     }
     function close() {
+      if (idx != null) resetZoomOnImg(slides[idx].img);
       idx = null;
-      root.classList.remove('open');
+      scale = 1; tx = 0; ty = 0;
+      root.classList.remove('open', 'text-hidden', 'pinching');
       root.setAttribute('aria-hidden', 'true');
-      resetZoom();
-      resetTransform();
       document.body.style.overflow = '';
+      resetRootTransform();
       try { history.replaceState(null, '', location.pathname + location.search); } catch (_) {}
       if (lastFocused && typeof lastFocused.focus === 'function') {
         lastFocused.focus();
         lastFocused = null;
       }
     }
-    function prev() {
-      if (idx == null) return;
-      idx = (idx - 1 + WORKS.length) % WORKS.length;
-      paint();
-      resetZoom();
-    }
-    function next() {
-      if (idx == null) return;
-      idx = (idx + 1) % WORKS.length;
-      paint();
-      resetZoom();
-    }
 
-    // ── REEL: animazioni dell'intero lightbox ────────────────────
-    // Stato delle trasformazioni "macro" (sulla root, non sull'immagine):
-    // usate per swipe verticale (navigazione) e swipe destra (chiusura).
-    const NAV_MS = 280;
-    const SPRING = 'cubic-bezier(.22, .8, .22, 1)';
-    function resetTransform() {
-      root.style.transition = 'none';
-      root.style.transform = '';
-      root.style.opacity = '';
-      // Forza reflow per far ripartire transizioni successive da uno stato pulito.
-      void root.offsetHeight;
-      root.style.transition = '';
-    }
-    // dir = +1 = swipe verso l'alto = opera successiva entra dal basso.
-    // dir = -1 = swipe verso il basso = opera precedente entra dall'alto.
-    function animateNav(dir) {
+    // ── GESTURES (touch) ─────────────────────────────────────────
+    // Un singolo gesture object per descrivere lo stato del tocco corrente.
+    let gesture = null;
+
+    root.addEventListener('touchstart', function (e) {
       if (navBusy) return;
-      navBusy = true;
-      const OUT = `translate3d(0, ${-dir * 100}vh, 0)`;
-      root.style.transition = `transform ${NAV_MS}ms ${SPRING}`;
-      root.style.transform = OUT;
-      setTimeout(() => {
-        // Cambia opera e riposiziona al lato opposto (entry).
-        if (dir > 0) next(); else prev();
-        root.style.transition = 'none';
-        root.style.transform = `translate3d(0, ${dir * 100}vh, 0)`;
-        void root.offsetHeight;
-        root.style.transition = `transform ${NAV_MS}ms ${SPRING}`;
-        root.style.transform = 'translate3d(0, 0, 0)';
-        setTimeout(() => {
-          root.style.transition = '';
-          root.style.transform = '';
-          navBusy = false;
-        }, NAV_MS + 10);
-      }, NAV_MS + 10);
-    }
-    function animateClose() {
-      if (navBusy) return;
-      navBusy = true;
-      root.style.transition = `transform ${NAV_MS}ms ${SPRING}, opacity ${NAV_MS}ms ease`;
-      root.style.transform = 'translate3d(100vw, 0, 0)';
-      root.style.opacity = '0';
-      setTimeout(() => {
-        navBusy = false;
-        close();
-      }, NAV_MS + 10);
-    }
-    let navBusy = false;
-
-    // ── ZOOM + PAN (sempre attivo, niente più fullscreen) ────────
-    let scale = 1, tx = 0, ty = 0;
-    const MIN_SCALE = 1, MAX_SCALE = 5;
-
-    function applyTransform(animate) {
-      stageImg.style.transition = animate ? 'transform 0.22s cubic-bezier(.2,.8,.2,1)' : 'none';
-      stageImg.style.transform  = `translate3d(${tx}px, ${ty}px, 0) scale(${scale})`;
-      if (scale > 1.001) stageImg.classList.add('zoomed');
-      else stageImg.classList.remove('zoomed');
-    }
-    function resetZoom() {
-      const wasZoomed = scale > 1.001;
-      scale = 1; tx = 0; ty = 0;
-      applyTransform(wasZoomed);
-    }
-    function clampPan() {
-      const w = stageImg.offsetWidth  * scale;
-      const h = stageImg.offsetHeight * scale;
-      const cw = stage.clientWidth;
-      const ch = stage.clientHeight;
-      const maxX = Math.max(0, (w - cw) / 2);
-      const maxY = Math.max(0, (h - ch) / 2);
-      tx = Math.max(-maxX, Math.min(maxX, tx));
-      ty = Math.max(-maxY, Math.min(maxY, ty));
-    }
-    function zoomAt(newScale, px, py, animate) {
-      newScale = Math.max(MIN_SCALE, Math.min(MAX_SCALE, newScale));
-      if (Math.abs(newScale - scale) < 0.001) return;
-      const r = stage.getBoundingClientRect();
-      const dx = px - r.left - r.width  / 2;
-      const dy = py - r.top  - r.height / 2;
-      const ratio = newScale / scale;
-      tx = dx - (dx - tx) * ratio;
-      ty = dy - (dy - ty) * ratio;
-      scale = newScale;
-      clampPan();
-      applyTransform(animate);
-    }
-
-    // ── TOUCH GESTURES ──────────────────────────────────────────
-    //   2 dita → pinch zoom (sempre attivo, anche da non-zoom)
-    //   1 dito quando zoomato → pan sull'immagine
-    //   1 dito quando NON zoomato → gesto di navigazione (swipe up/down/right)
-    let pinchD = 0, pinchM = null;
-    let panActive = false, panX = 0, panY = 0;
-    let navActive = false, navStartX = 0, navStartY = 0, navStartEdge = false;
-    let navDx = 0, navDy = 0;
-    let lockedAxis = null; // 'h' | 'v' | null — dopo i primi ~10px, blocca l'asse
-
-    function startNav(t) {
-      navActive = true;
-      navStartX = t.clientX;
-      navStartY = t.clientY;
-      navDx = navDy = 0;
-      lockedAxis = null;
-      // edge-swipe: come Instagram, il gesto di "back" funziona se parte
-      // dai primi ~30px da sinistra. Più libero per gli altri assi.
-      navStartEdge = t.clientX < 30;
-      root.style.transition = 'none';
-    }
-    function endNav(commit) {
-      navActive = false;
-      if (!commit) {
-        // Snap-back con spring.
-        root.style.transition = `transform 0.22s ${SPRING}, opacity 0.22s ease`;
-        root.style.transform = '';
-        root.style.opacity = '';
-      }
-    }
-
-    stage.addEventListener('touchstart', (e) => {
-      if (navBusy) return;
+      // Tap sulla freccia: lascia che gestisca il suo onclick, non avviare
+      // gesti su root (evita di interpretare il tap come "toggle descrizione").
+      if (e.target.closest('.next-arrow')) return;
       if (e.touches.length === 2) {
         const a = e.touches[0], b = e.touches[1];
-        pinchD = Math.hypot(b.clientX - a.clientX, b.clientY - a.clientY);
-        pinchM = { x: (a.clientX + b.clientX) / 2, y: (a.clientY + b.clientY) / 2 };
-        navActive = false; // pinch sovrascrive il gesto di navigazione
+        gesture = {
+          type: 'pinch',
+          d: Math.hypot(b.clientX - a.clientX, b.clientY - a.clientY),
+          m: { x: (a.clientX + b.clientX) / 2, y: (a.clientY + b.clientY) / 2 }
+        };
+        pinching = true;
+        root.classList.add('pinching');
       } else if (e.touches.length === 1) {
-        if (scale > 1.001) {
-          panActive = true;
-          panX = e.touches[0].clientX;
-          panY = e.touches[0].clientY;
-        } else {
-          startNav(e.touches[0]);
-        }
+        const t = e.touches[0];
+        gesture = {
+          type: scale > 1.001 ? 'pan' : 'maybe-tap',
+          startX: t.clientX, startY: t.clientY,
+          lastX: t.clientX, lastY: t.clientY,
+          startTime: performance.now(),
+          moved: false,
+          axis: null,
+          baseReelY: -idx * window.innerHeight
+        };
+        reel.style.transition = 'none';
+        root.style.transition = 'none';
       }
     }, { passive: false });
 
-    stage.addEventListener('touchmove', (e) => {
-      if (navBusy) return;
-      if (e.touches.length === 2 && pinchD > 0 && pinchM) {
+    root.addEventListener('touchmove', function (e) {
+      if (navBusy || !gesture) return;
+      // Pinch (2 dita)
+      if (gesture.type === 'pinch' && e.touches.length === 2) {
         e.preventDefault();
         const a = e.touches[0], b = e.touches[1];
         const d = Math.hypot(b.clientX - a.clientX, b.clientY - a.clientY);
         const m = { x: (a.clientX + b.clientX) / 2, y: (a.clientY + b.clientY) / 2 };
-        const sRatio  = d / pinchD;
+        const sRatio = d / gesture.d;
         const newScale = Math.max(MIN_SCALE, Math.min(MAX_SCALE, scale * sRatio));
-        const r = stage.getBoundingClientRect();
-        const dx = m.x - r.left - r.width  / 2;
-        const dy = m.y - r.top  - r.height / 2;
+        const cx = window.innerWidth / 2;
+        const cy = window.innerHeight / 2;
+        const dx = m.x - cx;
+        const dy = m.y - cy;
         const ratio = newScale / scale;
         tx = dx - (dx - tx) * ratio;
         ty = dy - (dy - ty) * ratio;
         scale = newScale;
-        tx += m.x - pinchM.x;
-        ty += m.y - pinchM.y;
+        tx += m.x - gesture.m.x;
+        ty += m.y - gesture.m.y;
         clampPan();
-        applyTransform(false);
-        pinchD = d;
-        pinchM = m;
-      } else if (panActive && e.touches.length === 1 && scale > 1.001) {
+        applyZoom(false);
+        gesture.d = d;
+        gesture.m = m;
+        return;
+      }
+      if (e.touches.length !== 1) return;
+      const t = e.touches[0];
+      const dx = t.clientX - gesture.startX;
+      const dy = t.clientY - gesture.startY;
+      gesture.lastX = t.clientX;
+      gesture.lastY = t.clientY;
+      if (!gesture.moved && Math.hypot(dx, dy) > TAP_MOVE_PX) gesture.moved = true;
+
+      if (gesture.type === 'pan') {
+        // Pan immagine zoomata
         e.preventDefault();
-        const t = e.touches[0];
-        tx += t.clientX - panX;
-        ty += t.clientY - panY;
-        panX = t.clientX;
-        panY = t.clientY;
+        const ddx = t.clientX - (gesture.panLastX || gesture.startX);
+        const ddy = t.clientY - (gesture.panLastY || gesture.startY);
+        tx += ddx; ty += ddy;
+        gesture.panLastX = t.clientX;
+        gesture.panLastY = t.clientY;
         clampPan();
-        applyTransform(false);
-      } else if (navActive && e.touches.length === 1) {
-        const t = e.touches[0];
-        navDx = t.clientX - navStartX;
-        navDy = t.clientY - navStartY;
-        // Decide asse dopo una soglia di ~10px.
-        if (!lockedAxis && Math.hypot(navDx, navDy) > 10) {
-          lockedAxis = Math.abs(navDx) > Math.abs(navDy) ? 'h' : 'v';
-        }
-        if (lockedAxis === 'h') {
-          // Solo swipe verso destra (back): dx >= 0. Sinistra: niente.
-          if (navDx < 0) { navDx = 0; }
-          // Edge-swipe richiesto come Instagram (back). Se non parte dal bordo,
-          // il gesto orizzontale non chiude — facciamo solo una piccola elastica.
-          const k = navStartEdge ? 1 : 0.25;
-          e.preventDefault();
-          root.style.transform = `translate3d(${navDx * k}px, 0, 0)`;
-          root.style.opacity = String(Math.max(0.4, 1 - (navDx * k) / window.innerWidth));
-        } else if (lockedAxis === 'v') {
-          e.preventDefault();
-          root.style.transform = `translate3d(0, ${navDy}px, 0)`;
-        }
+        applyZoom(false);
+        return;
+      }
+
+      if (gesture.type === 'maybe-tap' && gesture.moved && !gesture.axis) {
+        gesture.axis = Math.abs(dx) > Math.abs(dy) ? 'h' : 'v';
+        gesture.type = 'nav';
+      }
+      if (gesture.axis === 'h') {
+        e.preventDefault();
+        const ddx = Math.max(0, dx); // solo verso destra
+        root.style.transform = 'translate3d(' + ddx + 'px, 0, 0)';
+        root.style.opacity = String(Math.max(0.5, 1 - ddx / window.innerWidth));
+      } else if (gesture.axis === 'v') {
+        e.preventDefault();
+        const newY = gesture.baseReelY + dy;
+        reel.style.transform = 'translate3d(0, ' + newY + 'px, 0)';
       }
     }, { passive: false });
 
-    stage.addEventListener('touchend', (e) => {
-      if (e.touches.length < 2) { pinchD = 0; pinchM = null; }
-      if (e.touches.length === 0) panActive = false;
-      if (!navActive) return;
-      if (navBusy) { endNav(false); return; }
-      const VH = window.innerHeight;
-      const VW = window.innerWidth;
-      if (lockedAxis === 'h' && navStartEdge && navDx > VW * 0.25) {
-        // Swipe destra da bordo sinistro → chiudi.
-        animateClose();
-        navActive = false;
+    root.addEventListener('touchend', function (e) {
+      touchClickGuard = performance.now();
+      // Pinch terminato
+      if (gesture && gesture.type === 'pinch' && e.touches.length < 2) {
+        pinching = false;
+        root.classList.remove('pinching');
+        // Dopo il pinch la descrizione torna sempre visibile.
+        descHidden = false;
+        root.classList.remove('text-hidden');
+        // Se l'utente è quasi tornato a 1x, snap a 1.
+        if (scale < 1.05) {
+          scale = 1; tx = 0; ty = 0;
+          applyZoom(true);
+        }
+        gesture = null;
         return;
       }
-      if (lockedAxis === 'v' && Math.abs(navDy) > VH * 0.18) {
-        animateNav(navDy < 0 ? +1 : -1);
-        navActive = false;
-        return;
-      }
-      endNav(false);
-    }, { passive: true });
+      if (e.touches.length !== 0 || !gesture) return;
 
-    // Doppio tap → toggle 1x ↔ 2x verso il tap (mantiene lo zoom rapido).
-    let lastTap = 0;
-    stage.addEventListener('touchend', (e) => {
-      if (e.changedTouches.length !== 1) return;
-      if (lockedAxis) return; // se è stato un gesto, no doppio tap
-      const now = performance.now();
-      if (now - lastTap < 300) {
-        const t = e.changedTouches[0];
-        if (scale > 1.001) zoomAt(1, t.clientX, t.clientY, true);
-        else                zoomAt(2, t.clientX, t.clientY, true);
+      // Tap (singolo, nessun movimento, durata breve) → toggle descrizione.
+      if (gesture.type === 'maybe-tap' && !gesture.moved) {
+        const dt = performance.now() - gesture.startTime;
+        if (dt < TAP_MS) {
+          descHidden = !descHidden;
+          if (descHidden) root.classList.add('text-hidden');
+          else root.classList.remove('text-hidden');
+        }
+        gesture = null;
+        return;
       }
-      lastTap = now;
+
+      // Pan finito → niente da committare, lascia lo zoom dov'è.
+      if (gesture.type === 'pan') { gesture = null; return; }
+
+      // Navigazione: commit o snap-back.
+      if (gesture.type === 'nav') {
+        const VH = window.innerHeight;
+        const dxFinal = gesture.lastX - gesture.startX;
+        const dyFinal = gesture.lastY - gesture.startY;
+        if (gesture.axis === 'h') {
+          if (dxFinal > CLOSE_PX) {
+            animateClose();
+          } else {
+            // Snap-back orizzontale.
+            root.style.transition = 'transform 0.24s ' + SPRING + ', opacity 0.24s ease';
+            root.style.transform = '';
+            root.style.opacity = '';
+          }
+        } else if (gesture.axis === 'v') {
+          if (dyFinal < -VH * NAV_FRAC) animateNav(+1);
+          else if (dyFinal > VH * NAV_FRAC) animateNav(-1);
+          else setReelTo(idx, true);
+        }
+      }
+      gesture = null;
     }, { passive: true });
 
     // ── DESKTOP ─────────────────────────────────────────────────
-    // Wheel sull'immagine: con ctrlKey/metaKey (pinch del trackpad) zooma;
-    // wheel normale verticale = navigazione opera ↑/↓.
+    // Wheel: pinch trackpad (ctrlKey/metaKey) zooma; verticale normale = navigazione.
     let wheelAccum = 0;
     let wheelTimer = null;
-    stage.addEventListener('wheel', (e) => {
+    root.addEventListener('wheel', function (e) {
       if (navBusy) { e.preventDefault(); return; }
       if (e.ctrlKey || e.metaKey) {
         e.preventDefault();
         const factor = e.deltaY < 0 ? 1.15 : 1 / 1.15;
-        zoomAt(scale * factor, e.clientX, e.clientY, false);
+        const newScale = Math.max(MIN_SCALE, Math.min(MAX_SCALE, scale * factor));
+        const cx = window.innerWidth / 2;
+        const cy = window.innerHeight / 2;
+        const dx = e.clientX - cx;
+        const dy = e.clientY - cy;
+        const ratio = newScale / scale;
+        tx = dx - (dx - tx) * ratio;
+        ty = dy - (dy - ty) * ratio;
+        scale = newScale;
+        clampPan();
+        applyZoom(false);
         return;
       }
-      if (scale > 1.001) return; // mentre zoomato, lascia stare
+      if (scale > 1.001) return;
       e.preventDefault();
       wheelAccum += e.deltaY;
       clearTimeout(wheelTimer);
-      wheelTimer = setTimeout(() => { wheelAccum = 0; }, 180);
+      wheelTimer = setTimeout(function () { wheelAccum = 0; }, 200);
       if (wheelAccum > 60) { wheelAccum = 0; animateNav(+1); }
       else if (wheelAccum < -60) { wheelAccum = 0; animateNav(-1); }
     }, { passive: false });
 
-    // Mouse drag desktop: pan quando zoomato.
-    let mouseDragging = false, mouseStartX = 0, mouseStartY = 0;
-    stage.addEventListener('mousedown', (e) => {
+    // Mouse drag desktop quando zoomato: pan.
+    let mouseDragging = false, mouseLastX = 0, mouseLastY = 0;
+    root.addEventListener('mousedown', function (e) {
+      if (e.target.closest('.next-arrow')) return;
       if (scale <= 1.001) return;
       mouseDragging = true;
-      mouseStartX = e.clientX;
-      mouseStartY = e.clientY;
+      mouseLastX = e.clientX;
+      mouseLastY = e.clientY;
       e.preventDefault();
     });
-    window.addEventListener('mousemove', (e) => {
+    window.addEventListener('mousemove', function (e) {
       if (!mouseDragging) return;
-      tx += e.clientX - mouseStartX;
-      ty += e.clientY - mouseStartY;
-      mouseStartX = e.clientX;
-      mouseStartY = e.clientY;
+      tx += e.clientX - mouseLastX;
+      ty += e.clientY - mouseLastY;
+      mouseLastX = e.clientX;
+      mouseLastY = e.clientY;
       clampPan();
-      applyTransform(false);
+      applyZoom(false);
     });
-    window.addEventListener('mouseup', () => { mouseDragging = false; });
+    window.addEventListener('mouseup', function () { mouseDragging = false; });
 
-    // Doppio click desktop → toggle zoom.
-    stage.addEventListener('dblclick', (e) => {
-      if (scale > 1.001) zoomAt(1, e.clientX, e.clientY, true);
-      else                zoomAt(2, e.clientX, e.clientY, true);
+    // Click sull'immagine (non sulla freccia) → toggle descrizione, come tap.
+    // Su mobile il click viene sintetizzato dopo il touchend: lo sopprimiamo
+    // per ~500ms in modo che il toggle scatti una sola volta (in touchend).
+    root.addEventListener('click', function (e) {
+      if (e.target.closest('.next-arrow')) return;
+      if (mouseDragging) return;
+      if (isTouchClickSuppressed()) return;
+      descHidden = !descHidden;
+      if (descHidden) root.classList.add('text-hidden');
+      else root.classList.remove('text-hidden');
     });
 
-    // Clic sul backdrop (fuori da stage + info) chiude.
-    root.addEventListener('click', e => {
-      if (e.target === root) close();
+    // Doppio click desktop: toggle zoom 1x/2x verso il cursore.
+    root.addEventListener('dblclick', function (e) {
+      if (e.target.closest('.next-arrow')) return;
+      if (scale > 1.001) {
+        scale = 1; tx = 0; ty = 0;
+        applyZoom(true);
+      } else {
+        const cx = window.innerWidth / 2;
+        const cy = window.innerHeight / 2;
+        scale = 2;
+        tx = -(e.clientX - cx);
+        ty = -(e.clientY - cy);
+        clampPan();
+        applyZoom(true);
+      }
     });
 
     // Tastiera: Esc chiude, frecce navigano.
-    window.addEventListener('keydown', e => {
+    window.addEventListener('keydown', function (e) {
       if (!root.classList.contains('open')) return;
       if (e.key === 'Escape') { e.preventDefault(); animateClose(); }
       else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp')   { e.preventDefault(); animateNav(-1); }
       else if (e.key === 'ArrowRight' || e.key === 'ArrowDown') { e.preventDefault(); animateNav(+1); }
     });
 
-    return { root, open };
+    return { root: root, open: open };
   }
 
   // ── GALLERY (sezione opere) ─────────────────────────────────
