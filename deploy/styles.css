@@ -734,38 +734,63 @@ a { color: inherit; text-decoration: none; }
 .view-switch button.active { color: var(--bg); background: var(--gold); border-color: var(--gold); }
 .view-switch button:not(.active):hover { color: var(--ink); border-color: var(--line-strong); }
 
-/* === LIGHTBOX === */
+/* === LIGHTBOX — "reel" style alla Instagram =================================
+   Layout fullscreen senza colonne: lo stage occupa tutta la viewport, il
+   pannello info galleggia in basso sopra un gradiente scuro. Nessun tasto
+   visibile: tutte le azioni (chiudi, navigazione, zoom) sono gestuali. ===== */
 .lightbox {
   position: fixed; inset: 0;
   z-index: 80;
-  background: rgba(8, 7, 6, 0.94);
-  backdrop-filter: blur(20px);
-  display: grid;
-  grid-template-columns: 1fr 380px;
+  background: rgba(5, 8, 20, 0.96);
   opacity: 0;
   pointer-events: none;
-  transition: opacity 0.4s ease;
+  transition: opacity 0.3s ease;
+  overflow: hidden;
+  /* will-change su transform/opacity così i swipe non causano re-layer ogni volta. */
+  will-change: transform, opacity;
 }
 .lightbox.open { opacity: 1; pointer-events: auto; }
+
 .lightbox .stage {
-  position: relative;
+  position: absolute; inset: 0;
   display: flex; align-items: center; justify-content: center;
-  padding: 80px 60px;
   overflow: hidden;
+  /* Tutti i gesti li gestiamo via JS: niente scroll/pan/zoom nativo del browser. */
+  touch-action: none;
 }
 .lightbox .stage img {
-  max-height: 84vh;
-  max-width: 100%;
+  max-width: 100vw;
+  max-height: 100vh;
   width: auto;
+  height: auto;
   object-fit: contain;
-  box-shadow: 0 40px 120px rgba(0,0,0,0.7);
-  transition: transform 0.6s cubic-bezier(.2,.8,.2,1), opacity 0.3s ease;
+  transform-origin: 50% 50%;
+  will-change: transform;
+  user-select: none;
+  -webkit-user-drag: none;
+  cursor: zoom-in;
 }
+.lightbox .stage img.zoomed { cursor: grab; }
+.lightbox .stage img.zoomed:active { cursor: grabbing; }
+
+/* Pannello info: in basso, gradiente per leggibilità sopra l'immagine.
+   pointer-events:none lascia tutti i gesti passare allo stage anche
+   quando il dito è sopra al testo (sennò il pinch sull'area del testo non
+   funzionerebbe). */
 .lightbox .info {
-  border-left: 1px solid var(--line);
-  padding: 80px 48px;
-  display: flex; flex-direction: column;
-  background: linear-gradient(180deg, rgba(217,178,106,0.04), transparent 30%);
+  position: absolute;
+  left: 0; right: 0; bottom: 0;
+  padding: 60px 24px calc(24px + env(safe-area-inset-bottom));
+  background: linear-gradient(180deg,
+    rgba(5, 8, 20, 0) 0%,
+    rgba(5, 8, 20, 0.55) 35%,
+    rgba(5, 8, 20, 0.88) 100%);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  pointer-events: none;
+  max-height: 70vh;
+  overflow: hidden;
 }
 .lightbox .info .eyebrow {
   font-family: var(--mono);
@@ -773,72 +798,68 @@ a { color: inherit; text-decoration: none; }
   letter-spacing: 0.32em;
   text-transform: uppercase;
   color: var(--gold);
-  margin-bottom: 24px;
+  margin: 0;
 }
 .lightbox .info .title {
   font-family: var(--display);
   font-style: italic;
   font-weight: 200;
-  font-size: 64px;
-  line-height: 0.95;
+  font-size: clamp(30px, 5vw, 52px);
+  line-height: 0.98;
   letter-spacing: -0.03em;
-  margin-bottom: 32px;
+  margin: 0;
 }
-.lightbox .info .specs {
-  display: grid;
-  gap: 20px;
-  border-top: 1px solid var(--line);
-  padding-top: 24px;
-  margin-bottom: 32px;
-}
-.lightbox .info .specs .row { display: grid; grid-template-columns: 90px 1fr; gap: 12px; }
-.lightbox .info .specs .k {
-  font-family: var(--mono);
-  font-size: 10px;
-  letter-spacing: 0.24em;
-  text-transform: uppercase;
-  color: var(--ink-mute);
-  padding-top: 4px;
-}
-.lightbox .info .specs .v {
-  font-family: var(--serif);
-  font-size: 17px;
-  line-height: 1.5;
-  color: var(--ink);
-}
-/* "Come interagire" — sezione opzionale, è la prima cosa che il visitatore
-   legge entrando: zero separatore sopra, solo un margine sotto.
-   "Descrizione" — sezione opzionale subito sotto: separata da un filino.
-   Le specs (anno/formato/tecnica) vengono poi sotto, già col loro border-top. */
 .lightbox .info .interaction {
-  margin-bottom: 28px;
+  margin-top: 4px;
 }
-.lightbox .info .description {
-  border-top: 1px solid var(--line);
-  padding-top: 20px;
-  margin-bottom: 28px;
-}
-.lightbox .info .interaction-eyebrow,
-.lightbox .info .description-eyebrow {
+.lightbox .info .interaction-eyebrow {
   font-family: var(--mono);
-  font-size: 10px;
+  font-size: 13px;
   letter-spacing: 0.28em;
   text-transform: uppercase;
   color: var(--gold);
-  margin-bottom: 10px;
+  margin-bottom: 8px;
 }
-.lightbox .info .interaction-body,
-.lightbox .info .description-body {
+.lightbox .info .interaction-body {
   font-family: var(--serif);
-  font-size: 15px;
-  line-height: 1.6;
+  font-size: 16px;
+  line-height: 1.5;
   color: var(--ink);
 }
-/* Placeholder dentro lo stage per opere in lavorazione (lightbox aperto
-   su un'opera senza file). Visivamente coerente col tile coming-soon. */
+/* Specifiche tecniche compatte in fondo: anno · formato · tecnica
+   su una riga, fontsize piccolo. Sotto, il counter "01 / 09" è già
+   nell'eyebrow in alto. */
+.lightbox .info .specs {
+  display: grid;
+  gap: 4px;
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--ink-mute);
+  border-top: 1px solid rgba(240, 244, 255, 0.10);
+  padding-top: 12px;
+  margin-top: 4px;
+}
+.lightbox .info .specs .row {
+  display: grid;
+  grid-template-columns: 70px 1fr;
+  gap: 10px;
+  align-items: baseline;
+}
+.lightbox .info .specs .k { color: var(--ink-mute); }
+.lightbox .info .specs .v {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--ink-dim);
+}
+
+/* Placeholder dentro lo stage per opere in lavorazione. */
 .lightbox .stage-placeholder {
   width: min(70vw, 600px);
-  max-height: 84vh;
+  max-height: 70vh;
   aspect-ratio: 4 / 5;
   display: flex;
   flex-direction: column;
@@ -866,86 +887,6 @@ a { color: inherit; text-decoration: none; }
   text-transform: uppercase;
   color: var(--ink-mute);
 }
-
-.lightbox .info .nav-btns {
-  margin-top: auto;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  border-top: 1px solid var(--line);
-  padding-top: 24px;
-}
-.lightbox .info .nav-btns button {
-  font-family: var(--mono);
-  font-size: 10px;
-  letter-spacing: 0.32em;
-  text-transform: uppercase;
-  color: var(--ink-dim);
-  padding: 12px 0;
-  display: flex; align-items: center; gap: 12px;
-  transition: color 0.3s ease, transform 0.3s ease;
-}
-.lightbox .info .nav-btns button:hover { color: var(--gold); }
-.lightbox .info .nav-btns button.prev:hover { transform: translateX(-4px); }
-.lightbox .info .nav-btns button.next:hover { transform: translateX(4px); }
-.lightbox .info .counter {
-  font-family: var(--mono);
-  font-size: 10px;
-  letter-spacing: 0.24em;
-  color: var(--ink-mute);
-}
-.lightbox .info .counter b { color: var(--ink); font-weight: 400; }
-.lightbox .close {
-  position: absolute;
-  top: 24px; right: 24px;
-  width: 40px; height: 40px;
-  display: grid; place-items: center;
-  border: 1px solid var(--line);
-  z-index: 10;
-  transition: border-color 0.3s, transform 0.3s;
-}
-.lightbox .close:hover { border-color: var(--gold); transform: rotate(90deg); }
-.lightbox .close::before, .lightbox .close::after {
-  content: ""; position: absolute;
-  width: 16px; height: 1px; background: var(--ink);
-}
-.lightbox .close::before { transform: rotate(45deg); }
-.lightbox .close::after { transform: rotate(-45deg); }
-
-/* Fullscreen toggle (accanto al close) */
-.lightbox .fs-btn {
-  position: absolute;
-  top: 24px; right: 76px;
-  width: 40px; height: 40px;
-  display: grid; place-items: center;
-  border: 1px solid var(--line);
-  z-index: 10;
-  transition: border-color 0.3s, background-color 0.3s;
-  background: transparent;
-}
-.lightbox .fs-btn:hover { border-color: var(--gold); }
-.lightbox .fs-btn svg { width: 16px; height: 16px; stroke: var(--ink); fill: none; stroke-width: 1.5; }
-
-/* Stato a schermo intero: nasconde l'info, lascia solo l'immagine */
-.lightbox.fullscreen { grid-template-columns: 1fr; grid-template-rows: 1fr; }
-.lightbox.fullscreen .info { display: none; }
-.lightbox.fullscreen .stage {
-  padding: 0;
-  /* Il browser non intercetta gesti — pinch/pan li gestisce il JS */
-  touch-action: none;
-  overflow: hidden;
-}
-.lightbox.fullscreen .stage img {
-  max-height: 100vh;
-  max-width: 100vw;
-  cursor: grab;
-  /* Disattiva la transizione del lightbox normale: lo zoom usa transform */
-  transition: none;
-  will-change: transform;
-  user-select: none;
-  -webkit-user-drag: none;
-}
-.lightbox.fullscreen .stage img.zoomed { cursor: grabbing; }
 
 /* === FOOTER === */
 .footer {
@@ -1020,30 +961,14 @@ a { color: inherit; text-decoration: none; }
 /* responsive */
 @media (max-width: 900px) {
   .masonry { column-count: 2; }
-  .lightbox {
-    grid-template-columns: 1fr;
-    grid-template-rows: minmax(0, 1fr) auto; /* minmax(0, 1fr) lascia che lo stage si rimpiccolisca */
-  }
-  .lightbox .stage {
-    padding: 12px 12px 0;
-    min-height: 0;
-  }
-  .lightbox .stage img {
-    max-height: 100%;
-    max-width: 100%;
-    width: auto;
-    height: auto;
-  }
+  /* Su mobile l'info ha più gradiente sotto e meno padding laterale.
+     Il layout principale del lightbox (.stage absolute, .info fixed bottom)
+     funziona già per mobile e desktop allo stesso modo. */
   .lightbox .info {
-    border-left: 0;
-    border-top: 1px solid var(--line);
-    padding: 20px 24px;
-    max-height: 45vh;
-    overflow-y: auto;
+    padding: 80px 18px calc(20px + env(safe-area-inset-bottom));
+    gap: 12px;
   }
-  .lightbox .info .title { font-size: 32px; margin-bottom: 12px; }
-  .lightbox .fs-btn { top: 16px; right: 64px; width: 36px; height: 36px; }
-  .lightbox .close   { top: 16px; right: 16px; width: 36px; height: 36px; }
+  .lightbox .info .interaction-body { font-size: 15px; }
   /* Versione compatta dell'hint su mobile: solo freccia, senza testo. */
   .hint-pointer .hint-label { display: none; }
   .hint-pointer { bottom: 4vh; gap: 0; }

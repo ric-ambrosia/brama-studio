@@ -23,7 +23,7 @@
      così è già pronta quando la nav la richiede. -->
 <link rel="preload" as="image" href="images/signature.png" fetchpriority="high" />
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,200;1,300;1,400&family=Fraunces:ital,opsz,wght@0,9..144,200;0,9..144,300;0,9..144,400&family=Inter+Tight:wght@400;500;600&family=JetBrains+Mono:wght@400&display=swap" rel="stylesheet" />
-<link rel="stylesheet" href="styles.css?v=56" />
+<link rel="stylesheet" href="styles.css?v=57" />
 <script>
   // Configurazione del sito (era il "Tweaks panel" in dev, qui sono valori fissi)
   window.__BRAMA_CONFIG__ = {
@@ -400,15 +400,13 @@
   }
 
   // ── LIGHTBOX ────────────────────────────────────────────────
+  // Layout "reel" tipo Instagram: foto a tutto schermo, overlay con testi
+  // in basso. Niente tasti (chiudi/fullscreen/prev/next): la navigazione è
+  // solo gestuale — swipe verticale fra le opere, swipe destra per chiudere,
+  // pinch nativa per zoomare.
   function Lightbox() {
     let idx = null;
 
-    const closeBtn = h('button', { class: 'close', type: 'button', 'aria-label': 'Chiudi' });
-    const fsBtn = h('button', { class: 'fs-btn', type: 'button', 'aria-label': 'Schermo intero' });
-    fsBtn.innerHTML =
-      '<svg viewBox="0 0 24 24" aria-hidden="true">' +
-        '<path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/>' +
-      '</svg>';
     const stageImg = h('img', { src: '', alt: '' });
     // Placeholder per opere in lavorazione (nessun file disponibile).
     const stagePlaceholder = h('div', { class: 'stage-placeholder' });
@@ -425,35 +423,22 @@
     const yearV   = h('div', { class: 'v' });
     const sizeV   = h('div', { class: 'v' });
     const matsV   = h('div', { class: 'v' });
-    const counter = h('span', { class: 'counter' });
-    // Sezioni opzionali "come interagire" e "descrizione": entrambe popolate
-    // dal campo corrispondente sull'opera. Quando assente, l'intero wrap
-    // viene nascosto via display:none in paint().
+    // Sezione "come interagire": presente solo per opere con `interaction`.
     const interactionTitle = h('div', { class: 'interaction-eyebrow' }, '↳ Come interagire');
     const interactionBody  = h('p', { class: 'interaction-body' });
     const interactionWrap  = h('div', { class: 'interaction' }, interactionTitle, interactionBody);
 
-    const descriptionTitle = h('div', { class: 'description-eyebrow' }, '↳ Descrizione');
-    const descriptionBody  = h('p', { class: 'description-body' });
-    const descriptionWrap  = h('div', { class: 'description' }, descriptionTitle, descriptionBody);
-
-    const prevBtn = h('button', { class: 'prev', type: 'button', 'aria-label': 'Opera precedente' }, '← Prec');
-    const nextBtn = h('button', { class: 'next', type: 'button', 'aria-label': 'Opera successiva' }, 'Succ →');
-
     // Ordine voluto: prima cosa che leggi è "come interagire" (l'utente è davanti
-    // al quadro e deve sapere cosa fare), poi la "descrizione" (cosa stai
-    // guardando, riferimento filosofico), poi le specifiche tecniche.
+    // al quadro e deve sapere cosa fare), poi le specifiche tecniche.
     const info = h('aside', { class: 'info' },
       eyebrow,
       title,
       interactionWrap,
-      descriptionWrap,
       h('div', { class: 'specs' },
         h('div', { class: 'row' }, h('div', { class: 'k' }, 'Anno'), yearV),
         h('div', { class: 'row' }, h('div', { class: 'k' }, 'Formato'), sizeV),
         h('div', { class: 'row' }, h('div', { class: 'k' }, 'Tecnica'), matsV)
-      ),
-      h('div', { class: 'nav-btns' }, prevBtn, counter, nextBtn)
+      )
     );
 
     // Dialog ARIA: aria-labelledby punta al titolo dell'opera per gli screen reader.
@@ -464,7 +449,7 @@
       'aria-modal': 'true',
       'aria-labelledby': 'lightbox-title',
       'aria-hidden': 'true'
-    }, closeBtn, fsBtn, stage, info);
+    }, stage, info);
 
     function paint() {
       if (idx == null) return;
@@ -480,60 +465,47 @@
         stageImg.style.display = '';
         stagePlaceholder.style.display = 'none';
       }
-      eyebrow.textContent = `No. ${pad3(idx + 1)}`;
+      eyebrow.textContent = `No. ${pad3(idx + 1)} · ${pad2(idx + 1)} / ${WORKS.length}`;
       title.textContent = w.title;
       yearV.textContent = w.year;
       sizeV.textContent = w.size + (w.size === '—' ? '' : ' cm');
       matsV.textContent = w.materials;
-      counter.innerHTML = `<b>${pad2(idx + 1)}</b> / ${WORKS.length}`;
-      // Sezioni opzionali: mostrate solo per opere con i rispettivi campi.
+      // Sezione interazione: mostrata solo per opere con campo `interaction`.
       if (w.interaction) {
         interactionBody.textContent = w.interaction;
         interactionWrap.style.display = '';
       } else {
         interactionWrap.style.display = 'none';
       }
-      if (w.description) {
-        descriptionBody.textContent = w.description;
-        descriptionWrap.style.display = '';
-      } else {
-        descriptionWrap.style.display = 'none';
-      }
     }
 
-    // Per il focus trap: ricordiamo l'elemento focused prima dell'apertura
-    // e lo ripristiniamo alla chiusura (così la tastiera torna alla tile cliccata).
+    // Root focusable per ricevere la tastiera senza un pulsante visibile.
+    root.tabIndex = -1;
+
     let lastFocused = null;
     function open(i) {
       idx = i;
       paint();
       lastFocused = document.activeElement;
+      resetTransform();
       root.classList.add('open');
       root.setAttribute('aria-hidden', 'false');
       document.body.style.overflow = 'hidden';
-      // Aggiorna l'URL: l'hash diventa l'id dell'opera così la pagina è linkabile (QR).
-      // replaceState evita di accumulare entry nella history per ogni prev/next.
       try { history.replaceState(null, '', '#' + WORKS[i].id); } catch (_) {}
-      // sposta il focus sul pulsante chiudi: prima cosa che lo screen reader annuncia
-      setTimeout(() => closeBtn.focus(), 0);
+      setTimeout(() => root.focus({ preventScroll: true }), 0);
     }
     function close() {
       idx = null;
       root.classList.remove('open');
-      root.classList.remove('fullscreen');
       root.setAttribute('aria-hidden', 'true');
       resetZoom();
+      resetTransform();
       document.body.style.overflow = '';
-      // Rimuove l'hash dall'URL alla chiusura.
       try { history.replaceState(null, '', location.pathname + location.search); } catch (_) {}
       if (lastFocused && typeof lastFocused.focus === 'function') {
         lastFocused.focus();
         lastFocused = null;
       }
-    }
-    function toggleFullscreen() {
-      root.classList.toggle('fullscreen');
-      resetZoom();
     }
     function prev() {
       if (idx == null) return;
@@ -548,7 +520,56 @@
       resetZoom();
     }
 
-    // ── ZOOM + PAN (attivo in fullscreen) ────────────────────────
+    // ── REEL: animazioni dell'intero lightbox ────────────────────
+    // Stato delle trasformazioni "macro" (sulla root, non sull'immagine):
+    // usate per swipe verticale (navigazione) e swipe destra (chiusura).
+    const NAV_MS = 280;
+    const SPRING = 'cubic-bezier(.22, .8, .22, 1)';
+    function resetTransform() {
+      root.style.transition = 'none';
+      root.style.transform = '';
+      root.style.opacity = '';
+      // Forza reflow per far ripartire transizioni successive da uno stato pulito.
+      void root.offsetHeight;
+      root.style.transition = '';
+    }
+    // dir = +1 = swipe verso l'alto = opera successiva entra dal basso.
+    // dir = -1 = swipe verso il basso = opera precedente entra dall'alto.
+    function animateNav(dir) {
+      if (navBusy) return;
+      navBusy = true;
+      const OUT = `translate3d(0, ${-dir * 100}vh, 0)`;
+      root.style.transition = `transform ${NAV_MS}ms ${SPRING}`;
+      root.style.transform = OUT;
+      setTimeout(() => {
+        // Cambia opera e riposiziona al lato opposto (entry).
+        if (dir > 0) next(); else prev();
+        root.style.transition = 'none';
+        root.style.transform = `translate3d(0, ${dir * 100}vh, 0)`;
+        void root.offsetHeight;
+        root.style.transition = `transform ${NAV_MS}ms ${SPRING}`;
+        root.style.transform = 'translate3d(0, 0, 0)';
+        setTimeout(() => {
+          root.style.transition = '';
+          root.style.transform = '';
+          navBusy = false;
+        }, NAV_MS + 10);
+      }, NAV_MS + 10);
+    }
+    function animateClose() {
+      if (navBusy) return;
+      navBusy = true;
+      root.style.transition = `transform ${NAV_MS}ms ${SPRING}, opacity ${NAV_MS}ms ease`;
+      root.style.transform = 'translate3d(100vw, 0, 0)';
+      root.style.opacity = '0';
+      setTimeout(() => {
+        navBusy = false;
+        close();
+      }, NAV_MS + 10);
+    }
+    let navBusy = false;
+
+    // ── ZOOM + PAN (sempre attivo, niente più fullscreen) ────────
     let scale = 1, tx = 0, ty = 0;
     const MIN_SCALE = 1, MAX_SCALE = 5;
 
@@ -573,7 +594,6 @@
       tx = Math.max(-maxX, Math.min(maxX, tx));
       ty = Math.max(-maxY, Math.min(maxY, ty));
     }
-    // Zoom centrato sul punto (px,py) in coord. di schermo
     function zoomAt(newScale, px, py, animate) {
       newScale = Math.max(MIN_SCALE, Math.min(MAX_SCALE, newScale));
       if (Math.abs(newScale - scale) < 0.001) return;
@@ -588,25 +608,57 @@
       applyTransform(animate);
     }
 
-    // Pinch / pan (touch)
+    // ── TOUCH GESTURES ──────────────────────────────────────────
+    //   2 dita → pinch zoom (sempre attivo, anche da non-zoom)
+    //   1 dito quando zoomato → pan sull'immagine
+    //   1 dito quando NON zoomato → gesto di navigazione (swipe up/down/right)
     let pinchD = 0, pinchM = null;
-    let panX = 0, panY = 0, panActive = false;
+    let panActive = false, panX = 0, panY = 0;
+    let navActive = false, navStartX = 0, navStartY = 0, navStartEdge = false;
+    let navDx = 0, navDy = 0;
+    let lockedAxis = null; // 'h' | 'v' | null — dopo i primi ~10px, blocca l'asse
+
+    function startNav(t) {
+      navActive = true;
+      navStartX = t.clientX;
+      navStartY = t.clientY;
+      navDx = navDy = 0;
+      lockedAxis = null;
+      // edge-swipe: come Instagram, il gesto di "back" funziona se parte
+      // dai primi ~30px da sinistra. Più libero per gli altri assi.
+      navStartEdge = t.clientX < 30;
+      root.style.transition = 'none';
+    }
+    function endNav(commit) {
+      navActive = false;
+      if (!commit) {
+        // Snap-back con spring.
+        root.style.transition = `transform 0.22s ${SPRING}, opacity 0.22s ease`;
+        root.style.transform = '';
+        root.style.opacity = '';
+      }
+    }
 
     stage.addEventListener('touchstart', (e) => {
-      if (!root.classList.contains('fullscreen')) return;
+      if (navBusy) return;
       if (e.touches.length === 2) {
         const a = e.touches[0], b = e.touches[1];
         pinchD = Math.hypot(b.clientX - a.clientX, b.clientY - a.clientY);
         pinchM = { x: (a.clientX + b.clientX) / 2, y: (a.clientY + b.clientY) / 2 };
-      } else if (e.touches.length === 1 && scale > 1.001) {
-        panActive = true;
-        panX = e.touches[0].clientX;
-        panY = e.touches[0].clientY;
+        navActive = false; // pinch sovrascrive il gesto di navigazione
+      } else if (e.touches.length === 1) {
+        if (scale > 1.001) {
+          panActive = true;
+          panX = e.touches[0].clientX;
+          panY = e.touches[0].clientY;
+        } else {
+          startNav(e.touches[0]);
+        }
       }
     }, { passive: false });
 
     stage.addEventListener('touchmove', (e) => {
-      if (!root.classList.contains('fullscreen')) return;
+      if (navBusy) return;
       if (e.touches.length === 2 && pinchD > 0 && pinchM) {
         e.preventDefault();
         const a = e.touches[0], b = e.touches[1];
@@ -614,7 +666,6 @@
         const m = { x: (a.clientX + b.clientX) / 2, y: (a.clientY + b.clientY) / 2 };
         const sRatio  = d / pinchD;
         const newScale = Math.max(MIN_SCALE, Math.min(MAX_SCALE, scale * sRatio));
-        // Zoom verso il midpoint corrente
         const r = stage.getBoundingClientRect();
         const dx = m.x - r.left - r.width  / 2;
         const dy = m.y - r.top  - r.height / 2;
@@ -622,7 +673,6 @@
         tx = dx - (dx - tx) * ratio;
         ty = dy - (dy - ty) * ratio;
         scale = newScale;
-        // Pan dovuto allo spostamento del midpoint tra le due dita
         tx += m.x - pinchM.x;
         ty += m.y - pinchM.y;
         clampPan();
@@ -638,19 +688,56 @@
         panY = t.clientY;
         clampPan();
         applyTransform(false);
+      } else if (navActive && e.touches.length === 1) {
+        const t = e.touches[0];
+        navDx = t.clientX - navStartX;
+        navDy = t.clientY - navStartY;
+        // Decide asse dopo una soglia di ~10px.
+        if (!lockedAxis && Math.hypot(navDx, navDy) > 10) {
+          lockedAxis = Math.abs(navDx) > Math.abs(navDy) ? 'h' : 'v';
+        }
+        if (lockedAxis === 'h') {
+          // Solo swipe verso destra (back): dx >= 0. Sinistra: niente.
+          if (navDx < 0) { navDx = 0; }
+          // Edge-swipe richiesto come Instagram (back). Se non parte dal bordo,
+          // il gesto orizzontale non chiude — facciamo solo una piccola elastica.
+          const k = navStartEdge ? 1 : 0.25;
+          e.preventDefault();
+          root.style.transform = `translate3d(${navDx * k}px, 0, 0)`;
+          root.style.opacity = String(Math.max(0.4, 1 - (navDx * k) / window.innerWidth));
+        } else if (lockedAxis === 'v') {
+          e.preventDefault();
+          root.style.transform = `translate3d(0, ${navDy}px, 0)`;
+        }
       }
     }, { passive: false });
 
     stage.addEventListener('touchend', (e) => {
       if (e.touches.length < 2) { pinchD = 0; pinchM = null; }
       if (e.touches.length === 0) panActive = false;
+      if (!navActive) return;
+      if (navBusy) { endNav(false); return; }
+      const VH = window.innerHeight;
+      const VW = window.innerWidth;
+      if (lockedAxis === 'h' && navStartEdge && navDx > VW * 0.25) {
+        // Swipe destra da bordo sinistro → chiudi.
+        animateClose();
+        navActive = false;
+        return;
+      }
+      if (lockedAxis === 'v' && Math.abs(navDy) > VH * 0.18) {
+        animateNav(navDy < 0 ? +1 : -1);
+        navActive = false;
+        return;
+      }
+      endNav(false);
     }, { passive: true });
 
-    // Doppio tap → toggle 1x ↔ 2x verso il tap
+    // Doppio tap → toggle 1x ↔ 2x verso il tap (mantiene lo zoom rapido).
     let lastTap = 0;
     stage.addEventListener('touchend', (e) => {
-      if (!root.classList.contains('fullscreen')) return;
       if (e.changedTouches.length !== 1) return;
+      if (lockedAxis) return; // se è stato un gesto, no doppio tap
       const now = performance.now();
       if (now - lastTap < 300) {
         const t = e.changedTouches[0];
@@ -660,18 +747,31 @@
       lastTap = now;
     }, { passive: true });
 
-    // Wheel su desktop → zoom verso il cursore
+    // ── DESKTOP ─────────────────────────────────────────────────
+    // Wheel sull'immagine: con ctrlKey/metaKey (pinch del trackpad) zooma;
+    // wheel normale verticale = navigazione opera ↑/↓.
+    let wheelAccum = 0;
+    let wheelTimer = null;
     stage.addEventListener('wheel', (e) => {
-      if (!root.classList.contains('fullscreen')) return;
+      if (navBusy) { e.preventDefault(); return; }
+      if (e.ctrlKey || e.metaKey) {
+        e.preventDefault();
+        const factor = e.deltaY < 0 ? 1.15 : 1 / 1.15;
+        zoomAt(scale * factor, e.clientX, e.clientY, false);
+        return;
+      }
+      if (scale > 1.001) return; // mentre zoomato, lascia stare
       e.preventDefault();
-      const factor = e.deltaY < 0 ? 1.15 : 1 / 1.15;
-      zoomAt(scale * factor, e.clientX, e.clientY, false);
+      wheelAccum += e.deltaY;
+      clearTimeout(wheelTimer);
+      wheelTimer = setTimeout(() => { wheelAccum = 0; }, 180);
+      if (wheelAccum > 60) { wheelAccum = 0; animateNav(+1); }
+      else if (wheelAccum < -60) { wheelAccum = 0; animateNav(-1); }
     }, { passive: false });
 
-    // Mouse drag (desktop) quando zoomato
+    // Mouse drag desktop: pan quando zoomato.
     let mouseDragging = false, mouseStartX = 0, mouseStartY = 0;
     stage.addEventListener('mousedown', (e) => {
-      if (!root.classList.contains('fullscreen')) return;
       if (scale <= 1.001) return;
       mouseDragging = true;
       mouseStartX = e.clientX;
@@ -689,42 +789,23 @@
     });
     window.addEventListener('mouseup', () => { mouseDragging = false; });
 
-    // Doppio click desktop → toggle
+    // Doppio click desktop → toggle zoom.
     stage.addEventListener('dblclick', (e) => {
-      if (!root.classList.contains('fullscreen')) return;
       if (scale > 1.001) zoomAt(1, e.clientX, e.clientY, true);
       else                zoomAt(2, e.clientX, e.clientY, true);
     });
 
-    closeBtn.addEventListener('click', close);
-    fsBtn.addEventListener('click', toggleFullscreen);
-    prevBtn.addEventListener('click', prev);
-    nextBtn.addEventListener('click', next);
+    // Clic sul backdrop (fuori da stage + info) chiude.
     root.addEventListener('click', e => {
-      // In fullscreen niente click-to-close: l'unica via d'uscita è il pulsante,
-      // così l'utente può zoomare/pannare l'immagine senza chiudere senza volerlo.
-      if (root.classList.contains('fullscreen')) return;
-      if (e.target.classList.contains('lightbox') || e.target.classList.contains('stage')) close();
+      if (e.target === root) close();
     });
+
+    // Tastiera: Esc chiude, frecce navigano.
     window.addEventListener('keydown', e => {
       if (!root.classList.contains('open')) return;
-      if (e.key === 'Escape') {
-        if (root.classList.contains('fullscreen')) toggleFullscreen();
-        else close();
-      }
-      if (e.key === 'ArrowLeft')   prev();
-      if (e.key === 'ArrowRight')  next();
-      if (e.key === 'f' || e.key === 'F') toggleFullscreen();
-      // Focus trap: ciclo Tab solo tra i controlli del dialog.
-      if (e.key === 'Tab') {
-        const focusables = [closeBtn, fsBtn, prevBtn, nextBtn].filter(el => !el.disabled);
-        if (focusables.length === 0) return;
-        const idx = focusables.indexOf(document.activeElement);
-        e.preventDefault();
-        const dir = e.shiftKey ? -1 : 1;
-        const next = focusables[(Math.max(0, idx) + dir + focusables.length) % focusables.length];
-        next.focus();
-      }
+      if (e.key === 'Escape') { e.preventDefault(); animateClose(); }
+      else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp')   { e.preventDefault(); animateNav(-1); }
+      else if (e.key === 'ArrowRight' || e.key === 'ArrowDown') { e.preventDefault(); animateNav(+1); }
     });
 
     return { root, open };
