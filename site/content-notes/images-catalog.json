@@ -1,0 +1,174 @@
+{
+  "generatedAt": "2026-07-20",
+  "note": "Catalogo immagini brama v2. Dimensioni rilevate con sips. isDrawingTerritory=true se la pagina contiene disegni a pennarello bianco/nero abbastanza ampi da essere ritagliati come territori di disegno (texture/sfondi) per la homepage-viaggio.",
+  "works": [
+    {
+      "slug": "vertigine",
+      "image": { "file": "site/public/images/Vertigine.jpeg", "width": 2427, "height": 1612 },
+      "thumbs": [
+        { "file": "site/public/images/thumbs/Vertigine-600.jpg", "width": 600, "height": 398 },
+        { "file": "site/public/images/thumbs/Vertigine-1200.jpg", "width": 1200, "height": 797 }
+      ]
+    },
+    {
+      "slug": "abbandono",
+      "image": { "file": "site/public/images/Abbandono.jpg", "width": 785, "height": 1600 },
+      "thumbs": [
+        { "file": "site/public/images/thumbs/Abbandono-600.jpg", "width": 600, "height": 1223 }
+      ]
+    },
+    {
+      "slug": "fuga",
+      "image": { "file": "site/public/images/Escape.jpg", "width": 1080, "height": 1080 },
+      "thumbs": [
+        { "file": "site/public/images/thumbs/Escape-600.jpg", "width": 600, "height": 600 }
+      ]
+    },
+    {
+      "slug": "ti-devo-lasciare",
+      "image": { "file": "site/public/images/Ti_Devo_Lasciare.jpeg", "width": 3058, "height": 1823 },
+      "thumbs": [
+        { "file": "site/public/images/thumbs/Ti_Devo_Lasciare-600.jpg", "width": 600, "height": 357 },
+        { "file": "site/public/images/thumbs/Ti_Devo_Lasciare-1200.jpg", "width": 1200, "height": 715 }
+      ]
+    },
+    {
+      "slug": "pugno-nel-tempo",
+      "image": { "file": "site/public/images/Pugno_Nel_Tempo.jpeg", "width": 2830, "height": 2838 },
+      "thumbs": [
+        { "file": "site/public/images/thumbs/Pugno_Nel_Tempo-600.jpg", "width": 600, "height": 601 },
+        { "file": "site/public/images/thumbs/Pugno_Nel_Tempo-1200.jpg", "width": 1200, "height": 1203 }
+      ]
+    },
+    {
+      "slug": "depressione",
+      "image": { "file": "site/public/images/Depressione.jpeg", "width": 3586, "height": 2549 },
+      "thumbs": [
+        { "file": "site/public/images/thumbs/Depressione-600.jpg", "width": 600, "height": 426 },
+        { "file": "site/public/images/thumbs/Depressione-1200.jpg", "width": 1200, "height": 853 }
+      ]
+    },
+    {
+      "slug": "la-casa-di-mike",
+      "image": { "file": "site/public/images/La_Casa_Di_Mike.jpeg", "width": 1037, "height": 1256 },
+      "thumbs": [
+        { "file": "site/public/images/thumbs/La_Casa_Di_Mike-600.jpg", "width": 600, "height": 726 }
+      ]
+    },
+    {
+      "slug": "lu",
+      "image": { "file": "site/public/images/Lu.jpeg", "width": 1409, "height": 1406 },
+      "thumbs": [
+        { "file": "site/public/images/thumbs/Lu-600.jpg", "width": 600, "height": 598 },
+        { "file": "site/public/images/thumbs/Lu-1200.jpg", "width": 1200, "height": 1197 }
+      ]
+    }
+  ],
+  "otherImages": [
+    { "file": "site/public/images/favicon-32.png", "width": 32, "height": 16 },
+    { "file": "site/public/images/favicon-192.png", "width": 192, "height": 96 },
+    { "file": "site/public/images/og-image.jpg", "width": 1200, "height": 630 },
+    { "file": "site/public/images/signature.png", "width": 1024, "height": 512 }
+  ],
+  "portfolioPages": [
+    {
+      "file": "site/public/portfolio/page-01.jpg",
+      "width": 2304,
+      "height": 1296,
+      "content": "Copertina: titolo PORTFOLIO, BRAMA / ARTISTA su fondo bianco con disegno a pennarello di una creatura alata (uccello/drago geometrico); meta' destra occupata dall'opera Vertigine (vortice blu con inserti rossi).",
+      "isDrawingTerritory": true
+    },
+    {
+      "file": "site/public/portfolio/page-03.jpg",
+      "width": 2304,
+      "height": 1296,
+      "content": "Indice del portfolio (Core Collection, Sezione tecnica, Archive Collection, Contatti) con foto dell'opera targata M.S.; l'intero sfondo e' una filigrana chiara di un grande disegno a pennarello (macchine, tubi, frammenti geometrici).",
+      "isDrawingTerritory": true
+    },
+    {
+      "file": "site/public/portfolio/page-04.jpg",
+      "width": 2304,
+      "height": 1296,
+      "content": "Scheda opera VERTIGINE (Milano 2025, 150x100; acrilici, pennarello, resina, vetro, carta, fibra ottica, acciaio): vortice blu con farfalla al centro piu' 4 dettagli; piccolo disegno a pennarello a forma di pugnale/imbarcazione sotto il titolo.",
+      "isDrawingTerritory": false
+    },
+    {
+      "file": "site/public/portfolio/page-05.jpg",
+      "width": 2304,
+      "height": 1296,
+      "content": "Scheda opera ABBANDONO (Roma 2025, 80x150; acrilici, pennarello, resina, ossidiana, fibra ottica): tela verticale blu/nera con esplosione centrale e 4 dettagli; piccola figura umana a pennarello in basso a sinistra.",
+      "isDrawingTerritory": false
+    },
+    {
+      "file": "site/public/portfolio/page-06.jpg",
+      "width": 2304,
+      "height": 1296,
+      "content": "Scheda opera FUGGIRE (Roma 2024, 50x50; acrilici, pennarello): quadro con isola di disegno a pennarello b/n (occhio, mani, geometrie, croci) su fondo acrilico rosso-nero; in basso a sinistra grande disegno a pennarello con figura alata, lettere ESC e reticolo di linee.",
+      "isDrawingTerritory": true
+    },
+    {
+      "file": "site/public/portfolio/page-07.jpg",
+      "width": 2304,
+      "height": 1296,
+      "content": "Scheda opera PUGNO NEL TEMPO (Milano 2023, 150x150; acrilici, resina, gesso): dipinto materico nero/blu con nucleo chiaro e piccolo elemento origami al centro; in basso a sinistra disegno a pennarello medio-grande (lune cornute, triangoli, pattern b/n).",
+      "isDrawingTerritory": true
+    },
+    {
+      "file": "site/public/portfolio/page-08.jpg",
+      "width": 2304,
+      "height": 1296,
+      "content": "Scheda opera DEPRESSIONE (Rio de Janeiro 2023, 120x100; acrilici, resina, gesso, ossidiana, oro): rilievo blu con pieghe e due mani nere attorno a un centro bianco, piu' 3 dettagli; a sinistra disegno a pennarello di un occhio con sopracciglio (motivo iconico riutilizzabile, ma piccolo).",
+      "isDrawingTerritory": false
+    },
+    {
+      "file": "site/public/portfolio/page-09.jpg",
+      "width": 2304,
+      "height": 1296,
+      "content": "Scheda opera LASCIARTI ANDARE (Milano 2023, 100x70; acrilici, resina, gesso, oro): dipinto scuro con mano nera centrale, oro e fiammate rosse/verdi; piccoli disegni a pennarello a mezzaluna negli angoli.",
+      "isDrawingTerritory": false
+    },
+    {
+      "file": "site/public/portfolio/page-10.jpg",
+      "width": 2304,
+      "height": 1296,
+      "content": "Sezione TECNICA & MATERIALI: foto di studio (resine, tela blu in lavorazione, telaio con fibra ottica, stampante 3D) e testi su acrilici, disegno a pennarello, resina epossidica, fibra ottica, stampa 3D, altri materiali; filigrana chiara di disegni a pennarello sullo sfondo ma coperta da foto e testo.",
+      "isDrawingTerritory": false
+    },
+    {
+      "file": "site/public/portfolio/page-11.jpg",
+      "width": 2304,
+      "height": 1296,
+      "content": "ARCHIVIO EMOZIONI (primo progetto, 2021, acrilico su tela): tre tele astratte a colori - Sollievo, Speranza, Felicita'. Nessun disegno a pennarello.",
+      "isDrawingTerritory": false
+    },
+    {
+      "file": "site/public/portfolio/page-12.jpg",
+      "width": 2304,
+      "height": 1296,
+      "content": "ARCHIVIO EMOZIONI: sette tele astratte - Vergogna, Risentimento, Paura, Terrore, Rabbia, Invidia, Solitudine. Dipinti a colori/materici, niente pennarello b/n.",
+      "isDrawingTerritory": false
+    },
+    {
+      "file": "site/public/portfolio/page-13.jpg",
+      "width": 2304,
+      "height": 1296,
+      "content": "ARCHIVIO EMOZIONI: sette tele astratte - Gratitudine, Orgoglio, Compassione, Esperienza Estetica, Anticipazione, Amore, Confort. Dipinti a colori, niente pennarello b/n.",
+      "isDrawingTerritory": false
+    },
+    {
+      "file": "site/public/portfolio/page-14.jpg",
+      "width": 2304,
+      "height": 1296,
+      "content": "ARCHIVIO EMOZIONI: sette tele astratte - Senso di colpa, Frustrazione, Ansia, Vergogna, Rimorso, Gelosia, Tristezza. Frustrazione e' un labirinto b/n dipinto (pattern interessante ma non pennarello su bianco).",
+      "isDrawingTerritory": false
+    },
+    {
+      "file": "site/public/portfolio/page-16.jpg",
+      "width": 2304,
+      "height": 1296,
+      "content": "CONTATTI (ric.bramani@gmail.com, +39 3472209582, www.braminator.com) con grande disegno a pennarello b/n a tutta altezza: figura coronata affacciata a una finestra che regge una coperta a scacchi, bussola, vegetazione stilizzata. Ottimo territorio di disegno.",
+      "isDrawingTerritory": true
+    }
+  ],
+  "missingPages": ["page-02", "page-15"]
+}

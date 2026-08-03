@@ -1,0 +1,823 @@
+/* ============================================================
+   IL VIAGGIO — homepage definitiva
+   Teatro di carta: scene a schermo pieno alternate chiaro/scuro
+   (rif. emergenceprojects.com), asset a inchiostro del Ciclo A
+   tinti via mask CSS (il colore lo dà currentColor, mai il file),
+   opere che si ricompongono su campo blu notte (motore lab/p1b).
+
+   Registro dei colori:
+   - scena scura  → asset azzurro #4a93e6
+   - scena chiara → asset inchiostro #0a0a0a
+   - rosso #c8281c: massimo un accento per scena
+   ============================================================ */
+
+* { box-sizing: border-box; }
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+}
+
+html { scrollbar-color: #5d76a3 #dfe6f2; }
+html.lenis,
+html.lenis body { height: auto; }
+.lenis.lenis-smooth { scroll-behavior: auto !important; }
+
+body {
+  background: #e8ecf4; /* nessun flash prima del JS */
+  overflow-x: clip;
+  font-family: 'Inter Tight', system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+body.menu-open { overflow: hidden; }
+
+.vg {
+  --night: #050a1a;
+  --night-2: #0a1430;
+  --azure: #4a93e6;
+  --azure-soft: #9bb1d6;
+  --red: #c8281c;
+  --ink0: #0a0a0a;
+  --paper: #e8ecf4;
+  --paper-2: #dfe6f2;
+  --ease: cubic-bezier(0.32, 0.72, 0, 1);
+
+  position: relative;
+  background: var(--paper); /* in journey lo scrubba GSAP lungo i respiri */
+  min-height: 100vh;
+  min-height: 100svh;
+}
+
+/* solo screen reader */
+.vg-sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* ---------- asset a inchiostro: maschera + currentColor ---------- */
+
+.vg-ink {
+  position: absolute;
+  display: block;
+  background: currentColor;
+  -webkit-mask: var(--m) center / contain no-repeat;
+  mask: var(--m) center / contain no-repeat;
+}
+
+/* registro cromatico delle scene */
+.vg-dark { color: var(--azure); }
+.vg-light { color: var(--ink0); }
+
+/* ============================================================
+   MICRO-NAVIGAZIONE FISSA
+   blend difference: il segno è scuro su carta, chiaro su notte,
+   senza mai cambiare colore via JS.
+   ============================================================ */
+
+.vg-top {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: calc(14px + env(safe-area-inset-top)) 20px 0;
+  pointer-events: none;
+  mix-blend-mode: difference;
+  color: #e8ecf4;
+}
+
+.vg-sig-mark {
+  pointer-events: auto;
+  display: block;
+  padding: 4px;
+}
+.vg-sig-ink {
+  position: relative;
+  width: 72px;
+  height: 30px;
+  opacity: 0.92;
+}
+.vg-sig-mark:focus-visible,
+.vg-burger:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 4px;
+}
+
+.vg-burger {
+  pointer-events: auto;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 7px;
+  width: 44px;
+  height: 44px;
+  padding: 10px;
+  background: none;
+  border: 0;
+  cursor: pointer;
+  color: inherit;
+}
+.vg-burger-line {
+  display: block;
+  width: 100%;
+  height: 1.6px;
+  background: currentColor;
+  transition: transform 0.45s var(--ease), opacity 0.3s;
+}
+.vg-burger[aria-expanded='true'] .vg-burger-line:nth-child(1) {
+  transform: translateY(4.3px) rotate(45deg);
+}
+.vg-burger[aria-expanded='true'] .vg-burger-line:nth-child(2) {
+  transform: translateY(-4.3px) rotate(-45deg);
+}
+
+/* overlay menu: una stanza notte sopra il viaggio */
+.vg-menu {
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8svh;
+  background: #050a1a;
+  visibility: hidden;
+  opacity: 0;
+  transition: opacity 0.5s var(--ease), visibility 0s linear 0.5s;
+}
+body.menu-open .vg-menu {
+  visibility: visible;
+  opacity: 1;
+  transition: opacity 0.5s var(--ease);
+}
+.vg-menu-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  text-align: center;
+}
+.vg-menu-list a {
+  display: block;
+  padding: 10px 24px;
+  font-family: 'Fraunces', Georgia, serif;
+  font-weight: 300;
+  font-size: clamp(30px, 5.4svh, 44px);
+  line-height: 1.25;
+  letter-spacing: 0.01em;
+  color: #e8ecf4;
+  text-decoration: none;
+  opacity: 0;
+  transform: translateY(14px);
+  transition: color 0.3s, opacity 0.5s var(--ease), transform 0.5s var(--ease);
+}
+body.menu-open .vg-menu-list a {
+  opacity: 1;
+  transform: translateY(0);
+}
+body.menu-open .vg-menu-list li:nth-child(1) a { transition-delay: 0.06s; }
+body.menu-open .vg-menu-list li:nth-child(2) a { transition-delay: 0.11s; }
+body.menu-open .vg-menu-list li:nth-child(3) a { transition-delay: 0.16s; }
+body.menu-open .vg-menu-list li:nth-child(4) a { transition-delay: 0.21s; }
+body.menu-open .vg-menu-list li:nth-child(5) a { transition-delay: 0.26s; }
+.vg-menu-list a:hover,
+.vg-menu-list a:focus-visible { color: var(--azure); }
+.vg-menu-list a[aria-current='page'] { color: var(--azure-soft); }
+.vg-menu-list a:focus-visible {
+  outline: 2px solid var(--azure);
+  outline-offset: 4px;
+}
+.vg-menu-meta {
+  display: flex;
+  gap: 32px;
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+.vg-menu-meta a {
+  color: var(--azure-soft);
+  text-decoration: none;
+  transition: color 0.3s;
+}
+.vg-menu-meta a:hover,
+.vg-menu-meta a:focus-visible { color: #e8ecf4; }
+
+/* ============================================================
+   CAMPI E RESPIRI
+   Ogni sezione porta il suo campo in --field: dipinge da sé in
+   modalità statica/no-JS; in journey dipinge il root (scrub GSAP)
+   e le sezioni diventano trasparenti.
+   ============================================================ */
+
+.vg-sec { background: var(--field, transparent); }
+.vg.vg-journey .vg-sec { background: transparent; }
+
+.vg-fade { height: 62svh; }
+.vg-fade-s { height: 36svh; }
+/* senza journey i respiri sfumano da sé tra i campi adiacenti */
+.vg:not(.vg-journey) .vg-fade {
+  background: linear-gradient(180deg, var(--fa), var(--fb));
+}
+.vg.vg-journey .vg-fade { background: transparent; }
+
+/* ============================================================
+   GRAMMATICA DI SCENA (quinte, appesi, fregi)
+   ============================================================ */
+
+.vg-terr,
+.vg-soglia {
+  position: relative;
+  height: 100vh;
+  height: 100svh;
+  overflow: hidden;
+}
+
+/* i territori fuori schermo non vengono dipinti: le maschere a
+   inchiostro (CSS mask) si scaricano solo avvicinandosi, non al load.
+   L'altezza è fissa (100svh), quindi il layout non cambia. */
+.vg-terr {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 100svh;
+}
+
+/* fregio di filigrana: cielo della soglia (tile ripetuto, mai stirato) */
+.vg-fregio {
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: clamp(72px, 12svh, 128px);
+  opacity: 0.9;
+  -webkit-mask: var(--m) top center / auto 100% repeat-x;
+  mask: var(--m) top center / auto 100% repeat-x;
+}
+
+/* quinte laterali: tratteggio a pennarello, solo CSS */
+.vg-quinta {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 5vw;
+  background: repeating-linear-gradient(
+    64deg,
+    rgba(10, 20, 48, 0.42) 0 1.5px,
+    transparent 1.5px 10px
+  );
+}
+.vg-quinta-l { left: 0; border-right: 1.5px solid rgba(10, 20, 48, 0.4); }
+.vg-quinta-r {
+  right: 0;
+  border-left: 1.5px solid rgba(10, 20, 48, 0.4);
+  background: repeating-linear-gradient(
+    -64deg,
+    rgba(10, 20, 48, 0.42) 0 1.5px,
+    transparent 1.5px 10px
+  );
+}
+
+/* elementi appesi a fili di 1px disegnati in CSS */
+.vg-hang {
+  position: absolute;
+  top: -2svh;
+  left: var(--hx);
+  width: 0;
+}
+.vg-hang.vg-red .vg-orn { color: var(--red); }
+.vg-sway {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: max-content;
+  translate: -50% 0;
+  transform-origin: 50% 0;
+  animation: vg-swing var(--hd, 8s) ease-in-out var(--hdel, 0s) infinite alternate;
+}
+.vg-thread {
+  width: 1px;
+  height: var(--hl, 26svh);
+  background: currentColor;
+  opacity: 0.75;
+}
+.vg-orn {
+  position: relative;
+  width: var(--hs, 44px);
+  aspect-ratio: 1;
+  margin-top: -2px;
+}
+
+@keyframes vg-swing {
+  from { rotate: calc(-1 * var(--ha, 1deg)); }
+  to { rotate: var(--ha, 1deg); }
+}
+
+/* ============================================================
+   SOGLIA
+   ============================================================ */
+
+/* la cornice-finestra col protagonista: la figura coronata vi si affaccia */
+.vg-portal {
+  position: absolute;
+  left: 50%;
+  bottom: 9svh;
+  translate: -50% 0;
+  width: min(50svh, 76vw);
+  aspect-ratio: 2 / 3;
+  color: var(--ink0);
+}
+.vg-portal-frame { inset: 0; }
+.vg-portal-fig {
+  left: 50%;
+  bottom: 7%;
+  translate: -50% 0;
+  width: 60%;
+  aspect-ratio: 2 / 3;
+  opacity: 0.96;
+}
+
+/* micro-freccia disegnata */
+.vg-arrow {
+  left: 50%;
+  bottom: 3.4svh;
+  translate: -50% 0;
+  width: 34px;
+  aspect-ratio: 1;
+  color: var(--ink0);
+  opacity: 0.72;
+  animation: vg-bob 2.6s ease-in-out infinite alternate;
+}
+@keyframes vg-bob {
+  from { transform: translateY(0); }
+  to { transform: translateY(7px); }
+}
+
+/* ============================================================
+   TERRITORI (uno per opera — mai la stessa composizione)
+   ============================================================ */
+
+/* 1 · Vertigine — il risucchio: vortice lentissimo dietro il centro */
+.vg-vortice {
+  left: 50%;
+  top: 50%;
+  translate: -50% -50%;
+  width: min(132svh, 140vw);
+  aspect-ratio: 1;
+  opacity: 0.5;
+  animation: vg-spin 70s linear infinite;
+}
+.vg-vort-core {
+  left: 50%;
+  top: 50%;
+  translate: -50% -50%;
+  width: 26px;
+  aspect-ratio: 1;
+  color: var(--red); /* unico rosso della scena */
+}
+@keyframes vg-spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* 2 · Abbandono — il vuoto verticale: la figura sola in basso a sinistra */
+.vg-t-abbandono { color: #6e88b8; } /* più spenta del solito azzurro: è il buio maggiore */
+.vg-abb-fig {
+  left: 12%;
+  bottom: 6svh;
+  width: min(19svh, 30vw);
+  aspect-ratio: 2 / 3;
+}
+
+/* 3 · Fuggire — la carta ferita: reticolo da destra, figura in fuga a sinistra */
+.vg-fuga-ret {
+  right: -16vw;
+  top: 6svh;
+  width: min(96svh, 62vw);
+  aspect-ratio: 3 / 2;
+  transform: rotate(6deg);
+  opacity: 0.92;
+}
+.vg-fuga-fig {
+  left: -7vw;
+  bottom: 14svh;
+  width: min(46svh, 52vw);
+  aspect-ratio: 1;
+}
+
+/* 4 · Lasciarti andare — la mano aperta al centro-basso, scintille che salgono */
+.vg-mano {
+  left: 50%;
+  bottom: 3svh;
+  translate: -50% 0;
+  width: min(58svh, 76vw);
+  aspect-ratio: 1;
+}
+.vg-spark { aspect-ratio: 1; opacity: 0.85; }
+.vg-spark-a { left: 32%; top: 24svh; width: 22px; }
+.vg-spark-b { left: 64%; top: 15svh; width: 14px; }
+
+/* 5 · Pugno nel tempo — la lama-pendolo appesa, lo stemma caduto a terra */
+.vg-lama-hang .vg-orn {
+  width: min(360px, 62vw);
+  aspect-ratio: 3 / 2;
+  margin-top: -8px;
+}
+.vg-pugno-emb {
+  right: 12%;
+  bottom: 5.4svh;
+  width: min(15svh, 120px);
+  aspect-ratio: 1;
+}
+.vg-emb-shadow {
+  position: absolute;
+  right: 12%;
+  bottom: 4svh;
+  width: min(15svh, 120px);
+  height: 2.6svh;
+  background: radial-gradient(50% 50% at 50% 50%, rgba(0, 0, 0, 0.5), transparent 72%);
+  filter: blur(2px);
+}
+
+/* 6 · Depressione — l'occhio enorme che affiora dal margine inferiore */
+.vg-occhio {
+  left: 50%;
+  bottom: 0;
+  translate: -50% 52%;
+  width: min(150svh, 135vw);
+  aspect-ratio: 3 / 2;
+  opacity: 0.85;
+}
+
+/* 7 · La casa di Mike — pavimento a scacchi in prospettiva, casetta-giocattolo */
+.vg-floor3d {
+  position: absolute;
+  left: -18vw;
+  right: -18vw;
+  bottom: 0;
+  height: 34svh;
+  overflow: hidden;
+}
+.vg-scacchi {
+  position: absolute;
+  inset: -4% 0 0;
+  transform: perspective(700px) rotateX(56deg);
+  transform-origin: 50% 100%;
+  opacity: 0.85;
+  -webkit-mask: var(--m) top center / 150px repeat;
+  mask: var(--m) top center / 150px repeat;
+}
+/* il bordo alto del pavimento si dissolve nel campo della scena */
+.vg-floor3d::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, var(--field) 0%, transparent 46%);
+}
+.vg-casa {
+  right: 22%;
+  bottom: 13svh;
+  width: min(30svh, 40vw);
+  aspect-ratio: 1;
+}
+.vg-casa-shadow {
+  position: absolute;
+  right: 22%;
+  bottom: 11.6svh;
+  width: min(30svh, 40vw);
+  height: 3svh;
+  background: radial-gradient(50% 50% at 50% 50%, rgba(10, 20, 48, 0.22), transparent 72%);
+  filter: blur(2px);
+}
+
+/* 8 · Lu — il piccolo: una mezzaluna appesa e tanto respiro */
+.vg-luna-hang .vg-orn { opacity: 0.94; }
+
+/* ============================================================
+   OPERE · campo blu notte, ricomposizione a scrub
+   ============================================================ */
+
+.vg-opera {
+  position: relative;
+  height: 100vh;
+  height: 100svh;
+  display: grid;
+  place-items: center;
+}
+/* alone azzurro appena percettibile dietro l'opera */
+.vg-opera::before {
+  content: '';
+  position: absolute;
+  inset: 8% 0;
+  background: radial-gradient(closest-side at 50% 50%, rgba(74, 147, 230, 0.09), transparent 72%);
+  pointer-events: none;
+}
+
+.vg-opera-link {
+  display: block;
+  width: fit-content;
+  border-radius: 2px;
+}
+.vg-opera-link:focus-visible {
+  outline: 2px solid var(--azure);
+  outline-offset: 10px;
+}
+
+.vg-frame {
+  position: relative;
+  display: block;
+  /* il telaio riempie il campo lasciando aria alla didascalia */
+  width: min(86vw, calc(74svh * var(--arf, 1)));
+  box-shadow: 0 36px 110px rgba(0, 0, 0, 0.55);
+}
+
+.vg-art {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+/* canvas della ricomposizione: più grande del telaio (aria attorno).
+   NB: canvas è replaced — servono width/height espliciti, non inset. */
+.vg-scatter {
+  display: none;
+  position: absolute;
+  pointer-events: none;
+  z-index: 2;
+  opacity: 1;
+  transition: opacity 0.5s var(--ease);
+}
+.vg-p-shards .vg-scatter { left: -28%; top: -44%; width: 156%; height: 164%; }
+.vg-p-slabs .vg-scatter { left: -58%; top: -14%; width: 216%; height: 122%; }
+
+.vg-journey .vg-scatter { display: block; }
+.vg-journey .vg-art { opacity: 0; transition: opacity 0.45s var(--ease); }
+.vg-journey .vg-opera.is-composed .vg-art { opacity: 1; }
+.vg-opera.is-composed .vg-scatter { opacity: 0; }
+
+/* fallback senza WebGL2: opera già composta, niente canvas, didascalie visibili */
+.vg-nogl .vg-scatter { display: none !important; }
+.vg-nogl .vg-art { opacity: 1 !important; }
+.vg-nogl .vg-opera .vg-cap {
+  opacity: 1;
+  transform: translate(-50%, 0);
+}
+
+/* ---------- didascalie: SOLO titolo+anno e la riga "dal vivo" ----------
+   Affiorano a ricomposizione avvenuta (is-composed); in modalità
+   statica/no-JS sono sempre visibili. */
+.vg-cap {
+  position: absolute;
+  left: 50%;
+  bottom: clamp(16px, 4svh, 42px);
+  transform: translate(-50%, 8px);
+  width: min(86vw, 560px);
+  text-align: center;
+  opacity: 0;
+  transition: opacity 0.7s var(--ease) 0.2s, transform 0.7s var(--ease) 0.2s;
+  pointer-events: none;
+}
+.vg-cap-title {
+  font-family: 'Fraunces', Georgia, serif;
+  font-weight: 300;
+  font-size: clamp(17px, 2.2vw, 21px);
+  letter-spacing: 0.02em;
+  color: #f0f4ff;
+  margin: 0 0 6px;
+}
+.vg-cap-how {
+  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-style: italic;
+  font-size: clamp(14px, 1.8vw, 16px);
+  line-height: 1.5;
+  color: var(--azure-soft);
+  margin: 0;
+}
+.vg-opera.is-composed .vg-cap,
+.vg-mech.is-composed .vg-cap,
+.vg:not(.vg-journey) .vg-cap {
+  opacity: 1;
+  transform: translate(-50%, 0);
+}
+
+/* ============================================================
+   SCENA-MECCANISMO (opera in lavorazione)
+   La clessidra ruota lentamente su sé stessa; scrollando la
+   scena passa da scura a chiara (il futuro che si apre).
+   ============================================================ */
+
+.vg-mech {
+  position: relative;
+  height: 190svh;
+  /* presentazione statica: scena chiara, inchiostro */
+  color: var(--ink0);
+}
+/* in journey la scena parte notturna (azzurro); GSAP la scalda verso l'inchiostro */
+.vg-journey .vg-mech { color: var(--azure); }
+
+.vg-mech-stage {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  height: 100svh;
+  overflow: hidden;
+  display: grid;
+  place-items: center;
+}
+.vg-mech-scene {
+  position: absolute;
+  inset: 0;
+  color: inherit;
+}
+.vg-bussola {
+  left: 10%;
+  bottom: 7svh;
+  width: min(16svh, 130px);
+  aspect-ratio: 1;
+  opacity: 0.9;
+}
+.vg-mech-link {
+  position: relative;
+  display: block;
+  width: min(38svh, 60vw);
+  aspect-ratio: 2 / 3;
+  border-radius: 2px;
+}
+.vg-mech-link:focus-visible {
+  outline: 2px solid var(--azure);
+  outline-offset: 12px;
+}
+.vg-clessidra {
+  position: absolute;
+  inset: 0;
+  animation: vg-spin 46s linear infinite;
+}
+.vg-cap-mech { color: inherit; }
+.vg-cap-mech .vg-cap-title,
+.vg-cap-mech .vg-cap-how { color: inherit; }
+.vg-cap-mech .vg-cap-how { opacity: 0.75; }
+.vg-cap-status {
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  font-size: 10px;
+  letter-spacing: 0.26em;
+  text-transform: uppercase;
+  margin: 0 0 10px;
+  opacity: 0.7;
+}
+
+/* ============================================================
+   SIGILLO · firma + due porte (Shop / Manifesto)
+   ============================================================ */
+
+.vg-sigillo {
+  position: relative;
+  min-height: 100vh;
+  min-height: 100svh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 11svh;
+  padding: 10svh 24px;
+}
+.vg-sigillo-core {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 26px;
+}
+.vg-sig-emblema {
+  position: relative;
+  width: 74px;
+  aspect-ratio: 1;
+  color: var(--red); /* l'unico asset che vive rosso di default */
+}
+.vg-firma {
+  position: relative;
+  width: min(220px, 52vw);
+  height: calc(min(220px, 52vw) * 0.5); /* signature.png è 1024×512 */
+  color: #e8ecf4;
+}
+
+.vg-porte {
+  display: flex;
+  gap: clamp(56px, 12vw, 140px);
+}
+.vg-porta {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  padding: 12px;
+  text-decoration: none;
+  color: var(--azure);
+}
+.vg-porta-emblema {
+  position: relative;
+  width: clamp(72px, 12svh, 104px);
+  aspect-ratio: 1;
+  transition: color 0.4s, transform 0.6s var(--ease);
+}
+.vg-porta-label {
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  font-size: 10px;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: var(--azure-soft);
+  transition: color 0.3s;
+}
+.vg-porta:hover .vg-porta-emblema,
+.vg-porta:focus-visible .vg-porta-emblema {
+  color: var(--red);
+  transform: translateY(-4px);
+}
+.vg-porta:hover .vg-porta-label,
+.vg-porta:focus-visible .vg-porta-label { color: #e8ecf4; }
+.vg-porta:focus-visible {
+  outline: 2px solid var(--azure);
+  outline-offset: 6px;
+}
+
+/* ---------- fps meter (?debug=1) ---------- */
+
+.vg-fps {
+  position: fixed;
+  top: 10px;
+  right: 64px;
+  z-index: 99;
+  font: 11px/1.4 ui-monospace, 'SF Mono', Menlo, monospace;
+  color: #9cc8ff;
+  background: rgba(5, 10, 26, 0.72);
+  padding: 4px 8px;
+  border-radius: 4px;
+  pointer-events: none;
+}
+
+/* ============================================================
+   MOBILE
+   ============================================================ */
+
+@media (max-width: 720px) {
+  .vg-fregio { height: 64px; }
+  .vg-quinta { width: 4vw; }
+  .vg-hang-m { display: none; }
+  .vg-orn { width: calc(var(--hs, 44px) * 0.78); }
+
+  .vg-portal { width: min(46svh, 84vw); bottom: 10svh; }
+  .vg-arrow { width: 28px; }
+
+  .vg-vortice { width: 150vw; }
+  .vg-abb-fig { left: 9%; width: min(17svh, 34vw); }
+  .vg-fuga-ret { right: -30vw; width: 96vw; top: 4svh; }
+  .vg-fuga-fig { left: -10vw; width: 62vw; bottom: 18svh; }
+  .vg-mano { width: 82vw; }
+  .vg-lama-hang .vg-orn { width: 74vw; }
+  .vg-pugno-emb, .vg-emb-shadow { right: 9%; width: min(13svh, 96px); }
+  .vg-occhio { width: 190vw; }
+  .vg-casa, .vg-casa-shadow { right: 14%; width: min(26svh, 52vw); }
+  .vg-floor3d { height: 28svh; }
+
+  .vg-frame { width: min(92vw, calc(70svh * var(--arf, 1))); }
+  .vg-p-shards .vg-scatter { left: -14%; top: -36%; width: 128%; height: 152%; }
+  .vg-p-slabs .vg-scatter { left: -40%; top: -12%; width: 180%; height: 118%; }
+
+  .vg-fade { height: 52svh; }
+  .vg-fade-s { height: 30svh; }
+
+  .vg-mech { height: 175svh; }
+  .vg-mech-link { width: min(34svh, 64vw); }
+  .vg-bussola { left: 7%; width: min(13svh, 96px); }
+
+  .vg-porte { gap: 44px; }
+  .vg-opera-link:focus-visible { outline-offset: 6px; }
+}
+
+/* ============================================================
+   REDUCED MOTION · versione statica curata
+   ============================================================ */
+
+@media (prefers-reduced-motion: reduce) {
+  .vg-sway,
+  .vg-arrow,
+  .vg-vortice,
+  .vg-clessidra { animation: none; }
+  .vg-scatter { display: none !important; }
+  .vg-art { opacity: 1 !important; }
+  .vg-burger-line,
+  .vg-menu,
+  .vg-menu-list a,
+  .vg-porta-emblema { transition: none; }
+}

@@ -1,0 +1,22 @@
+{
+  "_note": "Tariffe al cliente per opera e per zona (importi in CENTESIMI di euro, IVA incl.). Modifica QUI: è l'unica fonte. null = 'su preventivo' (non spedibile a prezzo fisso). Zone: IT (Italia), EU (lista sotto), tutto il resto = WORLD. Numeri di partenza dalla ricerca corrieri 2026 (vedi memoria brama-spedizioni): confermare i grandi/UE e Pugno nel tempo con preventivo reale.",
+  "zones": {
+    "EU": ["AT", "BE", "BG", "HR", "CY", "CZ", "DK", "EE", "FI", "FR", "DE", "GR", "HU", "IE", "LV", "LT", "LU", "MT", "NL", "PL", "PT", "RO", "SK", "SI", "ES", "SE"]
+  },
+  "tiers": {
+    "emozioni": { "label": "Emozioni (40×50)",             "IT": 1500, "EU": 3500,  "WORLD": 6000 },
+    "small":    { "label": "Opera piccola (fino a 50×70)",  "IT": 2000, "EU": 4500,  "WORLD": 9000 },
+    "medium":   { "label": "Opera media (fino a 100×70)",   "IT": 3000, "EU": 6500,  "WORLD": 12000 },
+    "large":    { "label": "Opera grande (fino a 120×100)", "IT": null, "EU": null,  "WORLD": null },
+    "xlarge":   { "label": "Opera grande (lato 150 cm)",    "IT": null, "EU": null,  "WORLD": null },
+    "oversize": { "label": "Fuori misura (150×150)",        "IT": null, "EU": null,  "WORLD": null }
+  },
+  "options": {
+    "pickup":    { "label": "Ritiro all'esposizione (The Seed, Milano)", "price": 0,     "until": "2026-09-09" },
+    "handMilan": { "label": "Consegna a mano a Milano e dintorni",        "price": 10000, "onlyZone": "IT" }
+  },
+  "insuranceNote": "Ogni spedizione viaggia assicurata per il valore dell'opera, con corriere tracciato.",
+  "quoteNote": "Per questa destinazione la spedizione è su preventivo: scrivici e ti diamo il costo esatto.",
+  "deliveryDays": { "IT": [2, 5], "EU": [4, 10], "WORLD": [7, 20] },
+  "carrier": "Corriere assicurato con tracking"
+}

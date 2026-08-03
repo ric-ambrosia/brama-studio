@@ -1,0 +1,535 @@
+---
+import Base from '../layouts/Base.astro';
+import { getCollection } from 'astro:content';
+import { SITE } from '../lib/site';
+
+// Portfolio — scroll verticale continuo. Copertina visibile subito (con freccia
+// "scorri"). Ogni opera è una sezione alta col contenuto "sticky": entra
+// assemblandosi (le componenti si muovono da direzioni diverse, variano per
+// scena), la camera zooma/scorre DENTRO il quadro, poi il tutto scorre via
+// naturalmente mentre arriva l'opera dopo — flusso continuo, mai un vuoto.
+// Ordine cronologico (dalla più vecchia alla più recente): prima "Lasciarti andare", ultima Vertigine.
+const order = ['ti-devo-lasciare', 'depressione', 'pugno-nel-tempo', 'fuga', 'abbandono', 'vertigine'];
+const works = await getCollection('works');
+const byId = Object.fromEntries(works.map((w) => [w.id, w]));
+const scenes = order.map((id) => byId[id]).filter(Boolean);
+const meta = (d) =>
+  [d.city, d.year].filter(Boolean).join(', ') + (d.size ? ` · ${d.size.w}×${d.size.h} cm` : '');
+
+// Archivio Emozioni (2021) — le 24 tele mostrate nel portfolio, in ordine.
+const emozioni = [
+  ['sollievo', 'Sollievo'], ['speranza', 'Speranza'], ['felicita', 'Felicità'],
+  ['vergogna', 'Vergogna'], ['risentimento', 'Risentimento'], ['paura', 'Paura'],
+  ['terrore', 'Terrore'], ['rabbia', 'Rabbia'], ['invidia', 'Invidia'], ['solitudine', 'Solitudine'],
+  ['gratitudine', 'Gratitudine'], ['orgoglio', 'Orgoglio'], ['compassione', 'Compassione'],
+  ['esperienza-estetica', 'Esperienza Estetica'], ['anticipazione', 'Anticipazione'], ['amore', 'Amore'], ['confort', 'Confort'],
+  ['senso-di-colpa', 'Senso di colpa'], ['frustrazione', 'Frustrazione'], ['ansia', 'Ansia'],
+  ['vergogna-2', 'Vergogna'], ['rimorso', 'Rimorso'], ['gelosia', 'Gelosia'], ['tristezza', 'Tristezza'],
+];
+const jsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'CollectionPage',
+  name: 'Portfolio · brama',
+  url: `${SITE.domain}/portfolio`,
+  description: 'Le opere della Core Collection di brama in un racconto da scorrere.',
+  isPartOf: { '@type': 'WebSite', name: 'brama', url: SITE.domain },
+};
+---
+
+<Base
+  title="Portfolio · brama"
+  description="Il portfolio di brama: le opere della Core Collection in un racconto da scorrere."
+  ogImage="/portfolio/page-01.jpg"
+  jsonLd={jsonLd}
+>
+  <Fragment slot="head">
+    <script is:inline>
+      (function () {
+        var mm = window.matchMedia;
+        if (mm('(prefers-reduced-motion: reduce)').matches || mm('(max-width: 860px)').matches) return;
+        document.documentElement.classList.add('js-anim');
+      })();
+    </script>
+  </Fragment>
+
+  <div class="pf">
+    <!-- Timeline che scorre col portfolio: tenue, quasi nello sfondo, si riempie
+         mentre scorri con una testina luminosa che scivola e pulsa (high-tech). -->
+    <div class="pf-timeline" data-pf-timeline aria-hidden="true">
+      <div class="pf-tl-line"></div>
+      <div class="pf-tl-fill" data-pf-tl-fill></div>
+      <div class="pf-tl-head" data-pf-tl-head></div>
+      <div class="pf-tl-now" data-pf-tl-now></div>
+    </div>
+
+    <!-- ══ Copertina (visibile subito) ══ -->
+    <div class="pf-cover-scene">
+      <section class="pf-cover" aria-label="Copertina">
+        <div class="pf-cover-text">
+          <h1 class="pf-title">Portfolio</h1>
+          <p class="pf-brand">brama</p>
+          <img class="pf-creature" src="/viaggio/creatura-alata.png" alt="" aria-hidden="true" />
+        </div>
+        <div class="pf-vertigine">
+          <picture>
+            <source
+              type="image/avif"
+              srcset="/images/gen/Vertigine-1200.avif 1200w, /images/gen/Vertigine-2000.avif 2000w"
+              sizes="(max-width: 760px) 100vw, 55vw"
+            />
+            <source
+              type="image/webp"
+              srcset="/images/gen/Vertigine-1200.webp 1200w, /images/gen/Vertigine-2000.webp 2000w"
+              sizes="(max-width: 760px) 100vw, 55vw"
+            />
+            <img src="/images/Vertigine.jpeg" alt="Vertigine, vortice di pennellate blu" fetchpriority="high" decoding="async" />
+          </picture>
+        </div>
+      </section>
+      <a class="pf-hint" href="#pf-first" aria-label="Scorri">
+        <span class="pf-hint-label">scorri</span>
+        <svg viewBox="0 0 24 40" aria-hidden="true">
+          <path d="M12 3 v28 M4 24 l8 9 8 -9" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
+        </svg>
+      </a>
+    </div>
+
+    <!-- Capitolo 1 · Le emozioni -->
+    <section id="pf-first" class="pf-chapter" aria-label="All’inizio c’erano solo emozioni">
+      <div class="pf-chapter-inner">
+        <h2 class="pf-chapter-big">All’inizio c’erano solo emozioni.</h2>
+        <p class="pf-chapter-small">Tecniche varie, poco ricercate. Solo tanta voglia di esprimere l’inconscio.</p>
+      </div>
+    </section>
+
+    <section class="pf-emo-gallery" aria-label="Archivio Emozioni" data-tl-year="2021">
+      <ul class="pf-emo-grid" role="list">
+        {emozioni.map(([slug, label]) => (
+          <li class="pf-emo-item">
+            <div class="pf-emo-frame">
+              <img src={`/portfolio/emozioni/${slug}.jpg`} alt={`${label}, tela dell'Archivio Emozioni`} loading="lazy" decoding="async" />
+            </div>
+            <span class="pf-emo-label">{label}</span>
+          </li>
+        ))}
+      </ul>
+    </section>
+
+    <!-- Capitolo 2 · I materiali e la luce -->
+    <section class="pf-chapter" aria-label="Poi è iniziato lo studio dei materiali e della luce">
+      <div class="pf-chapter-inner">
+        <h2 class="pf-chapter-big">Poi è iniziato lo studio dei materiali e della luce.</h2>
+        <p class="pf-chapter-small">Fibra ottica, resine, vetri; nascono le prime forme tridimensionali.</p>
+      </div>
+    </section>
+
+    <!-- ══ Opere ══ -->
+    {scenes.map((w, i) => {
+      const d = w.data;
+      const side = i % 2 === 0 ? 'media-left' : 'media-right';
+      return (
+        <section class={`pf-work ${side}`} data-i={i} aria-label={d.title} data-tl-year={d.year}>
+          <div class="pf-work-inner">
+            <a class="pf-work-media" href={`/opera/${w.id}`} aria-label={`Apri l'opera ${d.title}`}>
+              <div class="pf-work-frame">
+                <img class="pf-work-img" src={d.images.main} alt={`${d.title}, opera`} loading="lazy" decoding="async" />
+              </div>
+            </a>
+            <div class="pf-work-info">
+              <p class="pf-work-idx">{String(i + 1).padStart(2, '0')} / {String(scenes.length).padStart(2, '0')}</p>
+              <h2 class="pf-work-title"><a href={`/opera/${w.id}`}>{d.title}</a></h2>
+              <p class="pf-work-meta">{meta(d)}</p>
+              <p class="pf-work-mat">{d.materials.join(', ')}</p>
+              <a class="pf-work-cta" href={`/opera/${w.id}`}>Vedi l'opera</a>
+            </div>
+          </div>
+        </section>
+      );
+    })}
+
+    <!-- Capitolo 3 · Elettronica, cinetica, robotica -->
+    <section class="pf-chapter" aria-label="Ora l’opera prende vita">
+      <div class="pf-chapter-inner">
+        <h2 class="pf-chapter-big">Ora l’opera prende vita.</h2>
+        <p class="pf-chapter-small">Elettronica, cinetica, robotica; sensori, motori e fibre ottiche fanno muovere, accendere, reagire la materia.</p>
+      </div>
+    </section>
+
+    <!-- Serie cinetica "Clessidra" (la prima): visore del meccanismo + link -->
+    <section class="pf-cinetica" aria-label="Clessidra, serie cinetica" data-tl-year="2026">
+      <div
+        class="pf-cinetica-stage"
+        data-paura
+        data-paura-section
+        data-animato="/models/clessidra_animato.glb"
+      >
+        <canvas class="pf-cinetica-canvas" data-paura-canvas></canvas>
+        <p class="pf-cinetica-progress" data-paura-progress>Caricamento 0%</p>
+      </div>
+      <a class="pf-cinetica-card" href="/opera/avventura-di-una-vita">
+        <p class="pf-cinetica-eyebrow">Serie cinetica</p>
+        <h2 class="pf-cinetica-title">Clessidra</h2>
+        <p class="pf-cinetica-text">
+          Un meccanismo perfettamente sincronizzato con la clessidra la rende perpetua.
+        </p>
+        <span class="pf-cinetica-cta">Scopri l'opera<span aria-hidden="true">&nbsp;→</span></span>
+      </a>
+    </section>
+
+    <!-- Serie cinetica "Battiti" (la seconda): visore del meccanismo + link -->
+    <section class="pf-cinetica" aria-label="Battiti, serie cinetica" data-tl-year="2026">
+      <div
+        class="pf-cinetica-stage"
+        data-paura
+        data-paura-section
+        data-animato="/models/paura_animato.glb"
+      >
+        <canvas class="pf-cinetica-canvas" data-paura-canvas></canvas>
+        <p class="pf-cinetica-progress" data-paura-progress>Caricamento 0%</p>
+      </div>
+      <a class="pf-cinetica-card" href="/opera/battiti">
+        <p class="pf-cinetica-eyebrow">Serie cinetica</p>
+        <h2 class="pf-cinetica-title">Battiti</h2>
+        <p class="pf-cinetica-text">
+          Un meccanismo fa battere la tela alla frequenza del tuo cuore.
+        </p>
+        <span class="pf-cinetica-cta">Scopri l'opera<span aria-hidden="true">&nbsp;→</span></span>
+      </a>
+    </section>
+
+    <div class="pf-after">
+      <p>Altre tavole in preparazione.</p>
+      <a class="pf-pdf" href="/presentazione.pdf" download>Scarica il portfolio (PDF, 18&nbsp;MB)</a>
+    </div>
+  </div>
+
+  <script>
+    import '../scripts/portfolio.js';
+  </script>
+
+  <script>
+    // Visori 3D dei meccanismi (Clessidra, Battiti): init pigra quando il teaser
+    // si avvicina, così i GLB non pesano sul caricamento della pagina.
+    const stages = document.querySelectorAll('[data-paura]');
+    if (stages.length) {
+      const io = new IntersectionObserver((entries, obs) => {
+        for (const e of entries) {
+          if (!e.isIntersecting) continue;
+          obs.unobserve(e.target);
+          import('../scripts/paura/paura.js')
+            .then((m) => m.initPaura(e.target))
+            .catch((err) => console.error('[paura]', err));
+        }
+      }, { rootMargin: '500px' });
+      stages.forEach((s) => io.observe(s));
+    }
+  </script>
+
+  <script>
+    // Timeline ancorata al contenuto (finisce alla coda, non copre il footer). La
+    // testina resta al centro schermo; accanto, l'anno CORRENTE segue lo scorrimento
+    // e cambia in base all'OPERA che stai guardando (le opere portano il loro anno:
+    // emozioni 2021, poi 2023/24/25, cinetica 2026).
+    const tl = document.querySelector('[data-pf-timeline]');
+    const pf = document.querySelector('.pf');
+    const nowEl = tl && tl.querySelector('[data-pf-tl-now]');
+    const startEl = document.querySelector('#pf-first');
+    const endEl = document.querySelector('.pf-after');
+    if (tl && pf && nowEl && startEl && endEl) {
+      const clamp = (v, a, b) => Math.min(Math.max(v, a), b);
+      const pageTop = (el) => el.getBoundingClientRect().top + window.scrollY;
+      let trackTop = 0, trackH = 1, marks = [], ticking = false, curYear = '';
+
+      const update = () => {
+        ticking = false;
+        const head = window.scrollY + window.innerHeight * 0.5; // punto corrente = centro schermo
+        tl.style.setProperty('--tl-y', clamp(head - trackTop, 0, trackH) + 'px');
+        tl.classList.toggle('is-on', window.scrollY > window.innerHeight * 0.35);
+        let yr = marks.length ? marks[0].year : '';
+        for (const m of marks) { if (head >= m.y) yr = m.year; else break; }
+        if (yr !== curYear) { curYear = yr; nowEl.textContent = yr; }
+      };
+      const layout = () => {
+        trackTop = pageTop(startEl);
+        trackH = Math.max(1, pageTop(endEl) - trackTop);
+        tl.style.top = trackTop - pageTop(pf) + 'px';
+        tl.style.height = trackH + 'px';
+        marks = [...document.querySelectorAll('[data-tl-year]')]
+          .map((a) => {
+            const r = a.getBoundingClientRect();
+            return { y: r.top + window.scrollY + r.height / 2, year: a.getAttribute('data-tl-year') };
+          })
+          .sort((a, b) => a.y - b.y);
+        update();
+      };
+      const onScroll = () => { if (!ticking) { ticking = true; requestAnimationFrame(update); } };
+      window.addEventListener('scroll', onScroll, { passive: true });
+      window.addEventListener('resize', () => requestAnimationFrame(layout));
+      window.addEventListener('load', layout);
+      layout();
+    }
+  </script>
+</Base>
+
+<style>
+  .pf { position: relative; background: var(--bg); }
+
+  /* ---------- Timeline di scorrimento (ancorata al contenuto, tenue) ---------- */
+  .pf-timeline {
+    position: absolute;            /* nel flusso del portfolio: finisce con la storia, non copre il footer */
+    left: clamp(16px, 3vw, 48px);
+    top: 0; height: 0; width: 46px;
+    z-index: 3; pointer-events: none;
+    opacity: 0; transition: opacity 0.6s ease;
+  }
+  .pf-timeline.is-on { opacity: 1; }
+  .pf-tl-line {
+    position: absolute; left: 0; top: 0; bottom: 0; width: 1px;
+    background:
+      linear-gradient(to bottom, rgba(150, 175, 235, 0.12), rgba(150, 175, 235, 0.12)),
+      repeating-linear-gradient(to bottom, rgba(150, 175, 235, 0.22) 0 1px, transparent 1px 50px);
+  }
+  .pf-tl-fill {
+    position: absolute; left: 0; top: 0; width: 1px;
+    height: var(--tl-y, 0px);
+    background: linear-gradient(to bottom, rgba(120, 150, 240, 0.35), var(--accent));
+    box-shadow: 0 0 8px 0 rgba(120, 150, 240, 0.4);
+  }
+  .pf-tl-head {
+    position: absolute; left: 0; top: var(--tl-y, 0px);
+    transform: translate(-50%, -50%);
+    width: 7px; height: 7px; border-radius: 50%;
+    background: var(--accent);
+    box-shadow: 0 0 0 1px rgba(120, 150, 240, 0.5), 0 0 12px 3px rgba(120, 150, 240, 0.7);
+  }
+  .pf-tl-head::after {
+    content: ""; position: absolute; inset: -3px; border-radius: 50%;
+    border: 1px solid var(--accent);
+    animation: pfTlPulse 2.6s ease-out infinite;
+  }
+  @keyframes pfTlPulse {
+    0% { transform: scale(0.55); opacity: 0.65; }
+    100% { transform: scale(2.7); opacity: 0; }
+  }
+  /* Anno corrente: segue la testina (centro schermo) e mostra l'anno del punto in cui sei */
+  .pf-tl-now {
+    position: absolute; left: 13px; top: var(--tl-y, 0px);
+    transform: translateY(-50%);
+    font-family: var(--mono); font-size: 12px; letter-spacing: 0.12em;
+    color: var(--accent); white-space: nowrap;
+    text-shadow: 0 0 8px rgba(120, 150, 240, 0.5);
+  }
+  @media (prefers-reduced-motion: reduce) { .pf-tl-head::after { animation: none; } }
+  @media (max-width: 760px) { .pf-timeline { display: none; } }
+
+  /* ---------- Copertina ---------- */
+  .pf-cover-scene { position: relative; height: 100svh; overflow: hidden; }
+  .pf-cover {
+    position: absolute; inset: 0;
+    display: grid; grid-template-columns: 1fr 46%; align-items: center;
+  }
+  .pf-cover-text { position: relative; padding: 0 clamp(28px, 7vw, 130px); }
+  .pf-title {
+    font-family: var(--sans); font-weight: 300;
+    font-size: clamp(54px, 11vw, 154px); line-height: 0.98; letter-spacing: -0.02em;
+    color: var(--ink); margin: 0;
+  }
+  .pf-brand {
+    font-family: var(--sans); font-style: italic;
+    font-size: clamp(20px, 2.6vw, 30px); color: var(--ink-dim);
+    margin: 18px 0 0; letter-spacing: 0.02em;
+  }
+  .pf-creature {
+    position: absolute; right: clamp(-10px, 2vw, 40px); bottom: clamp(-70px, -6vw, -30px);
+    width: clamp(120px, 16vw, 220px); opacity: 0.85; pointer-events: none;
+    filter: brightness(0) saturate(100%) invert(74%) sepia(21%) saturate(900%) hue-rotate(176deg) brightness(96%);
+  }
+  .pf-vertigine { position: relative; height: 100%; overflow: hidden; }
+  .pf-vertigine picture { display: block; width: 100%; height: 100%; }
+  .pf-vertigine img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .pf-vertigine::after {
+    content: ""; position: absolute; inset: 0;
+    background: linear-gradient(90deg, var(--bg), transparent 22%); pointer-events: none;
+  }
+  .pf-hint {
+    position: absolute; bottom: 5vh; left: 50%; transform: translateX(-50%);
+    z-index: 5; display: flex; flex-direction: column; align-items: center; gap: 8px;
+    color: rgba(240, 244, 255, 0.7); text-decoration: none;
+    font-family: var(--mono); font-size: 11px; letter-spacing: 0.34em; text-transform: uppercase;
+  }
+  .pf-hint svg { width: 20px; height: 34px; }
+  .pf-hint svg path { animation: pfBob 2.2s ease-in-out infinite; }
+  @keyframes pfBob { 0%,100% { transform: translateY(0); opacity: 0.7; } 50% { transform: translateY(4px); opacity: 1; } }
+
+  /* ---------- Capitolo (scritta della storia) ---------- */
+  .pf-chapter {
+    min-height: 100svh; display: grid; place-items: center; text-align: center;
+    padding: clamp(60px, 12vh, 140px) clamp(28px, 8vw, 160px);
+  }
+  .pf-chapter-inner { max-width: 30ch; }
+  @media (min-width: 820px) {
+    /* Da desktop le scritte della storia respirano in orizzontale, non più colonna stretta al centro */
+    .pf-chapter-inner { max-width: min(88vw, 46rem); }
+    .pf-chapter-small { max-width: min(80vw, 40rem); }
+  }
+  .pf-chapter-big {
+    font-family: var(--sans); font-weight: 300;
+    font-size: clamp(34px, 5.6vw, 72px); line-height: 1.08; letter-spacing: -0.01em;
+    color: var(--ink); margin: 0;
+  }
+  .pf-chapter-small {
+    font-family: var(--sans); font-style: italic;
+    font-size: clamp(16px, 2vw, 22px); line-height: 1.55; color: var(--ink-mute);
+    margin: clamp(18px, 3vh, 30px) auto 0; max-width: 40ch;
+  }
+
+  /* ---------- Scena opera (scorre, niente stop) ---------- */
+  .pf-work { position: relative; }
+  .pf-work-inner {
+    position: relative; height: 100svh; overflow: hidden;
+    display: grid; grid-template-columns: 56% 1fr; align-items: center;
+    column-gap: clamp(28px, 5vw, 90px);
+    padding: clamp(40px, 7vh, 90px) clamp(28px, 7vw, 120px);
+  }
+  .pf-work.media-right .pf-work-inner { grid-template-columns: 1fr 56%; }
+  .pf-work.media-right .pf-work-media { order: 2; }
+  .pf-work.media-right .pf-work-info { order: 1; }
+
+  .pf-work-media { position: relative; height: min(78vh, 660px); }
+  .pf-work-frame { position: absolute; inset: 0; overflow: hidden; will-change: transform, opacity; }
+  .pf-work-img {
+    width: 100%; height: 100%; object-fit: contain; object-position: center;
+    transform-origin: center center; will-change: transform;
+  }
+
+  .pf-work-info { max-width: 40ch; }
+  .pf-work-idx {
+    font-family: var(--mono); font-size: 12px; letter-spacing: 0.24em;
+    color: var(--accent); margin: 0 0 18px;
+  }
+  .pf-work-title {
+    font-family: var(--sans); font-weight: 300;
+    font-size: clamp(42px, 6vw, 88px); line-height: 1; letter-spacing: -0.02em;
+    color: var(--ink); margin: 0;
+  }
+  .pf-work-meta {
+    font-family: var(--mono); font-size: clamp(12px, 1.3vw, 14px);
+    letter-spacing: 0.04em; color: var(--ink-dim); margin: 20px 0 6px;
+  }
+  .pf-work-mat { font-family: var(--sans); font-size: clamp(15px, 1.7vw, 19px); color: var(--ink-dim); margin: 0; }
+  /* i quadri sono cliccabili: portano alla pagina dell'opera */
+  .pf-work-media { display: block; cursor: pointer; }
+  .pf-work-title a { color: inherit; text-decoration: none; transition: color 0.2s; }
+  .pf-work-media:hover ~ .pf-work-info .pf-work-title a,
+  .pf-work-title a:hover { color: var(--accent); }
+  .pf-work-cta {
+    display: inline-block; margin-top: 22px;
+    font-family: var(--mono); font-size: 13px; letter-spacing: 0.08em;
+    color: var(--accent); border-bottom: 1px solid transparent;
+    transition: border-color 0.2s, color 0.2s;
+  }
+  .pf-work-cta:hover { border-color: var(--accent); }
+
+  /* ---------- Battiti — teaser serie cinetica (link alla pagina 3D) ---------- */
+  .pf-cinetica {
+    padding: clamp(60px, 14vh, 160px) clamp(28px, 7vw, 130px);
+    display: flex;
+    align-items: center;
+    gap: clamp(28px, 5vw, 80px);
+    flex-wrap: wrap; /* su schermi stretti torna impilato (animazione sopra, testo sotto) */
+  }
+  .pf-cinetica-card {
+    flex: 1 1 300px; max-width: 44ch;
+    text-decoration: none; color: inherit;
+    padding-left: clamp(16px, 2vw, 24px);
+    border-left: 2px solid var(--line);
+    transition: border-color 0.3s;
+  }
+  .pf-cinetica-card:hover { border-color: var(--accent); }
+  .pf-cinetica-eyebrow {
+    font-family: var(--mono); font-size: 12px; letter-spacing: 0.24em; text-transform: uppercase;
+    color: var(--accent); margin: 0 0 14px;
+  }
+  .pf-cinetica-title {
+    font-family: var(--sans); font-weight: 300;
+    font-size: clamp(46px, 7vw, 96px); line-height: 0.98; letter-spacing: -0.02em;
+    color: var(--ink); margin: 0;
+    transition: color 0.2s;
+  }
+  .pf-cinetica-card:hover .pf-cinetica-title { color: var(--accent); }
+  .pf-cinetica-text {
+    font-family: var(--sans); font-size: clamp(16px, 2vw, 21px); color: var(--ink-dim);
+    margin: 20px 0 0;
+  }
+  .pf-cinetica-cta {
+    display: inline-block; margin-top: 24px;
+    font-family: var(--mono); font-size: 13px; letter-spacing: 0.06em; color: var(--accent);
+  }
+  /* Visore 3D del meccanismo nel teaser. Sfondo chiaro: i pezzi sono neri. */
+  .pf-cinetica-stage {
+    position: relative;
+    flex: 1.15 1 340px;
+    max-width: 620px;
+    aspect-ratio: 16 / 11;
+    background: transparent; /* animazione senza riquadro: il meccanismo galleggia sulla pagina */
+    overflow: hidden;
+  }
+  .pf-cinetica-canvas { display: block; width: 100%; height: 100%; touch-action: pan-y; }
+  .pf-cinetica-progress {
+    position: absolute; inset: 0; margin: 0; display: grid; place-items: center;
+    font-family: var(--mono); font-size: 12px; letter-spacing: 0.06em; color: var(--ink-mute);
+    pointer-events: none;
+  }
+  .pf-cinetica-stage[data-ready] .pf-cinetica-progress { display: none; }
+
+  /* ---------- Archivio Emozioni (galleria) ---------- */
+  .pf-emo-gallery { padding: clamp(20px, 4vh, 60px) clamp(28px, 7vw, 120px) clamp(60px, 12vh, 140px); }
+  .pf-emo-grid {
+    list-style: none; margin: 0 auto; padding: 0; max-width: 1280px;
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: clamp(24px, 3.5vw, 64px);
+  }
+  .pf-emo-item { margin: 0; }
+  .pf-emo-frame {
+    position: relative; aspect-ratio: 3 / 4; overflow: hidden; border-radius: 2px;
+    background: #0a1024; box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+  }
+  .pf-emo-frame img {
+    width: 100%; height: 100%; object-fit: cover; display: block;
+    transition: transform 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  .pf-emo-item:hover .pf-emo-frame img { transform: scale(1.05); }
+  .pf-emo-label {
+    display: block; margin-top: 12px;
+    font-family: var(--sans); font-size: clamp(15px, 1.5vw, 18px); color: var(--ink-dim);
+  }
+
+  /* ---------- coda ---------- */
+  .pf-after { text-align: center; padding: clamp(60px, 14vh, 140px) 24px; }
+  .pf-after p { font-family: var(--sans); font-style: italic; color: var(--ink-dim); margin: 0 0 24px; }
+  .pf-pdf {
+    display: inline-block; font-family: var(--mono);
+    font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-dim);
+    border: 1px solid var(--line-strong); border-radius: 999px; padding: 12px 22px;
+    transition: color 0.2s, border-color 0.2s;
+  }
+  .pf-pdf:hover { color: var(--ink); border-color: var(--accent); }
+
+  /* le info opera partono nascoste solo col motore attivo (entrano allo scroll) */
+  :global(html.js-anim) .pf-work-idx, :global(html.js-anim) .pf-work-title,
+  :global(html.js-anim) .pf-work-meta, :global(html.js-anim) .pf-work-mat,
+  :global(html.js-anim) .pf-work-philo, :global(html.js-anim) .pf-work-frame { opacity: 0; }
+  :global(html.js-anim) .pf-chapter-big, :global(html.js-anim) .pf-chapter-small,
+  :global(html.js-anim) .pf-emo-item { opacity: 0; }
+
+  /* ---------- mobile: sezioni normali, tutto visibile ---------- */
+  @media (max-width: 860px) {
+    .pf-work { min-height: 0; }
+    .pf-work-inner { position: relative; height: auto; min-height: 100svh; grid-template-columns: 1fr; row-gap: 28px; }
+    .pf-work.media-right .pf-work-inner { grid-template-columns: 1fr; }
+    .pf-work.media-right .pf-work-media, .pf-work.media-right .pf-work-info { order: initial; }
+    .pf-cover { grid-template-columns: 1fr; }
+    .pf-vertigine { height: 42vh; }
+    .pf-work-media { height: 54vh; }
+    .pf-emo-grid { grid-template-columns: repeat(2, 1fr); }
+  }
+</style>

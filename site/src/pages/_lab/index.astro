@@ -1,0 +1,135 @@
+---
+// lab — indice dei prototipi della homepage-viaggio "Il Tratto".
+// Pagine di studio interne: nessun link dal sito pubblico, noindex.
+import Base from '../../layouts/Base.astro';
+
+const prototipi = [
+  {
+    href: '/lab/p1c',
+    nome: 'P1c — Scenografia (direzione Emergence)',
+    tech: 'SVG + GSAP + Three.js',
+    desc: 'Evoluzione di P1-bis in chiave teatrale: soglia scenografica con figure appese a fili, opere come pannelli di scena, zero testo visibile. Motore di ricomposizione condiviso con P1-bis.',
+  },
+  {
+    href: '/lab/p1b',
+    nome: 'P1-bis · Ricomposizione',
+    tech: 'SVG + GSAP + Three.js',
+    desc: 'Variante scelta, in sviluppo. Base P1 in palette blu, senza torcia: le opere partono scomposte e si ricompongono su scroll, scheggia dopo scheggia.',
+  },
+  {
+    href: '/lab/p1',
+    nome: 'P1 · Filo 2D',
+    tech: 'SVG + GSAP',
+    desc: 'Camera 2D simulata su un piano di carta: il filo è un path SVG che si disegna su scroll. Massima compatibilità, static-first.',
+  },
+  {
+    href: '/lab/p2',
+    nome: 'P2 · Camera nel mondo',
+    tech: 'Three.js',
+    desc: 'Percorso 3D reale: la camera percorre una curva Catmull-Rom in una scena WebGL, filo in TubeGeometry e torcia in shader.',
+  },
+  {
+    href: '/lab/p3',
+    nome: 'P3 · Ibrido',
+    tech: 'DOM + canvas',
+    desc: 'DOM scrollabile e canvas 2D per il filo; WebGL confinato alla sola materia delle opere (torcia). Il 95% della pagina è DOM+CSS.',
+  },
+];
+---
+
+<Base
+  title="Lab — studio del Viaggio"
+  description="Prototipi interni della homepage-viaggio Il Tratto: tre approcci tecnici a confronto."
+>
+  <meta slot="head" name="robots" content="noindex, nofollow" />
+
+  <section class="page lab">
+    <p class="lab-note">Pagine di studio interne — non linkate dal sito pubblico.</p>
+
+    <p class="eyebrow">Lab</p>
+    <h1>Studio del Viaggio</h1>
+    <p class="lead">
+      Tre prototipi della homepage-viaggio <em>Il Tratto</em>: stesso racconto
+      (filo, territori, opere, torcia), tre architetture diverse.
+    </p>
+
+    <ul class="lab-list">
+      {prototipi.map((p) => (
+        <li class="lab-item">
+          <a href={p.href} class="lab-link">
+            <span class="lab-name">{p.nome}</span>
+            <span class="lab-tech">{p.tech}</span>
+          </a>
+          <p class="lab-desc">{p.desc}</p>
+        </li>
+      ))}
+    </ul>
+
+    <p class="lab-debug">
+      Su ogni prototipo, <code>?debug=1</code> mostra un overlay con gli fps
+      (correnti e media dal load).
+    </p>
+  </section>
+</Base>
+
+<style>
+  .lab-note {
+    font-family: var(--mono);
+    font-size: 12px;
+    letter-spacing: 0.06em;
+    color: var(--ink-mute);
+    border: 1px solid var(--line, currentColor);
+    border-radius: 6px;
+    padding: 10px 14px;
+    margin-bottom: 40px;
+  }
+  .lab-list {
+    list-style: none;
+    margin: 48px 0;
+    padding: 0;
+  }
+  .lab-item {
+    padding: 24px 0;
+    border-top: 1px solid var(--line, rgba(128, 128, 128, 0.25));
+  }
+  .lab-item:last-child {
+    border-bottom: 1px solid var(--line, rgba(128, 128, 128, 0.25));
+  }
+  .lab-link {
+    display: flex;
+    align-items: baseline;
+    gap: 16px;
+    flex-wrap: wrap;
+    text-decoration: none;
+    color: inherit;
+  }
+  .lab-name {
+    font-family: var(--display);
+    font-weight: 300;
+    font-size: clamp(22px, 3.4vw, 30px);
+    transition: color 0.2s;
+  }
+  .lab-link:hover .lab-name,
+  .lab-link:focus-visible .lab-name {
+    color: var(--accent);
+  }
+  .lab-tech {
+    font-family: var(--mono);
+    font-size: 12px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--ink-mute);
+  }
+  .lab-desc {
+    margin: 8px 0 0;
+    max-width: 62ch;
+  }
+  .lab-debug {
+    font-size: 14px;
+    color: var(--ink-mute);
+  }
+  .lab-debug code {
+    font-family: var(--mono);
+    font-size: 13px;
+  }
+</style>

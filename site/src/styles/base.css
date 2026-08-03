@@ -1,0 +1,233 @@
+/* === brama v2 — chrome di pagina (header, menu, footer) === */
+
+/* ---- barra di navigazione fissa (sezioni sempre visibili) ---- */
+.site-header {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  z-index: 200;
+}
+.site-bar {
+  display: flex;
+  align-items: center;
+  gap: clamp(14px, 2vw, 28px);
+  padding: 8px clamp(16px, 4vw, 44px);
+  background: rgba(5, 10, 26, 0.62);
+  -webkit-backdrop-filter: blur(16px);
+  backdrop-filter: blur(16px);
+  border-bottom: 1px solid var(--line);
+}
+.site-back {
+  display: inline-flex; align-items: center; gap: 8px;
+  font-family: var(--mono); font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--ink-dim);
+  padding: 8px 14px; border: 1px solid var(--line); border-radius: 999px;
+  transition: color 0.2s, border-color 0.2s, background 0.2s;
+}
+.site-back svg { width: 16px; height: 13px; }
+.site-back:hover { color: var(--ink); border-color: var(--line-strong); background: rgba(240,244,255,0.04); }
+
+.site-sig { display: inline-flex; margin-right: auto; }
+.site-sig img { height: clamp(46px, 4.6vw, 58px); width: auto; filter: var(--sig-tint); display: block; }
+
+.site-nav { display: flex; align-items: center; gap: clamp(15px, 1.8vw, 30px); }
+.site-nav a {
+  position: relative;
+  font-family: var(--sans); font-weight: 400; font-size: clamp(14px, 1.15vw, 16px);
+  letter-spacing: 0.015em; color: var(--ink-dim);
+  transition: color 0.2s;
+}
+.site-nav a:hover, .site-nav a[aria-current='page'] { color: var(--ink); }
+.site-nav a[aria-current='page']::after {
+  content: ""; position: absolute; left: 0; right: 0; bottom: -5px; height: 1.5px; background: var(--accent);
+}
+/* voce temporanea (Esposizione): staccata dalle altre + puntino "in corso" */
+.site-nav a.nav-temp {
+  margin-left: clamp(12px, 2vw, 24px);
+  padding-left: clamp(12px, 2vw, 24px);
+  border-left: 1px solid var(--line);
+  display: inline-flex; align-items: center; gap: 8px;
+}
+.nav-temp-tag {
+  font-family: var(--mono); font-size: 9px; letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--accent); border: 1px solid var(--accent-soft); border-radius: 999px;
+  padding: 2px 7px; line-height: 1; white-space: nowrap;
+}
+.nav-dot {
+  flex: none;
+  width: 6px; height: 6px; border-radius: 50%; background: var(--accent);
+  box-shadow: 0 0 0 0 rgba(74,147,230,0.6);
+  animation: navPulse 2.2s ease-out infinite;
+}
+@keyframes navPulse {
+  0% { box-shadow: 0 0 0 0 rgba(74,147,230,0.5); }
+  70% { box-shadow: 0 0 0 7px rgba(74,147,230,0); }
+  100% { box-shadow: 0 0 0 0 rgba(74,147,230,0); }
+}
+@media (prefers-reduced-motion: reduce) { .nav-dot { animation: none; } }
+/* schermi non larghissimi: resta il puntino, cade l'etichetta testuale */
+@media (max-width: 1180px) { .nav-temp-tag { display: none; } }
+
+/* menu mobile: la voce temporanea è staccata in fondo con la sua etichetta */
+.site-menu li.menu-temp { margin-top: 20px; padding-top: 20px; border-top: 1px solid var(--line); }
+.menu-temp-tag {
+  display: inline-flex; align-items: center; gap: 8px;
+  margin-left: 12px; vertical-align: middle;
+  font-family: var(--mono); font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase;
+  color: var(--accent);
+}
+
+/* accessibilità: focus visibile su tutti i controlli navigabili da tastiera */
+:where(a, button, input, textarea, select, [tabindex]):focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+  border-radius: 2px;
+}
+/* salta al contenuto (visibile solo al focus da tastiera) */
+.skip-link {
+  position: fixed; top: 10px; left: 10px; z-index: 300;
+  transform: translateY(-160%);
+  background: var(--accent); color: #fff;
+  font-family: var(--mono); font-size: 13px;
+  padding: 10px 16px; border-radius: 4px;
+  transition: transform 0.2s ease;
+}
+.skip-link:focus { transform: none; }
+
+.menu-toggle {
+  display: none;
+  position: relative;
+  width: 44px; height: 44px;
+  border-radius: 6px;
+}
+/* desktop: nav inline; mobile: hamburger + overlay */
+@media (max-width: 860px) {
+  .site-nav { display: none; }
+  .menu-toggle { display: block; }
+  .site-back span { display: none; }
+  .site-back { padding: 8px 10px; }
+}
+.burger-line {
+  position: absolute;
+  left: 11px;
+  width: 22px; height: 2px;
+  background: var(--ink);
+  transition: transform 0.32s cubic-bezier(0.32, 0.72, 0, 1), opacity 0.2s;
+}
+.l1 { top: 15px; }
+.l2 { top: 21px; }
+.l3 { top: 27px; }
+.menu-open .l1 { transform: translateY(6px) rotate(45deg); }
+.menu-open .l2 { opacity: 0; }
+.menu-open .l3 { transform: translateY(-6px) rotate(-45deg); }
+
+.site-menu {
+  position: fixed;
+  inset: 0 0 auto 0;
+  z-index: 190;
+  padding: 96px 24px 40px;
+  background: rgba(5, 10, 26, 0.86);
+  -webkit-backdrop-filter: blur(18px);
+  backdrop-filter: blur(18px);
+  border-bottom: 1px solid var(--line);
+  transform: translateY(-102%);
+  transition: transform 0.5s cubic-bezier(0.32, 0.72, 0, 1);
+  pointer-events: auto;
+}
+body.menu-open .site-menu { transform: translateY(0); }
+.site-menu ul { list-style: none; }
+.site-menu li a {
+  display: block;
+  font-family: var(--sans);
+  font-weight: 300;
+  font-size: clamp(28px, 5vw, 44px);
+  line-height: 1.5;
+  color: var(--ink);
+  opacity: 0;
+  transform: translateY(-8px);
+  transition: opacity 0.4s ease, transform 0.4s ease, color 0.2s;
+}
+.site-menu li a:hover,
+.site-menu li a[aria-current='page'] { color: var(--accent); }
+body.menu-open .site-menu li a { opacity: 1; transform: none; }
+body.menu-open .site-menu li:nth-child(1) a { transition-delay: 0.06s; }
+body.menu-open .site-menu li:nth-child(2) a { transition-delay: 0.11s; }
+body.menu-open .site-menu li:nth-child(3) a { transition-delay: 0.16s; }
+body.menu-open .site-menu li:nth-child(4) a { transition-delay: 0.21s; }
+body.menu-open .site-menu li:nth-child(5) a { transition-delay: 0.26s; }
+body.menu-open .site-menu li:nth-child(6) a { transition-delay: 0.31s; }
+.menu-meta {
+  margin-top: 32px;
+  display: flex;
+  gap: 24px;
+  font-family: var(--mono);
+  font-size: 13px;
+  color: var(--ink-dim);
+}
+.menu-meta a:hover { color: var(--accent); }
+
+main { min-height: 100svh; }
+
+.site-footer {
+  border-top: 1px solid var(--line);
+  padding: 56px 24px 40px;
+  background: var(--void);
+}
+.footer-inner { max-width: var(--maxw); margin: 0 auto; }
+.footer-sig { height: 37px; width: auto; filter: var(--sig-tint); margin-bottom: 12px; }
+.footer-tagline {
+  font-family: var(--sans);
+  font-style: italic;
+  color: var(--ink-dim);
+  margin-bottom: 32px;
+}
+.footer-cols { display: flex; flex-wrap: wrap; gap: 48px; margin-bottom: 40px; }
+.footer-col { display: flex; flex-direction: column; gap: 10px; }
+.footer-col a {
+  font-size: 14px;
+  color: var(--ink-dim);
+  transition: color 0.2s;
+}
+.footer-col a:hover { color: var(--ink); }
+.footer-note { font-family: var(--mono); font-size: 12px; color: var(--ink-mute); }
+
+/* Contenuto standard delle pagine interne */
+.page {
+  max-width: 880px;
+  margin: 0 auto;
+  padding: 140px 24px 96px;
+}
+.page-wide { max-width: var(--maxw); }
+.page h1 {
+  font-family: var(--sans);
+  font-weight: 200;
+  font-size: clamp(40px, 7vw, 72px);
+  line-height: 1.05;
+  margin-bottom: 24px;
+}
+.page h2 {
+  font-family: var(--sans);
+  font-weight: 300;
+  font-size: clamp(26px, 4vw, 40px);
+  margin: 56px 0 16px;
+}
+.page p { line-height: 1.7; color: var(--ink-dim); margin-bottom: 16px; }
+.page .lead {
+  font-family: var(--sans);
+  font-size: clamp(19px, 2.6vw, 24px);
+  color: var(--ink);
+}
+.eyebrow {
+  font-family: var(--mono);
+  font-size: 12px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-bottom: 16px;
+}
+
+/* === additivo — burger leggibile sulle bande carta ===
+   Le pagine interne possono ospitare scene chiare (es. la vetrina dello
+   /shop): stessa convenzione della micro-nav del Viaggio (viaggio.css),
+   blend difference — il segno resta chiaro sulla notte, scuro sulla carta,
+   senza JS. Su fondo scuro il risultato è invariato. */
+.burger-line { mix-blend-mode: difference; }

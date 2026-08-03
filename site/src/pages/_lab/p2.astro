@@ -1,0 +1,160 @@
+---
+// P2 — "CAMERA NEL MONDO": prototipo homepage-viaggio "Il Tratto".
+// Una camera Three.js percorre una curva reale attraverso territori di
+// disegno fino a entrare nella materia delle opere. Senza JS / WebGL /
+// con reduced-motion la stessa pagina è una sequenza verticale curata.
+import Base from '../../layouts/Base.astro';
+import '../../styles/lab/p2.css';
+---
+
+<Base
+  title="Il Tratto — camera nel mondo · brama lab P2"
+  description="Prototipo P2 della homepage-viaggio: un filo nero di pennarello conduce la camera attraverso territori di disegno, fino alla materia di Vertigine e Abbandono."
+  bare
+>
+  <div id="p2-root" class="p2">
+    <a class="p2-skip" href="#p2-fin">Salta il viaggio: vai alla firma</a>
+    <canvas id="p2-canvas" aria-hidden="true"></canvas>
+    <div class="p2-torch" aria-hidden="true"></div>
+    <div id="p2-debug" class="p2-debug" hidden aria-hidden="true"></div>
+
+    <div class="p2-track" aria-hidden="true"></div>
+
+    <div class="p2-flow">
+      <section class="p2-sec p2-intro" data-win="intro" aria-label="Inizio del viaggio">
+        <div class="sec-in">
+          <p class="eyebrow">brama · il tratto — prototipo p2</p>
+          <h1>Un filo nero<br />conosce la strada.</h1>
+          <p class="lede">
+            Scorri: la camera segue il tratto attraverso i territori del disegno,
+            in bianco e nero, fino a entrare nella materia delle opere — resina,
+            vetro, ossidiana, fibra ottica.
+          </p>
+          <p class="hint">
+            <span class="dot" aria-hidden="true"></span>
+            sulle opere, il cursore — o il dito — è la tua torcia
+          </p>
+          <div class="scrollcue" aria-hidden="true"><span></span></div>
+        </div>
+      </section>
+
+      <section class="p2-sec p2-cap" data-win="cap1" aria-label="Territorio di disegno I">
+        <div class="sec-in">
+          <span class="cap-rule" aria-hidden="true"></span>
+          <p class="eyebrow ink">territorio di disegno — I</p>
+          <p class="cap-line">
+            Il tratto si fa fitto, gira su se stesso: ogni linea è attratta verso il basso.
+          </p>
+          <figure class="figstat crop crop-ansia">
+            <img
+              src="/portfolio/page-14.jpg"
+              alt="Ansia — gesto in bianco e nero dall'archivio emozioni di brama"
+              loading="lazy"
+              decoding="async"
+            />
+          </figure>
+        </div>
+      </section>
+
+      <section class="p2-sec p2-stop" data-win="pv" id="opera-vertigine" aria-label="Vertigine">
+        <div class="sec-in">
+          <article class="stop-panel">
+            <p class="eyebrow">tappa I — dentro la materia</p>
+            <h2>Vertigine</h2>
+            <p class="meta">2025 · 150 × 100 cm</p>
+            <p class="mat">acrilici, pennarello, resina, vetro, carta, fibra ottica, acciaio</p>
+            <blockquote>
+              <p>«L'angoscia è la vertigine della libertà.»</p>
+              <cite>Søren Kierkegaard</cite>
+            </blockquote>
+            <p class="hint">
+              <span class="dot" aria-hidden="true"></span>
+              dal vivo, una torcia sulla striscia di fibre ottiche accende il vortice.
+              qui la luce sei tu: muovi il cursore — o il dito — sull'opera
+            </p>
+            <a class="stop-cta" href="/opera/vertigine">entra nell'opera <span aria-hidden="true">→</span></a>
+          </article>
+          <figure class="figstat">
+            <img
+              src="/images/thumbs/Vertigine-1200.jpg"
+              alt="Vertigine, 2025 — opera materica di brama: vortice blu e nero con vetro, resina e fibre ottiche"
+              loading="lazy"
+              decoding="async"
+            />
+          </figure>
+        </div>
+      </section>
+
+      <section class="p2-sec p2-cap" data-win="cap2" aria-label="Territorio di disegno II">
+        <div class="sec-in">
+          <span class="cap-rule" aria-hidden="true"></span>
+          <p class="eyebrow ink">territorio di disegno — II</p>
+          <p class="cap-line">
+            Le linee si diradano e cadono senza appigli: il bianco pesa più del nero.
+          </p>
+          <figure class="figstat crop crop-p16">
+            <img
+              src="/portfolio/page-16.jpg"
+              alt="Disegno a pennarello in bianco e nero — figura coronata affacciata su un campo di segni"
+              loading="lazy"
+              decoding="async"
+            />
+          </figure>
+        </div>
+      </section>
+
+      <section class="p2-sec p2-stop" data-win="pa" id="opera-abbandono" aria-label="Abbandono">
+        <div class="sec-in">
+          <article class="stop-panel">
+            <p class="eyebrow">tappa II — dentro la materia</p>
+            <h2>Abbandono</h2>
+            <p class="meta">2025 · 50 × 150 cm</p>
+            <p class="mat">acrilici, resina, ossidiana, fibra ottica</p>
+            <blockquote>
+              <p>«Geworfenheit: essere gettati nel mondo, senza averlo scelto.»</p>
+              <cite>Martin Heidegger</cite>
+            </blockquote>
+            <p class="hint">
+              <span class="dot" aria-hidden="true"></span>
+              la torcia accende punti dispersi nella materia e svela, al centro,
+              uno specchio infinito. muovi la luce: cerca il centro
+            </p>
+            <a class="stop-cta" href="/opera/abbandono">entra nell'opera <span aria-hidden="true">→</span></a>
+          </article>
+          <figure class="figstat">
+            <img
+              src="/images/thumbs/Abbandono-600.jpg"
+              alt="Abbandono, 2025 — opera materica verticale di brama: ossidiana e resina scura con punti di luce"
+              loading="lazy"
+              decoding="async"
+            />
+          </figure>
+        </div>
+      </section>
+
+      <section class="p2-sec p2-fin" data-win="fin" id="p2-fin" aria-label="Chiusura">
+        <div class="sec-in">
+          <p class="eyebrow">il filo si riannoda</p>
+          <img
+            class="fin-sig"
+            src="/images/signature.png"
+            alt="brama — firma"
+            width="220"
+            height="81"
+            loading="lazy"
+            decoding="async"
+          />
+          <p class="fin-line">Ogni opera è un nodo dello stesso tratto.</p>
+          <nav class="fin-nav" aria-label="continua">
+            <a class="stop-cta" href="/opere">tutte le opere <span aria-hidden="true">→</span></a>
+            <a class="stop-cta ghost" href="#p2-root" data-restart>ricomincia il viaggio <span aria-hidden="true">↺</span></a>
+          </nav>
+        </div>
+      </section>
+    </div>
+  </div>
+</Base>
+
+<script>
+  import '../../scripts/lab/p2/main.js';
+</script>

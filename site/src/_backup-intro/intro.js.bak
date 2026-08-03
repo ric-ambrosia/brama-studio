@@ -1,0 +1,62 @@
+// Landing brama: il vortice (vertigine.js) e la sua interazione col mouse sono
+// nativi e intatti. Qui gestiamo solo lo scroll: --p per la camera-che-entra e
+// l'apertura delle ali (CSS), e la comparsa delle sezioni come pezzi del vortice
+// che si posano una alla volta.
+const root = document.documentElement;
+const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+if (reduce) {
+  root.classList.add('is-static');
+} else {
+  const hub = document.querySelector('.hub');
+  const items = Array.from(document.querySelectorAll('.hub-item'));
+
+  // posizione di riposo di ogni voce (per farla arrivare DAL centro del vortice)
+  let rest = [];
+  function measure() {
+    const cx = innerWidth / 2, cy = innerHeight / 2;
+    rest = items.map((el, i) => {
+      const r = el.getBoundingClientRect();
+      return {
+        dx: cx - (r.left + r.width / 2),
+        dy: cy - (r.top + r.height / 2),
+        rot: (i % 2 ? 1 : -1) * (16 + i * 5), // rotazione iniziale deterministica
+      };
+    });
+  }
+
+  const easeOut = (t) => 1 - Math.pow(1 - t, 3);
+  const clamp01 = (t) => (t < 0 ? 0 : t > 1 ? 1 : t);
+
+  // ogni voce ha la sua finestra di scroll → si posano "una alla volta"
+  const START = 0.4, STAGGER = 0.11, SPAN = 0.16;
+
+  let p = 0, raf = 0;
+  function render() {
+    raf = 0;
+    root.style.setProperty('--p', p.toFixed(4));
+    for (let i = 0; i < items.length; i++) {
+      const r = rest[i];
+      if (!r) continue;
+      const local = clamp01((p - (START + i * STAGGER)) / SPAN);
+      const e = easeOut(local);
+      const tx = r.dx * (1 - e);
+      const ty = r.dy * (1 - e);
+      const sc = 0.3 + 0.7 * e;
+      const rot = r.rot * (1 - e);
+      items[i].style.transform = `translate(${tx.toFixed(1)}px, ${ty.toFixed(1)}px) scale(${sc.toFixed(3)}) rotate(${rot.toFixed(2)}deg)`;
+      items[i].style.opacity = easeOut(clamp01(local * 1.4)).toFixed(3);
+    }
+    if (hub) hub.classList.toggle('live', p > 0.6);
+  }
+
+  function onScroll() {
+    p = clamp01(scrollY / (innerHeight * 1.3));
+    if (!raf) raf = requestAnimationFrame(render);
+  }
+
+  addEventListener('scroll', onScroll, { passive: true });
+  addEventListener('resize', () => { measure(); onScroll(); });
+  measure();
+  onScroll();
+}

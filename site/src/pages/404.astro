@@ -1,0 +1,61 @@
+---
+import Base from '../layouts/Base.astro';
+---
+
+<Base
+  title="Pagina non trovata · brama"
+  description="La pagina cercata non esiste o è stata spostata."
+>
+  <section class="nf">
+    <p class="eyebrow">Errore 404</p>
+    <h1>Questa pagina non c'è.</h1>
+    <p class="nf-lead">
+      Forse è stata spostata, o il link non è corretto. Da qui puoi tornare al sito.
+    </p>
+    <nav class="nf-links" aria-label="Torna al sito">
+      <a href="/">Home</a>
+      <a href="/portfolio">Portfolio</a>
+      <a href="/shop">Shop</a>
+      <a href="/contatti">Contatti</a>
+    </nav>
+  </section>
+</Base>
+
+<style>
+  .nf {
+    max-width: 720px;
+    margin: 0 auto;
+    padding: clamp(140px, 22vh, 260px) 24px clamp(90px, 16vh, 160px);
+  }
+  .nf h1 {
+    font-family: var(--sans);
+    font-weight: 200;
+    font-size: clamp(40px, 8vw, 84px);
+    line-height: 1.02;
+    margin: 0 0 20px;
+  }
+  .nf-lead {
+    font-family: var(--sans);
+    font-size: clamp(18px, 2.4vw, 22px);
+    color: var(--ink-dim);
+    max-width: 46ch;
+    margin: 0 0 40px;
+  }
+  .nf-links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px 28px;
+  }
+  .nf-links a {
+    font-family: var(--sans);
+    font-size: 16px;
+    color: var(--ink);
+    border-bottom: 1px solid var(--line-strong);
+    padding-bottom: 3px;
+    transition: color 0.2s, border-color 0.2s;
+  }
+  .nf-links a:hover {
+    color: var(--accent);
+    border-color: var(--accent);
+  }
+</style>

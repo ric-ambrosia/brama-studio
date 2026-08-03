@@ -1,0 +1,134 @@
+---
+import LegalPage from '../../components/LegalPage.astro';
+---
+
+<LegalPage
+  title="Termini e condizioni di vendita"
+  metaTitle="Termini e condizioni di vendita · brama"
+  description="Termini e condizioni di vendita delle opere brama: pezzi unici, prezzi, processo d'ordine con Stripe, certificato di autenticità, recesso, garanzia e legge applicabile."
+>
+  <h2 id="venditore">1. Venditore</h2>
+  {/* NOTA INTERNA (non pubblicare): venditore = Riccardo Bramani / futura entità giuridica del brand.
+      Da confermare con commercialista; P.IVA da definire. Aggiornare la dicitura al go-live. */}
+  <p>
+    Le opere offerte su questo sito sono vendute da <strong>brama di Riccardo Bramani</strong>,
+    impresa individuale in regime forfettario (L. 190/2014), di seguito anche &ldquo;il Venditore&rdquo;.
+  </p>
+  <p>
+    P.IVA 13355710966 (operazioni non soggette a IVA, regime forfettario: i prezzi indicati sono finali).
+    Recapito: Viale Monte Nero 78/80, 20135 Milano.
+    Contatto: <a href="mailto:riccardo@brama.studio">riccardo@brama.studio</a>.
+  </p>
+
+  <h2 id="oggetto">2. Oggetto</h2>
+  <p>
+    brama vende opere d&rsquo;arte originali realizzate a mano. Ogni opera è un <strong>pezzo unico</strong>:
+    non esistono copie, edizioni o repliche, salvo diversa ed esplicita indicazione nella scheda dell&rsquo;opera.
+  </p>
+  <p>
+    I presenti Termini si applicano a tutti gli ordini effettuati tramite il sito, con consegna in Italia
+    e negli Stati membri dell&rsquo;Unione Europea.
+  </p>
+
+  <h2 id="prezzi">3. Prezzi</h2>
+  <ul>
+    <li>Tutti i prezzi sono espressi in <strong>euro (EUR)</strong>.</li>
+    {/* NOTA INTERNA (non pubblicare): regime fiscale del venditore — ordinario, forfettario o regime
+        del margine per opere d'arte — da confermare con commercialista; adeguare la dicitura. */}
+    <li>I prezzi si intendono <strong>IVA inclusa, ove applicabile</strong>.</li>
+    <li>
+      I costi di spedizione non sono inclusi nel prezzo dell&rsquo;opera e sono indicati prima della conferma
+      dell&rsquo;ordine (v. pagina <a href="/legal/spedizioni">Spedizioni e resi</a>).
+    </li>
+    <li>
+      Il Venditore si riserva il diritto di modificare i prezzi in qualsiasi momento; agli ordini già conclusi
+      si applica il prezzo in vigore al momento dell&rsquo;ordine.
+    </li>
+  </ul>
+
+  <h2 id="ordine">4. Processo d&rsquo;ordine e conclusione del contratto</h2>
+  <ol>
+    <li>
+      L&rsquo;acquirente seleziona l&rsquo;opera e avvia il pagamento tramite <strong>Stripe Checkout</strong>,
+      piattaforma di pagamento gestita da Stripe.
+    </li>
+    <li>Il pagamento può avvenire con i metodi resi disponibili da Stripe al momento dell&rsquo;acquisto.</li>
+    <li>
+      <strong>Riserva di disponibilità, opera unica.</strong> Trattandosi di pezzi unici, l&rsquo;inserimento
+      di un&rsquo;opera nel checkout non ne garantisce la disponibilità.
+      <strong>Il contratto si intende concluso soltanto al momento del pagamento andato a buon fine e della
+      conferma d&rsquo;ordine inviata via email.</strong> In caso di ordini simultanei sulla stessa opera,
+      prevale il primo pagamento completato; gli eventuali altri pagamenti saranno integralmente rimborsati,
+      senza ulteriori obblighi per il Venditore.
+    </li>
+    <li>La conferma d&rsquo;ordine riepiloga opera, prezzo, indirizzo di consegna e riferimenti del Venditore.</li>
+  </ol>
+
+  <h2 id="certificato">5. Certificato di autenticità</h2>
+  <p>
+    Ogni opera è accompagnata da un <strong>certificato di autenticità</strong> firmato, incluso nel prezzo,
+    che identifica l&rsquo;opera (titolo, tecnica, dimensioni, anno) e ne attesta l&rsquo;originalità.
+  </p>
+
+  <h2 id="fotografie">6. Fotografie e resa reale dell&rsquo;opera</h2>
+  <p>
+    Le fotografie pubblicate sul sito descrivono l&rsquo;opera con la massima cura e costituiscono parte
+    della descrizione contrattuale. Tuttavia:
+  </p>
+  <ul>
+    <li>la resa dei colori può variare in funzione dello schermo utilizzato dall&rsquo;acquirente;</li>
+    <li>
+      trattandosi di opere realizzate a mano, texture, riflessi e dettagli materici possono apparire
+      diversamente dal vivo rispetto alla fotografia.
+    </li>
+  </ul>
+  <p>Tali differenze, nei limiti della normale tolleranza, non costituiscono difetto di conformità.</p>
+
+  <h2 id="spedizione">7. Spedizione e consegna</h2>
+  <p>
+    Le opere sono spedite con corriere assicurato e tracciamento. Modalità, tempi e costi sono descritti
+    nella pagina <a href="/legal/spedizioni">Spedizioni e resi</a>, che costituisce parte integrante dei
+    presenti Termini.
+  </p>
+
+  <h2 id="recesso">8. Diritto di recesso</h2>
+  <p>
+    Se l&rsquo;acquirente è un consumatore, ha diritto di recedere dal contratto entro 14 giorni dal
+    ricevimento dell&rsquo;opera, secondo quanto previsto dalla pagina
+    <a href="/legal/recesso">Diritto di recesso</a>, che costituisce parte integrante dei presenti Termini.
+  </p>
+
+  <h2 id="garanzia">9. Garanzia legale di conformità</h2>
+  <p>
+    Ai consumatori si applica la garanzia legale di conformità prevista dal Codice del Consumo
+    (D.lgs. 206/2005 e D.lgs. 170/2021, ove applicabili).
+  </p>
+  {/* NOTA INTERNA (non pubblicare): da validare con il legale applicabilità e formulazione
+      della garanzia per beni usati/opere d'arte. */}
+
+  <h2 id="legge">10. Legge applicabile e foro competente</h2>
+  <ul>
+    <li>I presenti Termini sono regolati dalla <strong>legge italiana</strong>.</li>
+    <li>
+      Per gli acquirenti consumatori è competente il foro del luogo di residenza o domicilio del consumatore,
+      ove inderogabile per legge. Restano ferme le disposizioni più favorevoli previste dalla legge dello
+      Stato UE di residenza abituale del consumatore.
+    </li>
+  </ul>
+
+  <h2 id="adr">11. Risoluzione alternativa delle controversie (ADR/ODR)</h2>
+  <p>
+    Il consumatore residente nell&rsquo;Unione Europea può ricorrere a organismi di risoluzione alternativa
+    delle controversie (ADR) ai sensi della normativa applicabile.
+  </p>
+  {/* NOTA INTERNA (non pubblicare) — da validare con legale: la piattaforma europea ODR
+      (ec.europa.eu/consumers/odr) è stata dismessa dalla Commissione Europea nel 2025 ai sensi del
+      Reg. UE 2024/3228; verificare il riferimento corretto da inserire — es. elenco organismi ADR
+      italiani/UE — prima della pubblicazione. */}
+
+  <h2 id="contatti">12. Contatti</h2>
+  <p>
+    Per qualsiasi richiesta relativa a ordini e presenti Termini:
+    <a href="mailto:riccardo@brama.studio"><strong>riccardo@brama.studio</strong></a>.
+  </p>
+</LegalPage>

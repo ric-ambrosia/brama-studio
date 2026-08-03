@@ -1,0 +1,597 @@
+/* ============================================================
+   lab/p1 — IL TRATTO · prototipo "filo 2D"
+   Static-first: senza JS (o con prefers-reduced-motion) la pagina
+   è una sequenza verticale curata. La classe .is-journey (aggiunta
+   da journey.js) attiva il mondo 2D con camera su scroll.
+   ============================================================ */
+
+.p1 {
+  --p1-paper: #f4f0e0;
+  --p1-paper-dim: #e8e2cc;
+  --p1-ink: #0a0a0a;
+  --p1-ease: cubic-bezier(0.32, 0.72, 0, 1);
+  position: relative;
+  color: var(--ink);
+}
+.p1:not(.is-journey) { overflow-x: clip; }
+
+/* ---------- impalcatura viaggio ---------- */
+
+.p1-spacer { display: none; }
+.is-journey .p1-spacer { display: block; }
+
+.p1-stage { position: relative; }
+.is-journey .p1-stage {
+  position: fixed;
+  inset: 0;
+  overflow: hidden;
+  background: var(--bg);
+}
+
+.p1-world { position: relative; }
+.is-journey .p1-world {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 0;
+  height: 0;
+  will-change: transform;
+}
+
+/* ---------- stazioni: flusso statico / assolute nel mondo ---------- */
+
+.p1-station {
+  position: relative;
+  margin: 0 auto;
+  max-width: 880px;
+  padding: clamp(48px, 10vh, 120px) 20px;
+}
+.is-journey .p1-station {
+  position: absolute;
+  margin: 0;
+  padding: 0;
+  max-width: none;
+  width: var(--sw, min(88vw, 760px));
+  transform: translate(-50%, -50%) rotate(var(--srot, 0deg));
+}
+
+/* ---------- filo SVG ---------- */
+
+.p1-thread { display: none; }
+.is-journey .p1-thread {
+  display: block;
+  position: absolute;
+  overflow: visible;
+  pointer-events: none;
+  color: var(--p1-ink);
+}
+.p1-thread path {
+  stroke: currentColor;
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.p1-thread .p1-main { stroke-width: 5; }
+
+/* ---------- hero ---------- */
+
+.p1-hero { text-align: center; }
+.p1:not(.is-journey) .p1-hero {
+  min-height: 100svh;
+  display: grid;
+  align-content: center;
+  padding-top: 120px;
+}
+.p1-hero-inner {
+  display: grid;
+  gap: 20px;
+  justify-items: center;
+}
+.p1-kicker {
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.32em;
+  text-transform: uppercase;
+  color: var(--ink-mute);
+}
+.p1-hero h1 {
+  font-family: var(--display);
+  font-weight: 200;
+  font-size: clamp(64px, 15vw, 170px);
+  line-height: 0.95;
+  letter-spacing: -0.02em;
+}
+.p1-sub {
+  font-family: var(--serif);
+  font-weight: 300;
+  font-style: italic;
+  font-size: clamp(17px, 2.4vw, 23px);
+  line-height: 1.55;
+  max-width: 36ch;
+  color: var(--ink-dim);
+}
+.p1-scrollhint {
+  margin-top: 14px;
+  display: grid;
+  gap: 12px;
+  justify-items: center;
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.32em;
+  text-transform: uppercase;
+  color: var(--ink-mute);
+}
+.p1-scrollhint::after {
+  content: "";
+  width: 1px;
+  height: 46px;
+  background: linear-gradient(var(--accent), transparent);
+  animation: p1-drop 2.4s var(--p1-ease) infinite;
+}
+@keyframes p1-drop {
+  0% { transform: scaleY(0); transform-origin: top; opacity: 1; }
+  55% { transform: scaleY(1); opacity: 1; }
+  100% { transform: scaleY(1); opacity: 0; }
+}
+
+/* ---------- territori di disegno ---------- */
+
+.p1:not(.is-journey) .p1-territory {
+  max-width: none;
+  background: var(--p1-paper);
+  color: var(--p1-ink);
+  display: grid;
+  justify-items: center;
+  gap: 44px;
+  padding: 14vh 20px;
+}
+.is-journey .p1-territory {
+  display: grid;
+  justify-items: center;
+  gap: 30px;
+  color: var(--p1-ink);
+}
+
+.p1-frag {
+  font-family: var(--serif);
+  font-style: italic;
+  font-weight: 300;
+  font-size: clamp(20px, 3vw, 30px);
+  line-height: 1.45;
+  text-align: center;
+  color: inherit;
+}
+.p1-frag em {
+  font-style: italic;
+  color: rgba(200, 40, 28, 0.88);
+}
+.p1-frag-soft {
+  font-size: clamp(17px, 2.4vw, 24px);
+  letter-spacing: 0.04em;
+  opacity: 0.85;
+}
+
+/* pagina di quaderno (crop da /portfolio/page-*.jpg) */
+.p1-plate {
+  position: relative;
+  width: min(70vw, 430px);
+  background: #fdfbf3;
+  padding: 10px 10px 14px;
+  border: 1px solid rgba(10, 10, 10, 0.18);
+  box-shadow: 0 18px 50px rgba(10, 10, 10, 0.16);
+  transform: rotate(-1.4deg);
+}
+.p1-plate::before {
+  /* pezzetto di nastro carta */
+  content: "";
+  position: absolute;
+  top: -10px;
+  left: 50%;
+  width: 74px;
+  height: 20px;
+  transform: translateX(-50%) rotate(-2deg);
+  background: rgba(232, 226, 204, 0.85);
+  border: 1px solid rgba(10, 10, 10, 0.08);
+}
+.p1-cropwrap {
+  position: relative;
+  overflow: hidden;
+  background: #fdfbf3;
+}
+.p1-cropwrap img {
+  position: absolute;
+  max-width: none;
+  height: auto;
+}
+/* page-16: disegno a pennarello (il re alla finestra), metà destra */
+.p1-cropwrap-16 { aspect-ratio: 4 / 5; }
+.p1-cropwrap-16 img {
+  width: 238%;
+  left: -131%;
+  top: -3.6%;
+}
+/* page-14: "Ansia" — schizzi neri su bianco, in alto a destra */
+.p1-cropwrap-14 { aspect-ratio: 3 / 4; }
+.p1-cropwrap-14 img {
+  width: 340%;
+  left: -239%;
+  top: 15.6%;
+}
+.p1-platenote {
+  margin-top: 10px;
+  font-family: var(--mono);
+  font-size: 9.5px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: rgba(10, 10, 10, 0.52);
+  text-align: center;
+}
+.p1-t2a .p1-plate {
+  transform: rotate(2.2deg);
+  width: min(62vw, 370px);
+}
+.p1-t2a .p1-cropwrap img { filter: grayscale(1) contrast(0.96); }
+.p1-t2a .p1-plate { opacity: 0.94; }
+
+/* ---------- materia (le opere) ---------- */
+
+.p1:not(.is-journey) .p1-materia {
+  max-width: none;
+  padding: 14vh 20px;
+  display: grid;
+  justify-items: center;
+}
+
+/* fit-content: il rect del pannello coincide con il quadro,
+   così le percentuali della torcia sono esatte */
+.p1-panel {
+  position: relative;
+  margin: 0 auto;
+  width: fit-content;
+}
+
+.p1-canvas {
+  position: relative;
+  overflow: hidden;
+  background: #0b1226;
+  border: 1px solid rgba(240, 244, 255, 0.14);
+  box-shadow:
+    0 30px 90px rgba(0, 0, 0, 0.55),
+    0 4px 18px rgba(0, 0, 0, 0.4);
+}
+.p1-vert .p1-canvas { aspect-ratio: 3 / 2; width: min(92vw, 900px); }
+.p1-abb .p1-canvas { aspect-ratio: 1 / 3; height: min(74svh, 780px); margin-inline: auto; }
+
+.p1-art {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* strato "torcia": duplicato luminoso, mascherato sul puntatore */
+.p1-lit {
+  position: absolute;
+  inset: 0;
+  background-size: cover;
+  background-position: center;
+  filter: brightness(1.55) saturate(1.4) contrast(1.05);
+  opacity: 0;
+  pointer-events: none;
+  -webkit-mask-image: radial-gradient(
+    circle var(--trpx, 200px) at var(--tx, 50%) var(--ty, 45%),
+    #000 0%, rgba(0, 0, 0, 0.5) 55%, transparent 78%
+  );
+  mask-image: radial-gradient(
+    circle var(--trpx, 200px) at var(--tx, 50%) var(--ty, 45%),
+    #000 0%, rgba(0, 0, 0, 0.5) 55%, transparent 78%
+  );
+  transition: opacity 0.6s var(--p1-ease);
+}
+.p1-panel.is-live .p1-lit { opacity: 0.95; }
+
+/* vertigine: torcia sulla striscia di fibre → il vortice si accende */
+.p1-glow {
+  position: absolute;
+  inset: 0;
+  background-size: cover;
+  background-position: center;
+  mix-blend-mode: screen;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.9s var(--p1-ease);
+}
+.p1-panel.is-lit .p1-glow { opacity: 0.55; }
+
+.p1-fibre {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 7%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-around;
+  align-items: center;
+  pointer-events: none;
+  border-left: 1px solid rgba(240, 244, 255, 0.06);
+}
+.p1-fibre i {
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: rgba(240, 244, 255, 0.28);
+  box-shadow: 0 0 0 rgba(74, 147, 230, 0);
+  transition: background 0.5s var(--p1-ease), box-shadow 0.5s var(--p1-ease);
+}
+.p1-panel.is-lit .p1-fibre i {
+  background: #eaf4ff;
+  box-shadow:
+    0 0 10px rgba(150, 195, 255, 0.95),
+    0 0 26px rgba(74, 147, 230, 0.7);
+  animation: p1-spark 1.6s ease-in-out infinite;
+}
+.p1-panel.is-lit .p1-fibre i:nth-child(2n) { animation-delay: 0.35s; }
+.p1-panel.is-lit .p1-fibre i:nth-child(3n) { animation-delay: 0.7s; }
+@keyframes p1-spark {
+  0%, 100% { opacity: 0.72; }
+  50% { opacity: 1; }
+}
+
+/* abbandono: punti dispersi rivelati dalla torcia */
+.p1-punti {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.5s var(--p1-ease);
+  -webkit-mask-image: radial-gradient(
+    circle var(--trpx2, 240px) at var(--tx, 50%) var(--ty, 45%),
+    #000 0%, transparent 75%
+  );
+  mask-image: radial-gradient(
+    circle var(--trpx2, 240px) at var(--tx, 50%) var(--ty, 45%),
+    #000 0%, transparent 75%
+  );
+}
+.p1-panel.is-live .p1-punti { opacity: 1; }
+.p1-punti i {
+  position: absolute;
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: #eef4ff;
+  box-shadow:
+    0 0 8px rgba(160, 200, 255, 0.95),
+    0 0 22px rgba(74, 147, 230, 0.6);
+}
+
+/* abbandono: specchio infinito al centro */
+.p1-mirror {
+  position: absolute;
+  left: 50%;
+  top: 51.5%;
+  width: 52%;
+  aspect-ratio: 1;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  pointer-events: none;
+  opacity: 0;
+  mix-blend-mode: screen;
+  background:
+    repeating-radial-gradient(
+      circle at 50% 50%,
+      rgba(240, 244, 255, 0.15) 0 1.2%,
+      rgba(10, 14, 30, 0) 1.2% 7.5%
+    ),
+    radial-gradient(
+      circle at 50% 50%,
+      rgba(150, 195, 255, 0.5),
+      rgba(20, 30, 60, 0.7) 52%,
+      transparent 72%
+    );
+  transition: opacity 0.7s var(--p1-ease);
+}
+.p1-panel.is-mirror .p1-mirror {
+  opacity: 1;
+  animation: p1-depth 3.4s ease-in-out infinite alternate;
+}
+@keyframes p1-depth {
+  from { transform: translate(-50%, -50%) scale(1); }
+  to { transform: translate(-50%, -50%) scale(0.86); }
+}
+
+/* ---------- targhetta museo (contenuto reale nel DOM) ---------- */
+
+.p1-label {
+  position: absolute;
+  z-index: 4;
+  left: clamp(12px, 3%, 28px);
+  bottom: clamp(12px, 3%, 28px);
+  max-width: min(46ch, 78%);
+  padding: 18px 20px 16px;
+  background: rgba(5, 10, 26, 0.74);
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(240, 244, 255, 0.14);
+}
+.p1-abb .p1-label {
+  left: 0;
+  right: 0;
+  bottom: 5%;
+  margin-inline: auto;
+  width: min(88vw, 380px);
+  max-width: none;
+}
+.p1-label h2 {
+  font-family: var(--display);
+  font-weight: 300;
+  font-size: clamp(26px, 4vw, 40px);
+  line-height: 1.05;
+  letter-spacing: 0.02em;
+  text-transform: lowercase;
+}
+.p1-meta {
+  margin-top: 6px;
+  font-family: var(--mono);
+  font-size: 10.5px;
+  letter-spacing: 0.08em;
+  line-height: 1.6;
+  color: var(--ink-dim);
+}
+.p1-quote {
+  margin-top: 12px;
+  font-family: var(--serif);
+  font-style: italic;
+  font-weight: 300;
+  font-size: clamp(15px, 2vw, 17.5px);
+  line-height: 1.5;
+}
+.p1-cite {
+  display: block;
+  margin-top: 5px;
+  font-family: var(--mono);
+  font-style: normal;
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  color: var(--ink-mute);
+}
+.p1-torchnote {
+  margin-top: 12px;
+  font-family: var(--mono);
+  font-size: 10.5px;
+  line-height: 1.6;
+  letter-spacing: 0.03em;
+  color: #8fc1ff;
+}
+.p1-cta {
+  display: inline-block;
+  margin-top: 14px;
+  font-family: var(--sans);
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--ink);
+  border-bottom: 1px solid var(--accent-soft);
+  padding-bottom: 3px;
+  transition: color 0.25s var(--p1-ease);
+}
+.p1-cta span { display: inline-block; transition: transform 0.3s var(--p1-ease); }
+.p1-cta:hover { color: var(--accent); }
+.p1-cta:hover span { transform: translateX(5px); }
+.p1-cta:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 4px;
+}
+
+/* ---------- finale: la firma ---------- */
+
+.p1-fine { text-align: center; }
+.p1:not(.is-journey) .p1-fine {
+  max-width: none;
+  background: var(--p1-paper);
+  color: var(--p1-ink);
+  padding: 16vh 20px;
+}
+.p1-fine-inner {
+  display: grid;
+  gap: 26px;
+  justify-items: center;
+}
+.is-journey .p1-fine { color: var(--p1-ink); }
+.p1-sig {
+  width: min(52vw, 240px);
+  height: auto;
+  filter: brightness(0);
+  --sig: 115%;
+  -webkit-mask-image: linear-gradient(105deg, #000 0 var(--sig), transparent calc(var(--sig) + 14%));
+  mask-image: linear-gradient(105deg, #000 0 var(--sig), transparent calc(var(--sig) + 14%));
+}
+.p1-fine .p1-frag { font-size: clamp(18px, 2.6vw, 26px); }
+.p1-fine-nav {
+  display: flex;
+  gap: 34px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+.p1-fine .p1-cta {
+  color: inherit;
+  border-bottom-color: rgba(200, 40, 28, 0.6);
+}
+.p1-fine .p1-cta:hover { color: var(--red); }
+
+/* ---------- livelli fissi: alone-torcia, rotta, fps ---------- */
+
+.p1-halo {
+  display: none;
+  position: fixed;
+  left: 0;
+  top: 0;
+  width: 46vmin;
+  height: 46vmin;
+  margin: -23vmin 0 0 -23vmin;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle,
+    rgba(214, 232, 255, 0.34),
+    rgba(120, 170, 240, 0.12) 45%,
+    transparent 70%
+  );
+  mix-blend-mode: screen;
+  pointer-events: none;
+  opacity: 0;
+  z-index: 60;
+}
+.is-journey .p1-halo { display: block; }
+.p1-torch .p1-stage { cursor: none; }
+
+.p1-way {
+  display: none;
+  position: fixed;
+  left: 16px;
+  bottom: 14px;
+  z-index: 210;
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: var(--ink-mute);
+  pointer-events: none;
+  transition: color 0.5s;
+}
+.is-journey .p1-way { display: block; }
+
+.p1-fps {
+  position: fixed;
+  top: 8px;
+  left: 8px;
+  z-index: 400;
+  font-family: var(--mono);
+  font-size: 11px;
+  line-height: 1.4;
+  padding: 5px 8px;
+  background: rgba(5, 10, 26, 0.82);
+  color: #9be29b;
+  border: 1px solid var(--line);
+  pointer-events: none;
+  white-space: pre;
+}
+
+/* ---------- fase carta: adatta il chrome condiviso ---------- */
+
+html.p1-paper .burger-line { background: #0a0a0a; }
+html.p1-paper .p1-way { color: rgba(10, 10, 10, 0.55); }
+
+/* ---------- stati iniziali del viaggio (il timeline li anima) ---------- */
+
+.is-journey .p1-label { opacity: 0; }
+
+/* ---------- mobile ---------- */
+
+@media (max-width: 640px) {
+  .p1-label { padding: 13px 14px 12px; }
+  .p1-vert .p1-label { max-width: 88%; }
+  .p1-abb .p1-canvas { height: min(68svh, 640px); }
+}

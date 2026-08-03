@@ -1,0 +1,66 @@
+---
+import LegalPage from '../../components/LegalPage.astro';
+---
+
+<LegalPage
+  title="Cookie policy"
+  metaTitle="Cookie policy · brama"
+  description="Cookie policy del sito brama: nessun cookie di tracciamento o profilazione; solo cookie tecnici di Stripe al momento del pagamento."
+>
+  <p class="legal-summary">
+    <strong>Questo sito non utilizza cookie di tracciamento.</strong> Nessun cookie di profilazione,
+    nessun cookie di marketing, nessun analytics basato su cookie.
+  </p>
+
+  <h2 id="titolare">1. Titolare</h2>
+  {/* NOTA INTERNA (non pubblicare): titolare = Riccardo Bramani / futura entità giuridica del brand.
+      Da confermare con commercialista; P.IVA da definire. Aggiornare la dicitura al go-live. */}
+  <p>
+    <strong>brama di Riccardo Bramani</strong>, P.IVA 13355710966, Viale Monte Nero 78/80, 20135 Milano, contatto:
+    <a href="mailto:riccardo@brama.studio"><strong>riccardo@brama.studio</strong></a>.
+  </p>
+
+  <h2 id="cookie-utilizzati">2. Cookie utilizzati</h2>
+
+  <h3>Navigazione del sito</h3>
+  <p>
+    Durante la normale navigazione <strong>non viene installato alcun cookie</strong> né altra tecnologia
+    di tracciamento (pixel, fingerprinting, local storage a fini di tracciamento). Le eventuali statistiche
+    di utilizzo, se attivate in futuro, saranno raccolte in forma <strong>cookieless e anonima</strong> e
+    questa policy sarà aggiornata di conseguenza.
+  </p>
+
+  <h3>Checkout (Stripe)</h3>
+  <p>
+    Solo al momento del pagamento, la pagina di checkout gestita da <strong>Stripe</strong> installa
+    <strong>cookie tecnici</strong> strettamente necessari a:
+  </p>
+  <ul>
+    <li>completare la transazione;</li>
+    <li>
+      garantire la sicurezza del pagamento e la prevenzione delle frodi
+      (es. cookie <code>__stripe_mid</code>, <code>__stripe_sid</code>).
+    </li>
+  </ul>
+  <p>
+    Si tratta di cookie tecnici/di sicurezza, non utilizzati per finalità pubblicitarie da parte di questo
+    sito. Per il dettaglio si rimanda alla cookie policy di Stripe
+    (<a href="https://stripe.com/cookies-policy" rel="noopener noreferrer" target="_blank">stripe.com/cookies-policy</a>).
+  </p>
+  {/* NOTA INTERNA (non pubblicare): da validare la qualificazione dei cookie antifrode di Stripe come
+      tecnici esenti da consenso ai sensi delle Linee guida del Garante; confermare che non sia
+      necessario alcun banner. */}
+
+  <h2 id="banner">3. Banner e consenso</h2>
+  <p>
+    Poiché il sito utilizza esclusivamente cookie tecnici strettamente necessari,
+    <strong>non è previsto alcun banner di richiesta del consenso</strong>.
+  </p>
+  {/* NOTA INTERNA (non pubblicare): da confermare con legale prima del go-live. */}
+
+  <h2 id="browser">4. Gestione dei cookie dal browser</h2>
+  <p>
+    L&rsquo;utente può in ogni caso bloccare o eliminare i cookie tramite le impostazioni del proprio
+    browser. Il blocco dei cookie tecnici di Stripe può impedire il completamento del pagamento.
+  </p>
+</LegalPage>

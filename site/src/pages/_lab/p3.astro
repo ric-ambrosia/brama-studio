@@ -1,0 +1,279 @@
+---
+// P3 — "IBRIDO" · il tratto
+// DOM scrollabile con sezioni vere (SEO/a11y) + canvas 2D fixed per il filo
+// nero + micro-canvas WebGL (three) per la torcia dentro le opere.
+import Base from '../../layouts/Base.astro';
+import '../../styles/lab/p3.css';
+
+const title = 'il tratto — il viaggio di brama (lab P3)';
+const description =
+  'Un filo di pennarello si disegna da solo e conduce attraverso territori di disegno fino alla materia: Vertigine e Abbandono, opere con fibre ottiche che si accendono con la luce.';
+---
+
+<Base bare title={title} description={description}>
+  <script is:inline>
+    // Progressive enhancement: la modalità "viaggio" esiste solo con JS
+    // e senza prefers-reduced-motion. Il default markup-only è la versione
+    // statica curata.
+    if (!matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      document.documentElement.classList.add('p3-js');
+    }
+  </script>
+
+  <div class="p3" id="p3">
+    <canvas class="p3-thread" id="p3-thread" aria-hidden="true"></canvas>
+
+    <!-- ============================= HERO ============================= -->
+    <section class="p3-hero" id="inizio" aria-labelledby="p3-title" data-thread="hero">
+      <p class="p3-kicker">brama · il viaggio — prototipo P3 «ibrido»</p>
+      <h1 class="p3-title" id="p3-title">il <em>tratto</em></h1>
+      <p class="p3-lede">
+        Un filo di pennarello si disegna da solo e fa strada. Seguilo: dove il
+        bianco e nero cede al colore, si entra nella materia.
+      </p>
+      <p class="p3-hint" aria-hidden="true">scorri<span class="p3-hint-line"></span></p>
+    </section>
+
+    <!-- ================= TERRITORIO 01 — verso Vertigine ================= -->
+    <section
+      class="p3-territory p3-t1"
+      id="territorio-1"
+      aria-labelledby="p3-t1-h"
+      data-thread="t1"
+    >
+      <div
+        class="p3-paper-tex"
+        style="background-image:url('/portfolio/page-03.jpg')"
+        aria-hidden="true"
+      >
+      </div>
+
+      <!-- tratteggio: archi che iniziano ad avvitarsi (anticipa il vortice) -->
+      <svg
+        class="p3-hatch"
+        viewBox="0 0 1000 1400"
+        preserveAspectRatio="xMidYMid slice"
+        aria-hidden="true"
+      >
+        <g stroke-width="2.2" opacity="0.5">
+          <path pathLength="1" d="M 130 220 Q 300 150 470 210" stroke-dasharray="8 14" />
+          <path pathLength="1" d="M 90 340 Q 320 240 560 330" stroke-dasharray="6 18" />
+          <path pathLength="1" d="M 620 480 A 190 190 0 0 1 820 620" stroke-dasharray="10 12" />
+          <path pathLength="1" d="M 590 560 A 130 130 0 0 1 760 680" stroke-dasharray="7 15" />
+          <path pathLength="1" d="M 640 640 A 70 70 0 0 1 720 720" stroke-dasharray="5 10" />
+          <path pathLength="1" d="M 150 900 Q 340 830 460 940" stroke-dasharray="9 13" />
+          <path pathLength="1" d="M 220 1060 Q 420 980 600 1090" stroke-dasharray="6 16" />
+          <path pathLength="1" d="M 300 1240 A 220 220 0 0 1 640 1180" stroke-dasharray="12 10" />
+        </g>
+        <g stroke-width="1.4" opacity="0.35">
+          <line pathLength="1" x1="740" y1="180" x2="790" y2="260" />
+          <line pathLength="1" x1="800" y1="160" x2="850" y2="240" />
+          <line pathLength="1" x1="860" y1="140" x2="910" y2="220" />
+          <line pathLength="1" x1="120" y1="1180" x2="90" y2="1260" />
+          <line pathLength="1" x1="180" y1="1200" x2="150" y2="1280" />
+        </g>
+      </svg>
+
+      <figure class="p3-frag p3-frag-a" data-speed="0.86">
+        <img
+          src="/portfolio/page-16.jpg"
+          alt="Frammento di disegno a pennarello di brama: figura con corona affacciata su una coperta a scacchi"
+          loading="lazy"
+          decoding="async"
+          width="600"
+          height="800"
+        />
+        <figcaption>dal quaderno — pennarello su carta</figcaption>
+      </figure>
+
+      <div class="p3-copy p3-tilt">
+        <p class="p3-kicker">attraversamento 01 — carta e inchiostro</p>
+        <h2 class="p3-h2" id="p3-t1-h">Il tratto comincia ad avvitarsi.</h2>
+        <p class="p3-serif">
+          Un ronzio sotto la pelle della carta. Più avanti qualcosa gira su se
+          stesso e chiama: è il capogiro di chi può ancora scegliere tutto — e
+          non ha ancora scelto niente.
+        </p>
+      </div>
+    </section>
+
+    <!-- ===================== TAPPA 01 — VERTIGINE ===================== -->
+    <section
+      class="p3-opera p3-vertigine"
+      id="vertigine"
+      aria-labelledby="p3-vertigine-h"
+      data-opera="vertigine"
+      data-thread="opera1"
+    >
+      <div class="p3-opera-stage">
+        <div class="p3-opera-veil" aria-hidden="true"></div>
+
+        <figure class="p3-artwork">
+          <img
+            src="/images/thumbs/Vertigine-1200.jpg"
+            alt="Vertigine (2025): vortice blu in acrilico e resina, attraversato da frammenti di vetro rosso che convergono verso un centro luminoso. 150 × 100 cm."
+            width="1200"
+            height="797"
+            loading="lazy"
+            decoding="async"
+          />
+          <canvas class="p3-torch" aria-hidden="true"></canvas>
+          <div class="p3-torch-fallback" aria-hidden="true"></div>
+        </figure>
+
+        <div class="p3-opera-meta">
+          <p class="p3-kicker">tappa 01 — opera</p>
+          <h2 class="p3-opera-title" id="p3-vertigine-h">Vertigine</h2>
+          <p class="p3-mono">2025 · 150 × 100 cm</p>
+          <p class="p3-materials">
+            Acrilici, pennarello, resina, vetro, carta, fibra ottica, acciaio.
+          </p>
+          <blockquote class="p3-quote">
+            «L'angoscia è la vertigine della libertà.»
+            <cite>Søren Kierkegaard</cite>
+          </blockquote>
+          <p class="p3-live">
+            Dal vivo: una torcia puntata sulla striscia di fibre ottiche, lungo
+            il bordo destro, accende il vortice dall'interno.
+          </p>
+          <p class="p3-torch-hint">qui la torcia è il tuo dito — muovila sull'opera</p>
+          <a class="p3-cta" href="/opera/vertigine">entra nell'opera<span aria-hidden="true"> →</span></a>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= TERRITORIO 02 — verso Abbandono ================= -->
+    <section
+      class="p3-territory p3-t2"
+      id="territorio-2"
+      aria-labelledby="p3-t2-h"
+      data-thread="t2"
+    >
+      <div
+        class="p3-paper-tex"
+        style="background-image:url('/portfolio/page-03.jpg')"
+        aria-hidden="true"
+      >
+      </div>
+
+      <!-- tratteggio: segni verticali che cadono, si spezzano, si disperdono -->
+      <svg
+        class="p3-hatch"
+        viewBox="0 0 1000 1400"
+        preserveAspectRatio="xMidYMid slice"
+        aria-hidden="true"
+      >
+        <g stroke-width="2.4" opacity="0.5">
+          <path pathLength="1" d="M 220 120 q 18 90 -6 190" stroke-dasharray="30 22" />
+          <path pathLength="1" d="M 350 90 q -14 120 8 240" stroke-dasharray="22 30" />
+          <path pathLength="1" d="M 500 140 q 10 100 -12 210" stroke-dasharray="16 34" />
+          <path pathLength="1" d="M 660 100 q -8 130 10 230" stroke-dasharray="12 40" />
+          <path pathLength="1" d="M 800 160 q 14 90 -8 180" stroke-dasharray="8 46" />
+          <path pathLength="1" d="M 280 620 q 12 120 -10 240" stroke-dasharray="10 44" />
+          <path pathLength="1" d="M 430 660 q -10 110 12 220" stroke-dasharray="7 50" />
+          <path pathLength="1" d="M 590 640 q 8 130 -10 250" stroke-dasharray="5 56" />
+        </g>
+        <g stroke-width="1.6" opacity="0.32">
+          <line pathLength="1" x1="330" y1="1120" x2="336" y2="1160" />
+          <line pathLength="1" x1="420" y1="1180" x2="424" y2="1210" />
+          <line pathLength="1" x1="530" y1="1130" x2="533" y2="1152" />
+          <line pathLength="1" x1="640" y1="1200" x2="642" y2="1216" />
+          <line pathLength="1" x1="740" y1="1150" x2="741" y2="1160" />
+        </g>
+      </svg>
+
+      <figure class="p3-frag p3-frag-b" data-speed="1.12">
+        <img
+          src="/portfolio/page-16.jpg"
+          alt="Frammento di disegno a pennarello di brama: bussola e trama a scacchi che si disfa"
+          loading="lazy"
+          decoding="async"
+          width="600"
+          height="800"
+        />
+        <figcaption>dal quaderno — il segno si disperde</figcaption>
+      </figure>
+
+      <div class="p3-copy p3-tilt">
+        <p class="p3-kicker">attraversamento 02 — il segno si spezza</p>
+        <h2 class="p3-h2" id="p3-t2-h">Il tratto si interrompe, e cade.</h2>
+        <p class="p3-serif">
+          Nessuno chiede il permesso di lasciarti. Il segno si fa
+          intermittente, come i passi di chi è stato messo al mondo senza
+          essere interpellato.
+        </p>
+      </div>
+    </section>
+
+    <!-- ===================== TAPPA 02 — ABBANDONO ===================== -->
+    <section
+      class="p3-opera p3-abbandono"
+      id="abbandono"
+      aria-labelledby="p3-abbandono-h"
+      data-opera="abbandono"
+      data-thread="opera2"
+    >
+      <div class="p3-opera-stage">
+        <div class="p3-opera-veil" aria-hidden="true"></div>
+
+        <figure class="p3-artwork">
+          <img
+            src="/images/thumbs/Abbandono-600.jpg"
+            alt="Abbandono (2025): colata verticale scura di resina e ossidiana, punteggiata da frammenti che riflettono la luce attorno a un centro specchiante. 50 × 150 cm."
+            width="600"
+            height="1223"
+            loading="lazy"
+            decoding="async"
+          />
+          <canvas class="p3-torch" aria-hidden="true"></canvas>
+          <div class="p3-torch-fallback" aria-hidden="true"></div>
+        </figure>
+
+        <div class="p3-opera-meta">
+          <p class="p3-kicker">tappa 02 — opera</p>
+          <h2 class="p3-opera-title" id="p3-abbandono-h">Abbandono</h2>
+          <p class="p3-mono">2025 · 50 × 150 cm</p>
+          <p class="p3-materials">Acrilici, resina, ossidiana, fibra ottica.</p>
+          <blockquote class="p3-quote">
+            «Geworfenheit: l'essere gettati in un mondo che non abbiamo
+            scelto.»
+            <cite>Martin Heidegger</cite>
+          </blockquote>
+          <p class="p3-live">
+            Dal vivo: la torcia accende punti dispersi nella resina e svela uno
+            specchio infinito al centro dell'opera.
+          </p>
+          <p class="p3-torch-hint">avvicina la luce al centro: lo specchio risponde</p>
+          <a class="p3-cta" href="/opera/abbandono">entra nell'opera<span aria-hidden="true"> →</span></a>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================ FINALE ============================ -->
+    <section class="p3-finale" id="firma" aria-label="Chiusura del viaggio" data-thread="finale">
+      <p class="p3-kicker">il filo si riannoda</p>
+      <img
+        class="p3-sig"
+        src="/images/signature.png"
+        alt="brama — firma"
+        width="300"
+        height="150"
+        loading="lazy"
+        decoding="async"
+      />
+      <p class="p3-tagline">brama traduce le emozioni in gesto, colore e materia.</p>
+      <nav class="p3-finale-nav" aria-label="Prosegui">
+        <button type="button" id="p3-restart">rifai il viaggio ↑</button>
+        <a href="/archivio">archivio delle opere</a>
+        <a href="/contatti">contatti</a>
+      </nav>
+    </section>
+
+    <div class="p3-fps" id="p3-fps" hidden aria-hidden="true"></div>
+  </div>
+
+  <script>
+    import { initP3 } from '../../scripts/lab/p3/index.js';
+    initP3();
+  </script>
+</Base>

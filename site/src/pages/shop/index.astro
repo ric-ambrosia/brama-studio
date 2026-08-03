@@ -1,0 +1,663 @@
+---
+// /shop — vendita delle opere originali.
+// Ordine griglia: disponibili (byJourneyOrder) → riservate → vendute (prova
+// sociale) → in lavorazione (senza prezzo). Escluse le not-for-sale.
+// Lo status è quello effettivo (frontmatter + KV): dopo una vendita il Deploy
+// Hook rigenera la pagina e il badge diventa "Venduto" senza toccare i file.
+//
+// Regia (art-direction §8): testata sulla notte con l'emblema del pacco
+// (Ciclo A, tinto via mask CSS), poi la vetrina come scena CHIARA e ordinata
+// — carta azzurrata, taglio teatrale netto — quindi ritorno alla notte per
+// commissioni e spedizioni, e fregio di filigrana basso a chiudere.
+import { getCollection } from 'astro:content';
+import Base from '../../layouts/Base.astro';
+import ShopCard from '../../components/ShopCard.astro';
+import { SITE, FEATURES, SHIPPING, VENUE } from '../../lib/site';
+import {
+  effectiveStatus,
+  formatPrice,
+  formatSize,
+  byJourneyOrder,
+  priceInfo,
+  type Work,
+} from '../../lib/works';
+import catalog from '../../../content-notes/images-catalog.json';
+
+const works = await getCollection('works');
+const entries = await Promise.all(
+  works.map(async (w) => ({ w, status: await effectiveStatus(w) }))
+);
+
+const isEmo = (e: { w: Work }) => e.w.data.collection === 'emozioni';
+const pick = (s: string) =>
+  entries.filter((e) => e.status === s && !isEmo(e)).sort((a, b) => byJourneyOrder(a.w, b.w));
+
+const available = pick('available');
+const reserved = pick('reserved');
+const sold = pick('sold');
+const coming = pick('coming-soon');
+// not-for-sale escluse dallo shop (vivono in Viaggio e Archivio)
+const gridItems = [...available, ...reserved, ...sold, ...coming];
+
+// Archivio Emozioni — 24 tele a 25€: sezione a parte. Disponibili prima, poi vendute.
+const emoRank: Record<string, number> = { available: 0, reserved: 1, sold: 2, 'coming-soon': 3, 'not-for-sale': 4 };
+const emo = entries
+  .filter(isEmo)
+  .sort((a, b) => (emoRank[a.status] - emoRank[b.status]) || a.w.data.title.localeCompare(b.w.data.title, 'it'));
+const emoAvail = emo.filter((e) => e.status === 'available' || e.status === 'reserved').length;
+
+// Thumbs dal catalogo immagini: -600 per tutte, -1200 dove esiste.
+type ShopMedia = { src: string; srcset?: string; width: number; height: number };
+const toPublic = (f: string) => f.replace(/^site\/public/, '');
+const media = new Map<string, ShopMedia>();
+for (const item of catalog.works as {
+  slug: string;
+  image?: { file: string; width: number; height: number };
+  thumbs?: { file: string; width: number; height: number }[];
+}[]) {
+  const t600 = item.thumbs?.find((t) => t.file.endsWith('-600.jpg'));
+  const t1200 = item.thumbs?.find((t) => t.file.endsWith('-1200.jpg'));
+  if (t600) {
+    media.set(item.slug, {
+      src: toPublic(t600.file),
+      srcset: [
+        `${toPublic(t600.file)} 600w`,
+        ...(t1200 ? [`${toPublic(t1200.file)} 1200w`] : []),
+      ].join(', '),
+      width: t600.width,
+      height: t600.height,
+    });
+  } else if (item.image) {
+    media.set(item.slug, {
+      src: toPublic(item.image.file),
+      width: item.image.width,
+      height: item.image.height,
+    });
+  }
+}
+
+const metaLine = (w: Work) =>
+  [String(w.data.year), w.data.size ? formatSize(w.data.size) : null]
+    .filter(Boolean)
+    .join(' · ');
+
+const altText = (w: Work) => {
+  const mats = w.data.materials.join(', ');
+  return `«${w.data.title}», ${w.data.year}, opera materica${mats ? ` in ${mats}` : ''}${
+    w.data.size ? `, ${formatSize(w.data.size)}` : ''
+  }`;
+};
+
+const hasFiber = (w: Work) => w.data.materials.includes('fibra ottica');
+
+// Selettore categoria: "Abbigliamento" esiste solo con il feature flag attivo.
+const categories = [
+  { href: '/shop', label: 'Opere', current: true },
+  ...(FEATURES.apparel
+    ? [{ href: '/shop/abbigliamento', label: 'Abbigliamento', current: false }]
+    : []),
+];
+
+// Tariffe spedizione (fonte: config/shipping.json). Qui solo esempi per la vetrina:
+// il costo esatto per opera e destinazione si vede sulla pagina di ogni opera.
+const shipTiers = SHIPPING.tiers as Record<
+  string,
+  { label: string; IT: number | null; EU: number | null; WORLD: number | null }
+>;
+const shipOpts = SHIPPING.options as { handMilan: { price: number } };
+const fmtShip = (cents: number | null) =>
+  cents == null
+    ? 'su preventivo'
+    : new Intl.NumberFormat('it-IT', {
+        style: 'currency',
+        currency: 'EUR',
+        maximumFractionDigits: cents % 100 === 0 ? 0 : 2,
+      }).format(cents / 100);
+
+// JSON-LD: ItemList di Product per le sole opere disponibili.
+const productDescription = (w: Work) => {
+  const body = w.body?.trim();
+  if (body) return body.split(/\n{2,}/)[0].replace(/\s+/g, ' ');
+  const mats = w.data.materials.join(', ');
+  return `Opera materica unica, ${w.data.year}${mats ? `, ${mats}` : ''}.`;
+};
+const jsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'ItemList',
+  name: 'brama · opere originali disponibili',
+  numberOfItems: available.length,
+  itemListElement: available.map((e, i) => ({
+    '@type': 'ListItem',
+    position: i + 1,
+    item: {
+      '@type': 'Product',
+      name: e.w.data.title,
+      url: `${SITE.domain}/opera/${e.w.id}`,
+      ...(e.w.data.images.main
+        ? { image: `${SITE.domain}${e.w.data.images.main}` }
+        : {}),
+      description: productDescription(e.w),
+      brand: { '@type': 'Brand', name: SITE.name },
+      ...(e.w.data.price > 0
+        ? {
+            offers: {
+              '@type': 'Offer',
+              price: e.w.data.price,
+              priceCurrency: 'EUR',
+              availability: 'https://schema.org/InStock',
+              url: `${SITE.domain}/opera/${e.w.id}`,
+            },
+          }
+        : {}),
+    },
+  })),
+};
+
+const commissionMailto = `mailto:${SITE.email}?subject=${encodeURIComponent(
+  'Commissione'
+)}`;
+const quoteMailto = `mailto:${SITE.email}?subject=${encodeURIComponent(
+  'Preventivo spedizione'
+)}`;
+---
+
+<Base
+  title="Opere originali · brama"
+  description="Opere materiche originali in vendita: pezzi unici in acrilico, resina, vetro, ossidiana, oro e fibra ottica. Corriere assicurato con tracking e certificato di autenticità incluso."
+  jsonLd={jsonLd}
+>
+  <div class="shop-page">
+    <!-- testata: notte -->
+    <div class="page page-wide shop-head-wrap">
+      <header class="shop-head">
+        <div class="shop-head-copy">
+          <p class="eyebrow">Shop</p>
+          <h1>Opere originali</h1>
+          <p class="lead">
+            Pezzi unici. Corriere assicurato con tracking, certificato di
+            autenticità incluso.
+          </p>
+          <p class="shop-live">
+            Visibili anche dal vivo presso <a href="/esposizione">{VENUE.name}, {VENUE.city}</a>
+            <span class="shop-live-dates">· {VENUE.dateLabel}</span>
+          </p>
+        </div>
+        <span class="shop-emblem" aria-hidden="true"></span>
+      </header>
+    </div>
+
+    <!-- vetrina: scena carta (taglio teatrale scuro→chiaro) -->
+    <section class="shop-scene" aria-labelledby="shop-grid-h">
+      <div class="scene-inner">
+        <h2 id="shop-grid-h" class="sr-only">Opere in vendita</h2>
+        <div class="shop-toolbar">
+          <nav class="shop-cats" aria-label="Categorie dello shop">
+            {categories.map((c) => (
+              <a href={c.href} aria-current={c.current ? 'page' : undefined}>
+                {c.label}
+              </a>
+            ))}
+          </nav>
+          {available.length > 0 && (
+            <p class="shop-count">
+              {available.length}
+              {available.length === 1 ? ' opera disponibile' : ' opere disponibili'}
+              {sold.length > 0 &&
+                ` · ${sold.length} ${sold.length === 1 ? 'venduta' : 'vendute'}`}
+            </p>
+          )}
+        </div>
+
+        {gridItems.length > 0 ? (
+          <ul class="shop-grid" role="list">
+            {gridItems.map((e, i) => (
+              <li>
+                <ShopCard
+                  href={`/opera/${e.w.id}`}
+                  title={e.w.data.title}
+                  series={e.w.data.series}
+                  meta={metaLine(e.w)}
+                  status={e.status}
+                  priceLabel={
+                    e.status === 'available' || e.status === 'reserved'
+                      ? priceInfo(e.w.data).current
+                      : undefined
+                  }
+                  priceFullLabel={
+                    e.status === 'available' || e.status === 'reserved'
+                      ? priceInfo(e.w.data).full
+                      : null
+                  }
+                  media={media.get(e.w.id) ?? null}
+                  alt={altText(e.w)}
+                  lightActivated={hasFiber(e.w)}
+                  eager={i < 2}
+                />
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p class="shop-empty">
+            Nessuna opera disponibile in questo momento. Le prossime stanno
+            prendendo forma in studio. Per una commissione:
+            <a href={commissionMailto}>{SITE.email}</a>.
+          </p>
+        )}
+
+        {emo.length > 0 && (
+          <section class="shop-emo" aria-labelledby="shop-emo-h">
+            <div class="shop-emo-head">
+              <h2 id="shop-emo-h">Archivio Emozioni</h2>
+              <p>2021{emoAvail > 0 ? ` · ${emoAvail} disponibili` : ''}</p>
+            </div>
+            <ul class="shop-emo-grid" role="list">
+              {emo.map((e) => {
+                const soldOut = e.status === 'sold';
+                return (
+                  <li>
+                    <a class={`shop-emo-card${soldOut ? ' is-sold' : ''}`} href={`/opera/${e.w.id}`}>
+                      <span class="shop-emo-frame">
+                        <img src={e.w.data.images.main} alt={`${e.w.data.title}, tela dell'Archivio Emozioni`} loading="lazy" decoding="async" />
+                        {soldOut && <span class="shop-emo-badge">Venduto</span>}
+                      </span>
+                      <span class="shop-emo-row">
+                        <span class="shop-emo-name">{e.w.data.title}</span>
+                        <span class="shop-emo-price">{soldOut ? 'venduta' : '25 €'}</span>
+                      </span>
+                    </a>
+                  </li>
+                );
+              })}
+            </ul>
+          </section>
+        )}
+
+      </div>
+    </section>
+
+    <!-- coda: ritorno alla notte -->
+    <div class="page page-wide shop-tail">
+      <section class="shop-commission" aria-labelledby="commission-h">
+        <p class="eyebrow">Su commissione</p>
+        <h2 id="commission-h">Un'opera su misura</h2>
+        <p>
+          Ogni pezzo su commissione nasce da un dialogo.
+        </p>
+        <p class="shop-cta-row">
+          <a class="shop-cta" href={commissionMailto}>Scrivere per una commissione</a>
+          <span class="shop-cta-mail">{SITE.email}</span>
+        </p>
+      </section>
+
+      <section class="shop-shipping" aria-labelledby="shipping-h">
+        <p class="eyebrow">Spedizioni</p>
+        <h2 id="shipping-h">Come viaggiano le opere</h2>
+        <p>
+          Corriere assicurato e tracciato in Italia, UE e resto del mondo. Il costo esatto
+          lo calcoli su ogni opera scegliendo la destinazione.
+        </p>
+        <dl class="ship-list">
+          <div class="ship-row">
+            <dt>Emozioni (40×50)</dt>
+            <dd>Italia {fmtShip(shipTiers.emozioni.IT)} · UE {fmtShip(shipTiers.emozioni.EU)}</dd>
+          </div>
+          <div class="ship-row">
+            <dt>Opere grandi</dt>
+            <dd>
+              <a href={quoteMailto}>spedizione su preventivo</a>, oppure ritiro gratis
+            </dd>
+          </div>
+          <div class="ship-row">
+            <dt>Ritiro all’esposizione</dt>
+            <dd>The Seed, Milano · gratis</dd>
+          </div>
+          <div class="ship-row">
+            <dt>Consegna a mano</dt>
+            <dd>Milano e dintorni · {fmtShip(shipOpts.handMilan.price)}</dd>
+          </div>
+        </dl>
+        <p class="ship-legal">
+          Condizioni complete in <a href="/legal/spedizioni">Spedizioni e resi</a>.
+        </p>
+      </section>
+    </div>
+
+    <!-- fregio di filigrana basso, tinta azzurra sulla notte -->
+    <div class="shop-fregio" aria-hidden="true"></div>
+  </div>
+</Base>
+
+<style>
+  .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+    border: 0;
+  }
+
+  /* ---------- testata: notte, una cosa per volta ---------- */
+  .shop-head-wrap {
+    padding-bottom: clamp(56px, 8vh, 88px);
+  }
+  .shop-head {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: start;
+    gap: 32px clamp(32px, 6vw, 96px);
+  }
+  .shop-head .lead,
+  .shop-intro {
+    max-width: 62ch;
+  }
+  .shop-intro {
+    margin-top: 4px;
+  }
+
+  /* emblema del pacco (Ciclo A): timbro a inchiostro, tinto via mask */
+  .shop-emblem {
+    display: block;
+    width: clamp(72px, 10vw, 120px);
+    aspect-ratio: 1;
+    margin-top: clamp(28px, 6vh, 64px);
+    color: var(--accent);
+    background: currentColor;
+    -webkit-mask: url('/viaggio/shop-pacco.webp') center / contain no-repeat;
+    mask: url('/viaggio/shop-pacco.webp') center / contain no-repeat;
+    opacity: 0.9;
+  }
+  @media (max-width: 560px) {
+    .shop-emblem {
+      width: 64px;
+      margin-top: 40px;
+    }
+  }
+
+  /* ---------- vetrina: scena carta ----------
+     La scena chiara rimappa i token: le card e i testi ereditano
+     senza sapere di essere sulla carta. Taglio netto, niente sfumature. */
+  .shop-scene {
+    --ink: #0a0a0a;
+    --ink-dim: #313d58;
+    --ink-mute: #5b6884;
+    --line: rgba(10, 10, 10, 0.16);
+    --line-strong: rgba(10, 10, 10, 0.38);
+    --bg: #e8ecf4;
+    --bg-2: #dfe6f2;
+    --accent: #1f579f;
+    --badge-bg: rgba(8, 12, 24, 0.85);
+    --badge-ink: #e8ecf4;
+    --badge-line: rgba(232, 236, 244, 0.24);
+    background: #e8ecf4;
+    color: var(--ink-dim);
+  }
+  .scene-inner {
+    max-width: var(--maxw);
+    margin: 0 auto;
+    padding: clamp(64px, 10vh, 112px) 24px clamp(72px, 10vh, 104px);
+  }
+
+  /* nota "in mostra dal vivo" nella testata */
+  .shop-live { font-family: var(--sans); font-size: clamp(15px, 1.7vw, 18px); color: var(--ink-dim); margin-top: 16px; }
+  .shop-live a { color: var(--ink); border-bottom: 1px solid var(--accent); transition: color 0.2s; }
+  .shop-live a:hover { color: var(--accent); }
+  .shop-live-dates { color: var(--ink-mute); }
+
+  /* Archivio Emozioni: griglia a 25€ */
+  .shop-emo {
+    margin-top: clamp(56px, 9vh, 100px);
+    border-top: 1px solid var(--line);
+    padding-top: clamp(40px, 6vh, 64px);
+  }
+  .shop-emo-head { max-width: 62ch; margin-bottom: clamp(28px, 4vh, 44px); }
+  .shop-emo-head h2 {
+    font-family: var(--sans); font-weight: 300;
+    font-size: clamp(28px, 4vw, 48px); letter-spacing: -0.01em; color: var(--ink); margin: 0 0 10px;
+  }
+  .shop-emo-head p { font-family: var(--sans); font-size: clamp(15px, 1.7vw, 19px); color: var(--ink-dim); margin: 0; }
+  .shop-emo-head strong { color: var(--ink); font-weight: 600; }
+  .shop-emo-count { font-family: var(--mono); font-size: 12px; letter-spacing: 0.1em; color: var(--accent); }
+  .shop-emo-grid {
+    list-style: none; margin: 0; padding: 0;
+    display: grid; grid-template-columns: repeat(4, 1fr); gap: clamp(16px, 2vw, 30px);
+  }
+  .shop-emo-card { display: block; text-decoration: none; color: inherit; }
+  .shop-emo-frame {
+    display: block; position: relative; aspect-ratio: 3 / 4; overflow: hidden; border-radius: 2px;
+    background: #0a1024; box-shadow: 0 12px 30px rgba(10, 20, 50, 0.18);
+  }
+  .shop-emo-frame img {
+    width: 100%; height: 100%; object-fit: cover; display: block;
+    transition: transform 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  .shop-emo-card:hover .shop-emo-frame img { transform: scale(1.05); }
+  .shop-emo-card.is-sold .shop-emo-frame img { filter: grayscale(0.7) brightness(0.68); }
+  .shop-emo-badge {
+    position: absolute; top: 10px; left: 10px;
+    font-family: var(--mono); font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase;
+    background: var(--badge-bg); color: var(--badge-ink); border: 1px solid var(--badge-line);
+    padding: 5px 9px; border-radius: 2px;
+  }
+  .shop-emo-row { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; margin-top: 11px; }
+  .shop-emo-name { font-family: var(--sans); font-size: clamp(15px, 1.5vw, 18px); color: var(--ink); transition: color 0.2s; }
+  .shop-emo-card:hover .shop-emo-name { color: var(--accent); }
+  .shop-emo-card.is-sold .shop-emo-name { color: var(--ink-mute); }
+  .shop-emo-price { font-family: var(--mono); font-size: 13px; letter-spacing: 0.04em; color: var(--accent); }
+  @media (max-width: 900px) { .shop-emo-grid { grid-template-columns: repeat(3, 1fr); } }
+  @media (max-width: 560px) { .shop-emo-grid { grid-template-columns: repeat(2, 1fr); } }
+
+  /* selettore categoria + conteggio */
+  .shop-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 16px;
+    margin-bottom: clamp(40px, 6vh, 64px);
+  }
+  .shop-cats {
+    display: flex;
+    gap: 10px;
+  }
+  .shop-cats a {
+    font-family: var(--mono);
+    font-size: 12px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    padding: 9px 18px;
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    color: var(--ink-dim);
+    transition: color 0.2s, border-color 0.2s, background 0.2s;
+  }
+  .shop-cats a:hover {
+    color: var(--ink);
+    border-color: var(--line-strong);
+  }
+  .shop-cats a[aria-current='page'] {
+    color: var(--ink);
+    border-color: var(--accent);
+    background: rgba(74, 147, 230, 0.12);
+  }
+  .shop-cats a:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 3px;
+  }
+  .shop-count {
+    font-family: var(--mono);
+    font-size: 12px;
+    letter-spacing: 0.06em;
+    color: var(--ink-mute);
+    margin: 0;
+  }
+
+  /* griglia ariosa: tre colonne larghe a tutta pagina, tanto vuoto */
+  .shop-grid {
+    list-style: none;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 340px), 1fr));
+    gap: clamp(56px, 8vh, 80px) 44px;
+    padding: 0;
+    margin: 0;
+  }
+  .shop-empty {
+    max-width: 62ch;
+    line-height: 1.7;
+  }
+  .shop-empty a {
+    color: var(--accent);
+  }
+  .shop-empty a:hover {
+    text-decoration: underline;
+  }
+
+  /* note di cura/spedizione: coda della scena carta */
+  .shop-notes {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+    gap: 28px 36px;
+    border-top: 1px solid var(--line);
+    padding-top: 40px;
+    margin-top: clamp(72px, 10vh, 104px);
+  }
+  .shop-note h3 {
+    font-family: var(--mono);
+    font-weight: 400;
+    font-size: 11px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin: 0 0 10px;
+  }
+  .shop-note p {
+    font-size: 14px;
+    line-height: 1.65;
+    color: var(--ink-dim);
+    margin: 0;
+  }
+
+  /* ---------- coda: notte ---------- */
+  .shop-tail {
+    padding-top: clamp(80px, 12vh, 120px);
+    padding-bottom: 48px;
+  }
+  .shop-commission,
+  .shop-shipping {
+    max-width: 720px;
+  }
+  .shop-shipping {
+    margin-top: 96px;
+  }
+  .shop-commission .eyebrow,
+  .shop-shipping .eyebrow {
+    margin-bottom: 0;
+  }
+  .shop-commission h2,
+  .shop-shipping h2 {
+    margin-top: 12px;
+  }
+  .shop-cta-row {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 20px;
+    margin-top: 28px;
+  }
+  .shop-cta {
+    display: inline-block;
+    font-family: var(--mono);
+    font-size: 13px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--ink);
+    border: 1px solid var(--line-strong);
+    border-radius: 999px;
+    padding: 14px 28px;
+    transition: background 0.3s cubic-bezier(0.32, 0.72, 0, 1), color 0.3s,
+      border-color 0.3s;
+  }
+  .shop-cta:hover {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: var(--bg);
+  }
+  .shop-cta:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 4px;
+  }
+  .shop-cta-mail {
+    font-family: var(--mono);
+    font-size: 13px;
+    color: var(--ink-mute);
+  }
+
+  .ship-list {
+    margin: 28px 0 20px;
+    border-top: 1px solid var(--line);
+  }
+  .ship-row {
+    display: grid;
+    grid-template-columns: minmax(180px, 1fr) 1.4fr;
+    gap: 8px 24px;
+    padding: 14px 0;
+    border-bottom: 1px solid var(--line);
+  }
+  @media (max-width: 560px) {
+    .ship-row {
+      grid-template-columns: 1fr;
+    }
+  }
+  .ship-row dt {
+    font-family: var(--sans);
+    font-weight: 500;
+    font-size: 14px;
+    color: var(--ink);
+  }
+  .ship-row dd {
+    margin: 0;
+    font-size: 14px;
+    line-height: 1.6;
+    color: var(--ink-dim);
+  }
+  .ship-row dd a,
+  .ship-legal a {
+    color: var(--accent);
+  }
+  .ship-row dd a:hover,
+  .ship-legal a:hover {
+    text-decoration: underline;
+  }
+  .ship-legal {
+    font-size: 14px;
+    color: var(--ink-mute);
+  }
+
+  /* ---------- fregio basso (art-direction §5): tile mai stirato ---------- */
+  .shop-fregio {
+    height: clamp(64px, 9vw, 96px);
+    margin-top: 24px;
+    color: var(--accent);
+    background: currentColor;
+    -webkit-mask: url('/viaggio/fregio-filigrana.webp') bottom center / auto 100% repeat-x;
+    mask: url('/viaggio/fregio-filigrana.webp') bottom center / auto 100% repeat-x;
+    opacity: 0.4;
+  }
+
+  /* mobile: la scena respira ma non spreca */
+  @media (max-width: 720px) {
+    .shop-head {
+      grid-template-columns: minmax(0, 1fr) auto;
+    }
+    .scene-inner {
+      padding-left: 20px;
+      padding-right: 20px;
+    }
+    .shop-grid {
+      gap: 48px 28px;
+    }
+  }
+</style>

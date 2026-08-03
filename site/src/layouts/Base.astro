@@ -1,0 +1,191 @@
+---
+import '../styles/tokens.css';
+import '../styles/base.css';
+import { SITE, NAV, LEGAL_NAV, FEATURES } from '../lib/site';
+
+interface Props {
+  title?: string;
+  description?: string;
+  ogImage?: string;
+  jsonLd?: object | object[];
+  /** pagine immersive (il Viaggio) possono nascondere il footer standard */
+  bare?: boolean;
+  /** pagine di dettaglio (opera, legal, grazie): mostra il tasto "Indietro" */
+  showBack?: boolean;
+  /** destinazione di ripiego del tasto "Indietro" quando non c'è cronologia (accesso diretto/QR) */
+  backHref?: string;
+}
+
+const {
+  title = 'brama · opere materiche, emozioni in materia',
+  description = 'brama traduce le emozioni in gesto, colore e materia: opere in acrilico, resina, vetro, ossidiana, oro e fibra ottica, con meccanismi nascosti che si accendono con la luce.',
+  ogImage = '/images/og-image.jpg',
+  jsonLd,
+  bare = false,
+  showBack = false,
+  backHref,
+} = Astro.props;
+
+const canonical = new URL(Astro.url.pathname, SITE.domain).href;
+const nav = NAV;
+const path = Astro.url.pathname;
+const isActive = (href: string) => path === href || path.startsWith(href + '/');
+---
+
+<!doctype html>
+<html lang="it">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <link rel="canonical" href={canonical} />
+    <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32.png" />
+    <link rel="icon" type="image/png" sizes="192x192" href="/images/favicon-192.png" />
+    <link rel="apple-touch-icon" href="/images/favicon-192.png" />
+    <meta name="theme-color" content="#050a1a" />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="brama" />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonical} />
+    <meta property="og:image" content={new URL(ogImage, SITE.domain).href} />
+    <meta name="twitter:card" content="summary_large_image" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,200;1,300;1,400&family=Fraunces:ital,opsz,wght@0,9..144,200;0,9..144,300;0,9..144,400&family=Inter+Tight:wght@400;500;600&family=JetBrains+Mono:wght@400;700&display=swap"
+    />
+    {jsonLd && (
+      <script type="application/ld+json" set:html={JSON.stringify(jsonLd)} />
+    )}
+    <slot name="head" />
+  </head>
+  <body class="grain">
+    <a class="skip-link" href="#main">Vai al contenuto</a>
+    <header class="site-header">
+      <div class="site-bar">
+        {showBack && (
+          <button class="site-back" type="button" aria-label="Torna alla pagina precedente" data-back data-back-href={backHref}>
+            <svg viewBox="0 0 20 16" aria-hidden="true">
+              <path d="M8 1 L1 8 L8 15 M1 8 H19" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
+            </svg>
+            <span>Indietro</span>
+          </button>
+        )}
+        <a href="/" class="site-sig" aria-label="brama, home">
+          <img src="/images/signature.png" alt="brama" width="164" height="60" />
+        </a>
+        <nav class="site-nav" aria-label="Sezioni">
+          {nav.map((item) => (
+            <a
+              href={item.href}
+              class={item.temp ? 'nav-temp' : undefined}
+              aria-current={isActive(item.href) ? 'page' : undefined}
+            >
+              {item.temp && <span class="nav-dot" aria-hidden="true"></span>}
+              {item.label}
+              {item.temp && <span class="nav-temp-tag">mostra a tempo</span>}
+            </a>
+          ))}
+        </nav>
+        <button
+          class="menu-toggle"
+          aria-label="Apri il menu"
+          aria-expanded="false"
+          aria-controls="site-menu"
+        >
+          <span class="burger-line l1"></span>
+          <span class="burger-line l2"></span>
+          <span class="burger-line l3"></span>
+        </button>
+      </div>
+      <nav id="site-menu" class="site-menu" aria-hidden="true" inert>
+        <ul>
+          {nav.map((item) => (
+            <li class={item.temp ? 'menu-temp' : undefined}>
+              <a href={item.href} aria-current={isActive(item.href) ? 'page' : undefined}>
+                {item.label}
+                {item.temp && <span class="menu-temp-tag"><span class="nav-dot" aria-hidden="true"></span>mostra a tempo</span>}
+              </a>
+            </li>
+          ))}
+        </ul>
+        <div class="menu-meta">
+          <a href={SITE.instagram} rel="noopener" target="_blank" aria-label="Instagram">Instagram</a>
+          <a href={`mailto:${SITE.email}`}>{SITE.email}</a>
+        </div>
+      </nav>
+    </header>
+
+    <main id="main">
+      <slot />
+    </main>
+
+    {!bare && (
+      <footer class="site-footer">
+        <div class="footer-inner">
+          <img class="footer-sig" src="/images/signature.png" alt="brama" width="100" height="37" />
+          <p class="footer-tagline">{SITE.tagline}</p>
+          <div class="footer-cols">
+            <div class="footer-col">
+              <a href={`mailto:${SITE.email}`}>{SITE.email}</a>
+              <a href={SITE.instagram} rel="noopener" target="_blank">Instagram</a>
+              <a href="/portfolio">Portfolio</a>
+            </div>
+            <div class="footer-col">
+              {LEGAL_NAV.map((item) => <a href={item.href}>{item.label}</a>)}
+            </div>
+          </div>
+          <p class="footer-note">© {new Date().getFullYear()} brama. Tutti i diritti riservati.</p>
+        </div>
+      </footer>
+    )}
+
+    <script>
+      // Tasto "Indietro": torna alla pagina precedente; se non c'è storia
+      // (accesso diretto / da QR), risale al genitore o alla home.
+      const back = document.querySelector('[data-back]');
+      if (back) {
+        back.addEventListener('click', () => {
+          const ref = document.referrer;
+          const sameOrigin = ref && new URL(ref).origin === location.origin;
+          if (history.length > 1 && sameOrigin) {
+            // torna esattamente da dove si è arrivati (portfolio o shop)
+            history.back();
+          } else {
+            // accesso diretto / da QR / da sito esterno: usa il ripiego indicato dalla pagina
+            const fallback =
+              back.getAttribute('data-back-href') ||
+              location.pathname.replace(/\/[^/]+\/?$/, '') ||
+              '/';
+            location.href = fallback;
+          }
+        });
+      }
+
+      // Menu: toggle accessibile, chiusura su Escape e su click fuori.
+      const toggle = document.querySelector('.menu-toggle');
+      const menu = document.getElementById('site-menu');
+      if (toggle && menu) {
+        const setOpen = (open: boolean) => {
+          toggle.setAttribute('aria-expanded', String(open));
+          toggle.setAttribute('aria-label', open ? 'Chiudi il menu' : 'Apri il menu');
+          menu.setAttribute('aria-hidden', String(!open));
+          (menu as HTMLElement).inert = !open;
+          document.body.classList.toggle('menu-open', open);
+        };
+        toggle.addEventListener('click', () =>
+          setOpen(toggle.getAttribute('aria-expanded') !== 'true')
+        );
+        document.addEventListener('keydown', (e) => {
+          if (e.key === 'Escape') setOpen(false);
+        });
+        menu.addEventListener('click', (e) => {
+          if ((e.target as HTMLElement).tagName === 'A') setOpen(false);
+        });
+      }
+    </script>
+  </body>
+</html>

@@ -1,0 +1,253 @@
+---
+// Card opera per la griglia dello /shop.
+// Varianti guidate dallo status effettivo: available (default), reserved,
+// sold (badge + immagine attenuata), coming-soon (tile testuale, senza prezzo).
+// La card è token-driven: vive sulla notte con i token globali e sulla carta
+// della scena /shop, che rimappa --ink/--line/--bg e i --badge-* nel wrapper.
+import { STATUS_LABEL, type WorkStatus } from '../lib/works';
+
+interface ShopMedia {
+  src: string;
+  srcset?: string;
+  width: number;
+  height: number;
+}
+
+interface Props {
+  href: string;
+  title: string;
+  /** serie a cui appartiene l'opera (es. "Clessidra"), mostrata sopra il titolo */
+  series?: string;
+  /** riga meta già composta, es. "2025 · 150×100 cm" */
+  meta: string;
+  status: WorkStatus;
+  /** prezzo corrente (scontato se c'è sconto); assente per sold e coming-soon */
+  priceLabel?: string;
+  /** prezzo pieno di listino, mostrato barrato quando c'è uno sconto */
+  priceFullLabel?: string | null;
+  media?: ShopMedia | null;
+  alt?: string;
+  /** opera con fibra ottica: si attiva con la torcia */
+  lightActivated?: boolean;
+  /** prime card sopra la piega: niente lazy */
+  eager?: boolean;
+}
+
+const {
+  href,
+  title,
+  series,
+  meta,
+  status,
+  priceLabel,
+  priceFullLabel = null,
+  media = null,
+  alt = title,
+  lightActivated = false,
+  eager = false,
+} = Astro.props;
+
+const badge = status === 'available' ? undefined : STATUS_LABEL[status];
+const sizesAttr = '(max-width: 660px) calc(100vw - 48px), (max-width: 1024px) 45vw, 400px';
+---
+
+<a class:list={['shop-card', `is-${status}`]} href={href}>
+  <div class="card-media">
+    {media ? (
+      <img
+        src={media.src}
+        srcset={media.srcset}
+        sizes={media.srcset ? sizesAttr : undefined}
+        alt={alt}
+        width={media.width}
+        height={media.height}
+        loading={eager ? 'eager' : 'lazy'}
+        fetchpriority={eager ? 'high' : undefined}
+        decoding="async"
+      />
+    ) : (
+      <div class="card-veil" aria-hidden="true">
+        <span>{title}</span>
+      </div>
+    )}
+    {badge && <span class="card-badge">{badge}</span>}
+  </div>
+  <div class="card-info">
+    {series && <p class="card-series">{series}</p>}
+    <h3 class="card-title">{title}</h3>
+    <p class="card-meta">{meta}</p>
+    {lightActivated && <p class="card-tag">si attiva con la luce</p>}
+    {priceLabel && (
+      <p class="card-price">
+        {priceFullLabel && <span class="card-price-full">{priceFullLabel}</span>}
+        <span class="card-price-now">{priceLabel}</span>
+      </p>
+    )}
+  </div>
+</a>
+
+<style>
+  .shop-card {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    border-radius: 12px;
+  }
+  .shop-card:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 6px;
+  }
+
+  /* l'opera è l'unica superficie piena: cornice sottile, tanta aria dentro */
+  .card-media {
+    position: relative;
+    aspect-ratio: 1;
+    display: grid;
+    place-items: center;
+    padding: clamp(18px, 7%, 36px);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    overflow: hidden;
+    background: radial-gradient(120% 100% at 50% 0%, var(--bg-2) 0%, var(--bg) 75%);
+    transition: border-color 0.4s ease;
+  }
+  .shop-card:hover .card-media,
+  .shop-card:focus-visible .card-media {
+    border-color: var(--line-strong);
+  }
+  .card-media img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    transition: transform 0.6s cubic-bezier(0.32, 0.72, 0, 1);
+  }
+  .shop-card:hover .card-media img {
+    transform: scale(1.02);
+  }
+  .is-sold .card-media img {
+    filter: grayscale(0.4) brightness(0.75);
+  }
+
+  /* coming-soon: tile testuale, l'opera non ha ancora un'immagine */
+  .is-coming-soon .card-media {
+    background:
+      radial-gradient(60% 48% at 50% 46%, rgba(74, 147, 230, 0.14), transparent 72%),
+      radial-gradient(120% 100% at 50% 0%, var(--bg-2) 0%, var(--bg) 75%);
+  }
+  .card-veil {
+    display: grid;
+    place-items: center;
+    width: 100%;
+    height: 100%;
+    text-align: center;
+  }
+  .card-veil span {
+    font-family: var(--sans);
+    font-weight: 200;
+    font-style: italic;
+    font-size: clamp(22px, 3vw, 30px);
+    line-height: 1.25;
+    color: var(--ink-dim);
+    max-width: 82%;
+  }
+
+  /* timbro di stato: scuro anche sulla carta (override via --badge-*) */
+  .card-badge {
+    position: absolute;
+    top: 12px;
+    left: 12px;
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--badge-ink, var(--ink));
+    background: var(--badge-bg, rgba(5, 10, 26, 0.78));
+    border: 1px solid var(--badge-line, var(--line));
+    border-radius: 999px;
+    padding: 6px 12px;
+    -webkit-backdrop-filter: blur(8px);
+    backdrop-filter: blur(8px);
+  }
+  .card-badge::before {
+    content: '';
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--accent);
+  }
+  .is-sold .card-badge::before {
+    background: var(--red);
+  }
+
+  /* didascalia essenziale: titolo, riga tecnica, prezzo. Nient'altro. */
+  .card-info {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    padding: 0 2px;
+  }
+  .card-series {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--ink-mute);
+    margin: 0 0 3px;
+  }
+  .card-title {
+    font-family: var(--sans);
+    font-weight: 300;
+    font-size: 22px;
+    line-height: 1.2;
+    color: var(--ink);
+    transition: color 0.25s ease;
+  }
+  .shop-card:hover .card-title,
+  .shop-card:focus-visible .card-title {
+    color: var(--accent);
+  }
+  .card-meta {
+    font-family: var(--mono);
+    font-size: 12px;
+    letter-spacing: 0.04em;
+    color: var(--ink-mute);
+    margin: 0;
+  }
+  .card-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    color: var(--accent);
+    margin: 2px 0 0;
+  }
+  .card-tag::before {
+    content: '';
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: currentColor;
+    box-shadow: 0 0 8px 1px rgba(74, 147, 230, 0.7);
+  }
+  .card-price {
+    margin: 8px 0 0;
+    font-family: var(--sans);
+    font-weight: 500;
+    font-size: 14px;
+    color: var(--ink-dim);
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+  }
+  .card-price-full {
+    color: var(--ink-mute);
+    text-decoration: line-through;
+    font-weight: 400;
+  }
+  .card-price-now { color: var(--ink); }
+</style>

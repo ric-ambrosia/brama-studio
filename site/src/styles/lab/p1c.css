@@ -1,0 +1,495 @@
+/* ============================================================
+   lab/p1c — IL TEATRO (variante Emergence)
+   Zero scritte. Campi chiari carta-azzurrata con scenografie
+   fatte dei disegni a pennarello (cut-out via mix-blend-mode)
+   ↔ sezioni blu notte in cui le opere si ricompongono.
+
+   TECNICA CUT-OUT (senza asset preprocessati):
+   ogni disegno vive in un wrapper .pc-ink che
+   1. ha background = campo della scena (così il multiply si
+      risolve DENTRO il wrapper: gli antenati possono avere
+      transform/parallasse senza rompere il blend);
+   2. croppa la figura dal JPG di portfolio (img assoluta con
+      width/left/top in % calcolati dalla regione di ritaglio);
+   3. ha un ::after blu notte in mix-blend-mode:lighten che vira
+      la china nera esattamente verso #0a1430.
+   ============================================================ */
+
+* { box-sizing: border-box; }
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+}
+
+html { scrollbar-color: #5d76a3 #dfe6f2; }
+html.lenis,
+html.lenis body { height: auto; }
+.lenis.lenis-smooth { scroll-behavior: auto !important; }
+
+body {
+  background: #e8ecf4; /* nessun flash prima del JS */
+  overflow-x: clip;
+  font-family: system-ui, sans-serif; /* solo per il meter di debug: la pagina non ha testo */
+  -webkit-font-smoothing: antialiased;
+}
+
+.pc {
+  --ink: #0a1430;
+  --field: #e8ecf4;
+  --field-2: #dfe6f2;
+  --dark: #050a1a;
+  --red: #c8281c;
+  --azure: #6fb0ff;
+  --floorh: 13svh;
+  --ease: cubic-bezier(0.32, 0.72, 0, 1);
+  --wrap: var(--field);
+
+  position: relative;
+  background: var(--field); /* in journey viene animato da GSAP */
+  min-height: 100vh;
+  min-height: 100svh;
+}
+
+/* etichette solo per screen reader */
+.pc-sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+.pc-defs {
+  position: absolute;
+  width: 0;
+  height: 0;
+  overflow: hidden;
+}
+
+/* ---------- cut-out dei disegni ---------- */
+
+.pc-ink {
+  position: relative;
+  overflow: hidden;
+  background: var(--wrap);
+}
+.pc-ink > img {
+  position: absolute;
+  display: block;
+  height: auto;
+  max-width: none;
+  mix-blend-mode: multiply;
+  filter: grayscale(1) contrast(1.06);
+}
+/* la china nera → blu notte (lighten: max per canale con #0a1430) */
+.pc-ink::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: var(--ink);
+  mix-blend-mode: lighten;
+  pointer-events: none;
+}
+
+/* geometrie di ritaglio (regioni [x0,x1]×[y0,y1] dei JPG 2304×1296)
+   width% = 100/(x1-x0) · left% = -x0/(x1-x0) · top% = -y0/(y1-y0) */
+.pc-panel > img    { width: 247.5%; left: -138.1%; top: -0.81%; }  /* page-16 · figura coronata */
+.pc-frieze > img   { width: 166.7%; left: -66.7%;  top: 0; }        /* page-03 · filigrana (banda alta) */
+.pc-fig > img      { width: 853.3%; left: -45.2%;  top: -197.8%; }  /* page-06 · sentinella alata (busto) */
+.pc-creature > img { width: 454.5%; left: -100%;   top: -164.7%; }  /* page-01 · creatura alata */
+.pc-emblem > img   { width: 396.8%; left: -11.1%;  top: -204.2%; }  /* page-07 · emblema lune/triangoli */
+
+/* ---------- scene chiare ---------- */
+
+.pc-scene {
+  position: relative;
+  height: 100vh;
+  height: 100svh;
+  overflow: hidden;
+}
+
+.pc-interludio { --wrap: var(--field-2); }
+
+/* fregio di filigrana lungo il cielo della scena
+   (due copie sovrapposte in multiply per dare corpo alla filigrana;
+   il mask dissolve il bordo inferiore nel campo) */
+.pc-frieze {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 14svh;
+  -webkit-mask-image: linear-gradient(180deg, #000 50%, transparent 100%);
+  mask-image: linear-gradient(180deg, #000 50%, transparent 100%);
+}
+.pc-frieze > img { filter: grayscale(1) contrast(1.35); }
+
+/* quinte laterali: tratteggio a pennarello */
+.pc-quinta {
+  position: absolute;
+  top: 0;
+  bottom: var(--floorh);
+  width: 6vw;
+  background: repeating-linear-gradient(
+    64deg,
+    rgba(10, 20, 48, 0.5) 0 1.5px,
+    transparent 1.5px 10px
+  );
+}
+.pc-quinta-l { left: 0; border-right: 1.5px solid rgba(10, 20, 48, 0.45); }
+.pc-quinta-r {
+  right: 0;
+  border-left: 1.5px solid rgba(10, 20, 48, 0.45);
+  background: repeating-linear-gradient(
+    -64deg,
+    rgba(10, 20, 48, 0.5) 0 1.5px,
+    transparent 1.5px 10px
+  );
+}
+
+/* elementi appesi a fili */
+.pc-hang {
+  position: absolute;
+  top: -2svh;
+  left: var(--hx);
+  width: 0;
+  color: var(--ink);
+}
+/* nell'appeso "rosso" solo l'ornamento è rosso: filo e perle restano china */
+.pc-hang.pc-red .pc-orn { color: var(--red); }
+.pc-sway {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: max-content;
+  translate: -50% 0;
+  transform-origin: 50% 0;
+  animation: pc-swing var(--hd, 8s) ease-in-out var(--hdel, 0s) infinite alternate;
+}
+.pc-line {
+  width: 1.5px;
+  height: var(--hl, 26svh);
+  background: currentColor;
+  opacity: 0.8;
+}
+.pc-bead {
+  position: absolute;
+  left: 50%;
+  translate: -50% 0;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: currentColor;
+  opacity: 0.9;
+}
+.pc-orn {
+  width: var(--hs, 44px);
+  height: var(--hs, 44px);
+  margin-top: -3px;
+  color: inherit;
+}
+
+@keyframes pc-swing {
+  from { rotate: calc(-1 * var(--ha, 1deg)); }
+  to   { rotate: var(--ha, 1deg); }
+}
+
+/* pannello centrale: la figura coronata, sospesa sopra il pavimento */
+.pc-panel {
+  position: absolute;
+  left: 50%;
+  bottom: calc(var(--floorh) + 8svh);
+  translate: -50% 0;
+  width: min(46svh, 80vw);
+  aspect-ratio: 931 / 1275;
+  box-shadow: 0 22px 60px rgba(10, 20, 48, 0.12);
+}
+
+/* sentinella alata in piedi sul pavimento (bordi sfumati: il tratto
+   si dissolve nel campo come uno schizzo) */
+.pc-fig {
+  position: absolute;
+  left: 11%;
+  bottom: calc(var(--floorh) - 1svh);
+  width: min(17svh, 16vw);
+  aspect-ratio: 270 / 370;
+  -webkit-mask-image: radial-gradient(72% 72% at 50% 50%, #000 52%, transparent 94%);
+  mask-image: radial-gradient(72% 72% at 50% 50%, #000 52%, transparent 94%);
+}
+
+/* micro-freccia di scroll disegnata */
+.pc-arrow {
+  position: absolute;
+  left: 50%;
+  bottom: calc(var(--floorh) + 1svh);
+  translate: -50% 0;
+  width: 22px;
+  color: var(--ink);
+  opacity: 0.6;
+  animation: pc-bob 2.6s ease-in-out infinite alternate;
+}
+.pc-arrow svg { display: block; width: 100%; height: auto; }
+
+@keyframes pc-bob {
+  from { transform: translateY(0); }
+  to   { transform: translateY(7px); }
+}
+
+/* pavimento teatrale */
+.pc-floor {
+  position: absolute;
+  left: -4vw;
+  right: -4vw;
+  bottom: 0;
+  height: var(--floorh);
+  color: var(--ink);
+}
+.pc-floor-fringe {
+  height: 32%;
+  background: radial-gradient(120% 100% at 50% 100%, currentColor 62%, transparent 63%)
+    0 0 / 24px 100% repeat-x;
+  opacity: 0.92;
+}
+.pc-floor-check {
+  height: 68%;
+  background: repeating-conic-gradient(currentColor 0% 25%, transparent 0% 50%)
+    0 0 / 30px 30px;
+  border-top: 2px solid currentColor;
+  opacity: 0.92;
+}
+
+/* ---------- interludio ---------- */
+
+.pc-hang.pc-hc { top: -1svh; }
+
+.pc-creature {
+  width: min(52svh, 46vw);
+  aspect-ratio: 507 / 426;
+  margin-top: -4px;
+}
+
+.pc-spark-red {
+  position: absolute;
+  left: 17%;
+  top: 62svh;
+  width: 26px;
+  height: 26px;
+  color: var(--red);
+}
+
+.pc-emblem {
+  position: absolute;
+  right: 13%;
+  bottom: 9svh;
+  width: min(30svh, 26vw);
+  aspect-ratio: 581 / 426;
+}
+.pc-emblem-shadow {
+  position: absolute;
+  right: 13%;
+  bottom: 7.4svh;
+  width: min(30svh, 26vw);
+  height: 3svh;
+  background: radial-gradient(50% 50% at 50% 50%, rgba(10, 20, 48, 0.2), transparent 72%);
+  filter: blur(2px);
+}
+
+/* ---------- respiri (bande di transizione cromatica) ---------- */
+
+.pc-fade { height: 75svh; }
+
+/* ---------- opere · blu notte ---------- */
+
+.pc-opera {
+  position: relative;
+  height: 100vh;
+  height: 100svh;
+  display: grid;
+  place-items: center;
+}
+/* alone azzurro appena percettibile dietro l'opera */
+.pc-opera::before {
+  content: "";
+  position: absolute;
+  inset: 8% 0;
+  background: radial-gradient(closest-side at 50% 50%, rgba(74, 147, 230, 0.09), transparent 72%);
+  pointer-events: none;
+}
+
+/* senza JS / static: la sezione dipinge da sé il suo blu notte */
+.pc:not(.pc-journey) .pc-opera {
+  background: linear-gradient(
+    180deg,
+    rgba(5, 10, 26, 0) 0%,
+    #050a1a 13%,
+    #050a1a 87%,
+    rgba(5, 10, 26, 0) 100%
+  );
+}
+/* in journey il colore lo dipinge il campo animato del root */
+.pc.pc-journey .pc-opera { background: transparent; }
+
+.pc-opera-link {
+  display: block;
+  width: fit-content;
+  border-radius: 2px;
+}
+.pc-opera-link:focus-visible {
+  outline: 2px solid var(--azure);
+  outline-offset: 10px;
+}
+
+.pc-frame {
+  position: relative;
+  display: block;
+  box-shadow: 0 36px 110px rgba(0, 0, 0, 0.55);
+}
+.pc-vert .pc-frame { width: min(88vw, 116svh); aspect-ratio: 2427 / 1612; }
+.pc-abb .pc-frame  { width: min(70vw, 39svh);  aspect-ratio: 785 / 1600; }
+
+.pc-art {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+/* canvas della ricomposizione: più grande del telaio (aria attorno) */
+.pc-scatter {
+  display: none;
+  position: absolute;
+  pointer-events: none;
+  z-index: 2;
+  opacity: 1;
+  transition: opacity 0.5s var(--ease);
+}
+/* NB: il canvas è un elemento replaced — l'inset non lo stira:
+   servono width/height espliciti (equivalenti all'inset voluto) */
+.pc-vert .pc-scatter { left: -20%; top: -46%; width: 140%; height: 158%; }
+.pc-abb .pc-scatter  { left: -62%; top: -14%; width: 224%; height: 120%; }
+
+.pc-journey .pc-scatter { display: block; }
+.pc-journey .pc-art { opacity: 0; transition: opacity 0.45s var(--ease); }
+.pc-journey .pc-opera.is-composed .pc-art { opacity: 1; }
+.pc-opera.is-composed .pc-scatter { opacity: 0; }
+
+/* fallback senza WebGL2: opera già composta, niente canvas */
+.pc-nogl .pc-scatter { display: none !important; }
+.pc-nogl .pc-art { opacity: 1 !important; }
+
+/* ---------- didascalie opere (uniche scritte visibili del viaggio) ----------
+   Affiorano solo a ricomposizione avvenuta (is-composed); in modalità
+   statica/no-JS sono sempre visibili. Titolo + riga "come funziona": il
+   resto del racconto vive in /opera/<slug>. */
+.pc-caption {
+  position: absolute;
+  left: 50%;
+  bottom: clamp(16px, 4.5svh, 44px);
+  transform: translate(-50%, 8px);
+  width: min(86vw, 560px);
+  text-align: center;
+  opacity: 0;
+  transition: opacity 0.7s var(--ease) 0.2s, transform 0.7s var(--ease) 0.2s;
+  pointer-events: none;
+}
+.pc-caption-title {
+  font-family: 'Fraunces', Georgia, serif;
+  font-weight: 300;
+  font-size: clamp(17px, 2.2vw, 21px);
+  letter-spacing: 0.02em;
+  color: #f0f4ff;
+  margin: 0 0 6px;
+}
+.pc-caption-how {
+  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-style: italic;
+  font-size: clamp(14px, 1.8vw, 16px);
+  line-height: 1.5;
+  color: #9bb1d6;
+  margin: 0;
+}
+.pc-opera.is-composed .pc-caption,
+.pc:not(.pc-journey) .pc-caption {
+  opacity: 1;
+  transform: translate(-50%, 0);
+}
+/* il telaio verticale di Abbandono scende più in basso: didascalia più a filo */
+.pc-abb .pc-caption { bottom: clamp(6px, 1.6svh, 16px); }
+
+/* ---------- sigillo ---------- */
+
+.pc-sigillo {
+  height: 100vh;
+  height: 100svh;
+  display: grid;
+  place-items: center;
+}
+.pc-sig {
+  width: min(190px, 44vw);
+  height: auto;
+  mix-blend-mode: multiply;
+  filter: brightness(0) saturate(100%) invert(8%) sepia(36%) saturate(2600%)
+    hue-rotate(215deg) brightness(0.9);
+  opacity: 0.96;
+}
+
+/* ---------- fps meter (?debug=1) ---------- */
+
+.pc-fps {
+  position: fixed;
+  top: 10px;
+  right: 12px;
+  z-index: 99;
+  font: 11px/1.4 ui-monospace, "SF Mono", Menlo, monospace;
+  color: #9cc8ff;
+  background: rgba(5, 10, 26, 0.72);
+  padding: 4px 8px;
+  border-radius: 4px;
+  pointer-events: none;
+}
+
+/* ---------- mobile ---------- */
+
+@media (max-width: 720px) {
+  .pc { --floorh: 10svh; }
+
+  .pc-frieze { height: 9svh; }
+  .pc-quinta { width: 4.5vw; }
+
+  .pc-panel { width: min(40svh, 76vw); bottom: calc(var(--floorh) + 7svh); }
+  .pc-fig { width: min(15svh, 21vw); left: 6%; }
+
+  .pc-h3, .pc-h4 { display: none; }
+  .pc-orn { width: calc(var(--hs, 44px) * 0.78); height: calc(var(--hs, 44px) * 0.78); }
+
+  .pc-creature { width: min(44svh, 66vw); }
+  .pc-emblem, .pc-emblem-shadow { width: min(24svh, 38vw); right: 10%; }
+  .pc-spark-red { left: 12%; }
+
+  .pc-fade { height: 60svh; }
+
+  .pc-vert .pc-frame { width: min(94vw, 108svh); }
+  .pc-abb .pc-frame  { width: min(76vw, 34svh); }
+  .pc-vert .pc-scatter { left: -12%; top: -36%; width: 124%; height: 146%; }
+  .pc-abb .pc-scatter  { left: -40%; top: -12%; width: 180%; height: 118%; }
+
+  .pc-opera-link:focus-visible { outline-offset: 6px; }
+}
+
+/* ---------- reduced motion: sequenza statica curata ---------- */
+
+@media (prefers-reduced-motion: reduce) {
+  .pc-sway { animation: none; }
+  .pc-arrow { animation: none; }
+  .pc-scatter { display: none !important; }
+  .pc-art { opacity: 1 !important; }
+}

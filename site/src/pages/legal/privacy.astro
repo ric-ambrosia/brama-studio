@@ -1,0 +1,129 @@
+---
+import LegalPage from '../../components/LegalPage.astro';
+---
+
+<LegalPage
+  title="Informativa sulla privacy"
+  metaTitle="Informativa privacy (art. 13 GDPR) · brama"
+  description="Informativa sul trattamento dei dati personali del sito brama: dati raccolti per gli ordini via Stripe, nessuna profilazione, tempi di conservazione e diritti dell'interessato."
+  eyebrow="Note legali · art. 13 GDPR"
+>
+  <h2 id="titolare">1. Titolare del trattamento</h2>
+  {/* NOTA INTERNA (non pubblicare): titolare = Riccardo Bramani / futura entità giuridica del brand.
+      Da confermare con commercialista; P.IVA da definire. Aggiornare la dicitura al go-live. */}
+  <p>
+    Il titolare del trattamento è <strong>brama di Riccardo Bramani</strong>, P.IVA 13355710966, Viale Monte Nero 78/80, 20135 Milano.
+  </p>
+  <p>
+    Contatto per la privacy: <a href="mailto:riccardo@brama.studio"><strong>riccardo@brama.studio</strong></a>
+   .
+  </p>
+
+  <h2 id="dati">2. Quali dati trattiamo e perché</h2>
+  <p>
+    Questo sito è progettato per raccogliere il minimo indispensabile. Non esistono account utente,
+    newsletter, né strumenti di profilazione.
+  </p>
+  <div class="legal-table" tabindex="0" role="region" aria-label="Tabella dei trattamenti effettuati">
+    <table>
+      <caption>Trattamenti effettuati</caption>
+      <thead>
+        <tr>
+          <th scope="col">Dati</th>
+          <th scope="col">Quando</th>
+          <th scope="col">Finalità</th>
+          <th scope="col">Base giuridica</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Nome, indirizzo di spedizione, email, dati di pagamento</td>
+          <td>Acquisto tramite Stripe Checkout</td>
+          <td>Esecuzione dell&rsquo;ordine, spedizione, fatturazione</td>
+          <td>Contratto (art. 6.1.b GDPR); obblighi legali fiscali/contabili (art. 6.1.c GDPR)</td>
+        </tr>
+        <tr>
+          <td>Email e contenuto del messaggio</td>
+          <td>Contatto spontaneo via email</td>
+          <td>Risposta alla richiesta</td>
+          <td>Legittimo interesse / misure precontrattuali (art. 6.1.b e 6.1.f GDPR)</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <p>
+    I dati di pagamento (numero di carta ecc.) sono trattati direttamente da <strong>Stripe</strong> e non
+    transitano né vengono conservati sui sistemi del Titolare.
+  </p>
+
+  <h2 id="no-profilazione">3. Nessuna profilazione, nessun marketing</h2>
+  <ul>
+    <li>Non effettuiamo profilazione né decisioni automatizzate.</li>
+    <li>Non inviamo comunicazioni commerciali non richieste.</li>
+    <li>
+      Non utilizziamo cookie di tracciamento né strumenti di analytics basati su cookie
+      (v. <a href="/legal/cookie">Cookie policy</a>).
+    </li>
+  </ul>
+
+  <h2 id="destinatari">4. Destinatari dei dati</h2>
+  <p>I dati possono essere comunicati esclusivamente a:</p>
+  <ul>
+    <li><strong>Stripe</strong> (Stripe Payments Europe, Ltd. e società collegate), per la gestione dei pagamenti;</li>
+    <li>il <strong>corriere</strong> incaricato della consegna (nome, indirizzo, recapiti necessari alla spedizione);</li>
+    <li>
+      il <strong>commercialista</strong> e i soggetti a cui la comunicazione è dovuta per obblighi di legge
+      (es. amministrazione finanziaria);
+    </li>
+    <li>
+      eventuali fornitori tecnici del sito e della casella email, in qualità di responsabili del trattamento
+      ove applicabile.
+      {/* NOTA INTERNA (non pubblicare): completare l'elenco fornitori hosting/email al go-live. */}
+    </li>
+  </ul>
+  <p>I dati non vengono venduti né ceduti a terzi per finalità di marketing.</p>
+
+  <h2 id="extra-ue">5. Trasferimenti extra-UE</h2>
+  <p>
+    Stripe può trasferire dati verso paesi terzi (in particolare gli Stati Uniti) sulla base di garanzie
+    adeguate ai sensi del Capo V del GDPR (decisioni di adeguatezza e/o clausole contrattuali standard).
+  </p>
+  {/* NOTA INTERNA (non pubblicare): verificare lo stato attuale delle garanzie di Stripe —
+      es. EU-U.S. Data Privacy Framework — prima della pubblicazione. */}
+
+  <h2 id="conservazione">6. Tempi di conservazione</h2>
+  <ul>
+    <li>
+      <strong>Dati relativi agli ordini e documenti fiscali</strong>: conservati per il periodo richiesto
+      dalla normativa civilistica e fiscale (di regola 10 anni, art. 2220 c.c.).
+    </li>
+    <li>
+      <strong>Corrispondenza email</strong>: conservata per il tempo necessario a gestire la richiesta e per
+      eventuali esigenze di tutela, poi cancellata.
+      {/* NOTA INTERNA (non pubblicare): definire con il legale un termine massimo indicativo. */}
+    </li>
+  </ul>
+
+  <h2 id="diritti">7. Diritti dell&rsquo;interessato</h2>
+  <p>L&rsquo;interessato può esercitare in qualsiasi momento i diritti previsti dagli artt. 15&ndash;22 GDPR:</p>
+  <ul>
+    <li>accesso ai propri dati;</li>
+    <li>rettifica;</li>
+    <li>cancellazione (&ldquo;diritto all&rsquo;oblio&rdquo;), nei limiti degli obblighi legali di conservazione;</li>
+    <li>limitazione del trattamento;</li>
+    <li>portabilità;</li>
+    <li>opposizione al trattamento fondato sul legittimo interesse.</li>
+  </ul>
+  <p>
+    Le richieste vanno inviate a <a href="mailto:riccardo@brama.studio"><strong>riccardo@brama.studio</strong></a>.
+    È inoltre possibile proporre reclamo al <strong>Garante per la protezione dei dati personali</strong>
+    (<a href="https://www.garanteprivacy.it" rel="noopener noreferrer" target="_blank">www.garanteprivacy.it</a>)
+    o all&rsquo;autorità di controllo dello Stato UE di residenza.
+  </p>
+
+  <h2 id="conferimento">8. Natura del conferimento</h2>
+  <p>
+    Il conferimento dei dati richiesti in fase di acquisto è necessario per concludere ed eseguire il
+    contratto: in mancanza, non è possibile evadere l&rsquo;ordine.
+  </p>
+</LegalPage>

@@ -1,0 +1,171 @@
+---
+// lab/p1 — IL TRATTO · prototipo "filo 2D"
+// Un tratto di pennarello SVG si disegna su scroll (Lenis + GSAP ScrollTrigger)
+// e una camera 2D simulata attraversa territori di disegno e opere.
+import Base from '../../layouts/Base.astro';
+import '../../styles/lab/p1.css';
+
+// punti dispersi di Abbandono (percentuali sul quadro)
+const PUNTI = [
+  [18, 12], [64, 8], [82, 20], [30, 26], [70, 33], [14, 44], [84, 52],
+  [22, 62], [58, 70], [80, 78], [34, 84], [66, 90], [20, 93], [48, 15],
+];
+---
+
+<Base
+  title="il tratto — il viaggio nelle opere | brama"
+  description="Un filo d'inchiostro si disegna da solo e conduce dal segno alla materia: Vertigine, Abbandono e i territori di disegno di brama."
+  bare
+>
+  <div class="p1" id="p1-root">
+    <div class="p1-spacer" aria-hidden="true"></div>
+
+    <div class="p1-stage">
+      <div class="p1-world">
+        <svg class="p1-thread" aria-hidden="true" focusable="false">
+          <g class="p1-deco"></g>
+          <path class="p1-main"></path>
+          <circle class="p1-tip" r="4.5" fill="currentColor" opacity="0"></circle>
+        </svg>
+
+        <!-- tappa 0: soglia -->
+        <section class="p1-station p1-hero" data-wx="50" data-wy="50" style="--sw:min(92vw,760px)">
+          <div class="p1-hero-inner">
+            <p class="p1-kicker">brama · il viaggio</p>
+            <h1>il tratto</h1>
+            <p class="p1-sub">
+              Un filo d'inchiostro si disegna da solo e conduce dal segno alla materia.
+              Non è una pagina che scorre: è una strada che curva.
+            </p>
+            <p class="p1-scrollhint">scorri</p>
+          </div>
+        </section>
+
+        <!-- territorio i · verso la vertigine -->
+        <section class="p1-station p1-territory p1-t1a" data-wx="135" data-wy="105" style="--srot:-4deg; --sw:min(80vw,520px)">
+          <figure class="p1-plate">
+            <div class="p1-cropwrap p1-cropwrap-16">
+              <img
+                src="/portfolio/page-16.jpg"
+                alt="Disegno a pennarello nero su carta: una figura con la corona si affaccia da una finestra e solleva una coperta a scacchi"
+                loading="lazy"
+                decoding="async"
+              />
+            </div>
+            <figcaption class="p1-platenote">quaderno · pennarello su carta</figcaption>
+          </figure>
+          <p class="p1-frag">Prima del colore c'è il segno:<br />logiche interne, geometrie che respirano.</p>
+        </section>
+
+        <section class="p1-station p1-territory p1-t1b" data-wx="185" data-wy="152" style="--srot:-6deg; --sw:min(84vw,560px)">
+          <p class="p1-frag">Il tratto si avvita.<br /><em>Ogni scelta è un affaccio sul vuoto.</em></p>
+        </section>
+
+        <!-- tappa 1: VERTIGINE -->
+        <section class="p1-station p1-materia p1-vert" id="vertigine" data-wx="252" data-wy="215" style="--sw:min(92vw,940px)">
+          <figure class="p1-panel" data-opera="vertigine">
+            <div class="p1-canvas">
+              <img
+                class="p1-art"
+                src="/images/thumbs/Vertigine-1200.jpg"
+                data-full="/images/Vertigine.jpeg"
+                alt="Vertigine (2025): un vortice di pennellate blu precipita verso il centro, dove una farfalla riposa in una cavità scura; schegge di vetro rosso incastonate nella resina"
+                loading="lazy"
+                decoding="async"
+              />
+              <div class="p1-lit" style="background-image:url('/images/thumbs/Vertigine-1200.jpg')" aria-hidden="true"></div>
+              <div class="p1-glow" style="background-image:url('/images/thumbs/Vertigine-1200.jpg')" aria-hidden="true"></div>
+              <div class="p1-fibre" aria-hidden="true">
+                {Array.from({ length: 14 }).map(() => <i></i>)}
+              </div>
+            </div>
+            <figcaption class="p1-label">
+              <h2>vertigine</h2>
+              <p class="p1-meta">2025 · 150 × 100 cm · acrilici, pennarello, resina, vetro, carta, fibra ottica, acciaio</p>
+              <blockquote class="p1-quote">
+                «L'angoscia è la vertigine della libertà.»
+                <span class="p1-cite">— Søren Kierkegaard</span>
+              </blockquote>
+              <p class="p1-torchnote">
+                La torcia è tua: sfiora la striscia di fibre, a destra — il vortice si accende.
+              </p>
+              <a class="p1-cta" href="/opera/vertigine" data-focus-t="4.7">entra nell'opera<span aria-hidden="true"> →</span></a>
+            </figcaption>
+          </figure>
+        </section>
+
+        <!-- territorio ii · la caduta -->
+        <section class="p1-station p1-territory p1-t2a" data-wx="240" data-wy="330" style="--srot:5deg; --sw:min(78vw,480px)">
+          <figure class="p1-plate">
+            <div class="p1-cropwrap p1-cropwrap-14">
+              <img
+                src="/portfolio/page-14.jpg"
+                alt="Frammento d'archivio: schizzi di inchiostro nero dispersi su carta bianca, dall'opera Ansia"
+                loading="lazy"
+                decoding="async"
+              />
+            </div>
+            <figcaption class="p1-platenote">archivio emozioni · frammenti dispersi</figcaption>
+          </figure>
+          <p class="p1-frag p1-frag-soft">La carta si fa rada.<br />Ciò che resta, precipita.</p>
+        </section>
+
+        <section class="p1-station p1-territory p1-t2b" data-wx="200" data-wy="405" style="--srot:8deg; --sw:min(84vw,560px)">
+          <p class="p1-frag">Non si sceglie di cadere.<br /><em>Si è gettati — poi si impara il buio.</em></p>
+        </section>
+
+        <!-- tappa 2: ABBANDONO -->
+        <section class="p1-station p1-materia p1-abb" id="abbandono" data-wx="158" data-wy="480" style="--sw:min(92vw,720px)">
+          <figure class="p1-panel" data-opera="abbandono">
+            <div class="p1-canvas">
+              <img
+                class="p1-art"
+                src="/images/thumbs/Abbandono-600.jpg"
+                data-full="/images/Abbandono.jpg"
+                alt="Abbandono (2025): campo verticale blu notte attraversato da un rombo scuro; al centro un'esplosione di ossidiana con schegge gialle e rosse, contornata da trame bianche a pennarello"
+                loading="lazy"
+                decoding="async"
+              />
+              <div class="p1-lit" style="background-image:url('/images/thumbs/Abbandono-600.jpg')" aria-hidden="true"></div>
+              <div class="p1-punti" aria-hidden="true">
+                {PUNTI.map((p) => <i style={`left:${p[0]}%; top:${p[1]}%`}></i>)}
+              </div>
+              <div class="p1-mirror" aria-hidden="true"></div>
+            </div>
+            <figcaption class="p1-label">
+              <h2>abbandono</h2>
+              <p class="p1-meta">2025 · 50 × 150 cm · acrilici, resina, ossidiana, fibra ottica</p>
+              <blockquote class="p1-quote">
+                «Geworfenheit: si è gettati nel mondo, senza averlo scelto.»
+                <span class="p1-cite">— Martin Heidegger</span>
+              </blockquote>
+              <p class="p1-torchnote">
+                Accendi i punti dispersi; al centro, uno specchio senza fondo.
+              </p>
+              <a class="p1-cta" href="/opera/abbandono" data-focus-t="9.0">entra nell'opera<span aria-hidden="true"> →</span></a>
+            </figcaption>
+          </figure>
+        </section>
+
+        <!-- chiusura: il filo si riannoda nella firma -->
+        <section class="p1-station p1-fine" data-wx="68" data-wy="545" style="--sw:min(88vw,560px)">
+          <div class="p1-fine-inner">
+            <img class="p1-sig" src="/images/signature.png" alt="brama — firma dell'artista" width="240" height="88" loading="lazy" decoding="async" />
+            <p class="p1-frag">Ogni emozione è un filo.<br />Questo era uno soltanto.</p>
+            <nav class="p1-fine-nav" aria-label="continua il percorso">
+              <a class="p1-cta" href="/opere" data-focus-t="10.3">tutte le opere<span aria-hidden="true"> →</span></a>
+              <a class="p1-cta p1-restart" href="#p1-root" data-focus-t="10.3">ricomincia il viaggio</a>
+            </nav>
+          </div>
+        </section>
+      </div>
+    </div>
+
+    <div class="p1-halo" aria-hidden="true"></div>
+    <p class="p1-way" aria-hidden="true">il tratto</p>
+  </div>
+</Base>
+
+<script>
+  import '../../scripts/lab/p1/journey.js';
+</script>

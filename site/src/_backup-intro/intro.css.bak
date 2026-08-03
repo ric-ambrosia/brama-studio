@@ -1,0 +1,246 @@
+/* === brama — landing ===
+   Hero IDENTICO alla v1 (vortice vertigine.js + farfalla di vetro + logo + hint),
+   solo SENZA il corpo della farfalla. Le regole di .nav-sig/.hero/.hint-pointer/
+   .hero-mark/.butterfly-*/glass sono copiate verbatim da deploy/styles.css.
+   In più: la transizione di scroll (ali che si aprono + camera che entra nel
+   vortice) e le sezioni che si posano come pezzi del vortice, una alla volta. */
+
+:root { --p: 0; }
+
+html, body { margin: 0; background: var(--bg); }
+body { color: var(--ink); font-family: var(--sans); -webkit-font-smoothing: antialiased; }
+
+/* ---------- chrome v1 (verbatim) ---------- */
+.nav-fixed {
+  position: fixed; top: 12px; left: 16px;
+  z-index: 50;
+  pointer-events: none;
+}
+.nav-sig {
+  height: 160px;
+  width: auto;
+  filter: var(--sig-tint);
+  opacity: 0;
+  user-select: none;
+  -webkit-user-drag: none;
+  animation: navSigIn 1.4s ease 1.5s forwards;
+}
+@keyframes navSigIn {
+  from { opacity: 0; transform: translateY(-8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ---------- il track di scroll pilota --p (scroll semplice) ---------- */
+.intro-track { height: 260svh; }
+
+/* hero v1 reso "fixed" così lo scroll muove la scena, non la pagina */
+.hero {
+  position: fixed;
+  inset: 0;
+  height: 100vh;
+  height: 100svh;
+  width: 100%;
+  overflow: hidden;
+  background: var(--bg);
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+  -webkit-tap-highlight-color: transparent;
+  z-index: 1;
+}
+.hero, .hero * { -webkit-touch-callout: none; }
+
+/* camera che ENTRA nel vortice: il canvas si ingrandisce dal centro sullo scroll */
+.hero canvas {
+  position: absolute; inset: 0;
+  width: 100%; height: 100%;
+  display: block;
+  cursor: crosshair;
+  transform-origin: 50% 50%;
+  transform: scale(calc(1 + var(--p) * var(--p) * 2.6));
+  opacity: calc(1 - var(--p) * 0.55);
+  will-change: transform, opacity;
+}
+
+/* outer: solo posizione + dissolvenza sullo scroll (nessuna animazione qui,
+   così la calc con --p vince e la scritta sparisce appena si scorre) */
+.hint-pointer {
+  position: fixed;
+  bottom: 5vh;
+  left: 50%;
+  transform: translateX(-50%);
+  color: rgba(240, 244, 255, 0.7);
+  text-decoration: none;
+  font-family: var(--sans);
+  font-size: 11px; letter-spacing: 0.4em; text-transform: uppercase;
+  opacity: calc(0.85 - var(--p) * 4);
+  pointer-events: auto; z-index: 5;
+}
+.hint-inner {
+  display: flex; flex-direction: column; align-items: center; gap: 10px;
+  opacity: 0;
+  animation: hintFadeIn 1.2s ease 2.6s forwards;
+}
+.hint-pointer:hover { color: #4a93e6; }
+.hint-label { font-weight: 500; text-shadow: 0 2px 12px rgba(0,0,0,0.6); }
+.hint-pointer svg {
+  width: 18px; height: 28px;
+  filter: drop-shadow(0 2px 8px rgba(0,0,0,0.7));
+  animation: hintBob 2.4s ease-in-out infinite;
+}
+@keyframes hintFadeIn { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes hintBob { 0%,100% { transform: translateY(0); opacity: 0.85; } 50% { transform: translateY(6px); opacity: 1; } }
+
+/* ---------- farfalla v1 (verbatim, SENZA corpo) ---------- */
+.hero-mark {
+  position: absolute;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  width: clamp(360px, 56vw, 720px);
+  height: auto;
+  display: grid; place-items: center;
+  pointer-events: none;
+  z-index: 3;
+}
+/* deriva + dissolvenza delle ali quando si entra nel vortice */
+.fly-shift {
+  display: grid; place-items: center;
+  transform: translateY(calc(var(--p) * -12svh)) scale(calc(1 - var(--p) * 0.1));
+  opacity: calc(1 - var(--p) * 1.5);
+  transition: transform 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+  will-change: transform, opacity;
+}
+.butterfly-wrap {
+  position: relative;
+  display: grid; place-items: center;
+  opacity: 0; transform: scale(0.55);
+  animation: butterflyEnter 2.4s cubic-bezier(0.22, 1, 0.36, 1) 0.4s forwards;
+  will-change: opacity, transform;
+}
+.butterfly-bloom {
+  position: absolute;
+  width: 360px; height: 360px; border-radius: 50%;
+  background: radial-gradient(circle, rgba(74,147,230,0.45) 0%, rgba(74,147,230,0.18) 35%, transparent 70%);
+  pointer-events: none; opacity: 0;
+  animation: bloomBurst 1.2s cubic-bezier(0.22, 1, 0.36, 1) 0.4s forwards;
+  will-change: opacity, transform;
+}
+@keyframes bloomBurst { 0% { opacity: 0; transform: scale(0.4); } 35% { opacity: 0.85; transform: scale(1); } 100% { opacity: 0; transform: scale(1.4); } }
+@keyframes butterflyEnter {
+  0% { opacity: 0; transform: scale(0.55) rotate(-4deg); }
+  20% { opacity: 0.55; transform: scale(0.94) rotate(2deg); }
+  38% { opacity: 1; transform: scale(1.05) rotate(-1deg); }
+  60% { transform: scale(0.99) rotate(0.3deg); }
+  100% { opacity: 1; transform: scale(1) rotate(0); }
+}
+
+.butterfly-glass {
+  position: relative; display: block; flex: 0 0 auto;
+  width: 360px; height: 280px;
+  filter: drop-shadow(0 16px 36px rgba(5,10,30,0.65));
+}
+/* le ali vivono in due slot che si aprono sullo scroll (transform-origin al centro) */
+.wing-slot { position: absolute; inset: 0; transition: transform 0.4s cubic-bezier(0.22,1,0.36,1); will-change: transform; }
+.wing-slot.left  { transform: translateX(calc(var(--p) * -13vw)) rotate(calc(var(--p) * -9deg)); }
+.wing-slot.right { transform: translateX(calc(var(--p) *  13vw)) rotate(calc(var(--p) *  9deg)); }
+
+.g-wing {
+  position: absolute; top: 0; width: 50%; height: 100%;
+  transform-origin: 100% 50%;
+  animation: flapL 7s ease-in-out infinite;
+}
+.g-wing-l { left: 0; }
+.g-wing-r { left: 50%; transform-origin: 0% 50%; animation-name: flapR; }
+.g-wing-r > .shard { transform: scaleX(-1); transform-origin: 50% 50%; }
+@keyframes flapL { 0%,100% { transform: scaleX(1) skewY(0deg); } 50% { transform: scaleX(0.18) skewY(-3deg); } }
+@keyframes flapR { 0%,100% { transform: scaleX(1) skewY(0deg); } 50% { transform: scaleX(0.18) skewY(3deg); } }
+
+.shard {
+  position: absolute; inset: 0;
+  backdrop-filter: blur(6px) saturate(1.2);
+  -webkit-backdrop-filter: blur(6px) saturate(1.2);
+  border: 1px solid rgba(220, 240, 248, 0.6);
+  background: linear-gradient(135deg, rgba(195,230,240,0.4) 0%, rgba(255,255,255,0.22) 50%, rgba(180,220,232,0.4) 100%);
+  box-shadow: inset 0 0 30px rgba(220,240,248,0.25);
+  overflow: hidden;
+}
+.shard::before, .shard::after {
+  content: ""; position: absolute; inset: -12% -22%;
+  background: linear-gradient(180deg, transparent 30%, rgba(220,235,255,0) 42%, rgba(240,248,255,1) 50%, rgba(220,235,255,0) 58%, transparent 70%);
+  mix-blend-mode: screen; pointer-events: none; will-change: transform, opacity;
+  filter: brightness(var(--gi, 1));
+}
+.shard::before { animation: shardGlintDown 7s linear var(--gd1, 0s) infinite; }
+.shard::after  { animation: shardGlintUp   7s linear var(--gd2, 0s) infinite; }
+.shard.s-d::before { --gd1: 0s;    --gi: 1; }
+.shard.s-a::before { --gd1: 0.18s; --gi: 0.7; }
+.shard.s-c::before { --gd1: 0.54s; --gi: 0.22; }
+.shard.s-e::before { --gd1: 0.72s; --gi: 0.08; }
+.shard.s-e::after { --gd2: 0s; }
+.shard.s-c::after { --gd2: 0.18s; }
+.shard.s-a::after { --gd2: 0.54s; }
+.shard.s-d::after { --gd2: 0.72s; }
+@keyframes shardGlintDown { 0% { transform: translateY(-80%); opacity: 0; } 12% { transform: translateY(-80%); opacity: 0; } 14% { transform: translateY(-70%); opacity: 1; } 38% { transform: translateY(70%); opacity: 1; } 40% { transform: translateY(80%); opacity: 0; } 100% { transform: translateY(80%); opacity: 0; } }
+@keyframes shardGlintUp { 0% { transform: translateY(80%); opacity: 0; } 62% { transform: translateY(80%); opacity: 0; } 64% { transform: translateY(70%); opacity: 1; } 86% { transform: translateY(-70%); opacity: 1; } 88% { transform: translateY(-80%); opacity: 0; } 100% { transform: translateY(-80%); opacity: 0; } }
+.shard.s-d { clip-path: polygon(100% 45%, 55% 12%, 22% 0, 14% 22%); backdrop-filter: blur(2px); background: linear-gradient(160deg, rgba(255,255,255,0.55), rgba(195,230,240,0.28)); opacity: 0.92; z-index: 2; }
+.shard.s-a { clip-path: polygon(100% 45%, 14% 22%, 0% 30%, 14% 48%, 22% 60%, 100% 52%); backdrop-filter: blur(3px) saturate(1.4); background: linear-gradient(120deg, rgba(195,230,240,0.55), rgba(255,255,255,0.18)); opacity: 0.95; z-index: 2; }
+.shard.s-c { clip-path: polygon(100% 52%, 22% 60%, 8% 72%, 30% 86%); backdrop-filter: blur(4px) saturate(1.3); background: linear-gradient(110deg, rgba(205,235,238,0.5), rgba(180,222,232,0.4)); opacity: 0.95; z-index: 1; }
+.shard.s-e { clip-path: polygon(100% 52%, 30% 86%, 50% 92%, 65% 76%); backdrop-filter: blur(8px) saturate(1.2); background: linear-gradient(140deg, rgba(180,220,232,0.55), rgba(255,255,255,0.2)); opacity: 0.95; z-index: 1; }
+
+/* ---------- sezioni: pezzi del vortice che si fermano, una alla volta ---------- */
+.hub {
+  position: fixed;
+  inset: 0;
+  z-index: 4;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: clamp(4px, 1.1vh, 14px);
+  pointer-events: none;
+}
+.hub.live { pointer-events: auto; }
+.hub-item {
+  font-family: var(--display);
+  font-weight: 300;
+  font-size: clamp(30px, 6.2vw, 72px);
+  line-height: 1.16;
+  color: var(--ink);
+  text-decoration: none;
+  position: relative;
+  opacity: 0;                 /* transform/opacity li guida intro.js */
+  will-change: transform, opacity;
+  transition: color 0.25s, letter-spacing 0.35s cubic-bezier(0.22,1,0.36,1);
+}
+.hub-item::after {
+  content: attr(data-i);
+  position: absolute; top: 0.1em; right: -1.6em;
+  font-family: var(--mono); font-size: 11px; letter-spacing: 0.2em;
+  color: var(--ink-mute);
+}
+.hub.live .hub-item:hover, .hub.live .hub-item:focus-visible {
+  color: var(--accent); letter-spacing: 0.05em; outline: none;
+}
+.hub-foot {
+  position: fixed; bottom: 22px; left: 0; right: 0; z-index: 4;
+  display: flex; gap: 22px; justify-content: center;
+  font-family: var(--mono); font-size: 12px; color: var(--ink-mute);
+  opacity: calc((var(--p) - 0.62) * 3.4);
+  pointer-events: none;
+}
+.hub.live ~ .hub-foot { pointer-events: auto; }
+.hub-foot a:hover { color: var(--accent); }
+
+/* ---------- fallback statico (no-JS / reduced-motion) ---------- */
+.is-static .intro-track { height: auto; }
+.is-static .hero { position: relative; }
+.is-static .hero canvas { transform: none; opacity: 1; }
+.is-static .fly-shift { transform: none; opacity: 1; }
+.is-static .wing-slot { transform: none; }
+.is-static .hub { position: relative; min-height: 100svh; background: var(--bg); pointer-events: auto; }
+.is-static .hub-item { opacity: 1 !important; transform: none !important; }
+.is-static .hub-foot { position: relative; opacity: 1; pointer-events: auto; margin-bottom: 28px; }
+.is-static .hint-pointer { display: none; }
+
+@media (max-width: 640px) {
+  .butterfly-glass { transform: scale(0.82); }
+  .wing-slot.left  { transform: translateX(calc(var(--p) * -20vw)) rotate(calc(var(--p) * -9deg)); }
+  .wing-slot.right { transform: translateX(calc(var(--p) *  20vw)) rotate(calc(var(--p) *  9deg)); }
+}

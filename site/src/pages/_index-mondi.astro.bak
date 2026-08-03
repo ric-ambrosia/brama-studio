@@ -1,0 +1,416 @@
+---
+// MONDI — homepage v2: viaggio 3D dentro le opere.
+// Hero = farfalla + vortice della v1 (portati su GPU, molto migliorati), poi
+// 9 AMBIENTI 3D — uno per opera, materiali ed emozione del quadro — attraversati
+// da uno scroll continuo (motore: src/scripts/mondi/engine.js, contratto in
+// content-notes/mondi-architettura.md). NIENTE frammenti/ricomposizione (resta
+// solo in /lab): le opere si mostrano sempre INTERE.
+// Documento autonomo (niente layout Base): micro-navigazione fissa
+// (punto-logo + hamburger) + fallback statico server-rendered completo
+// (no-JS / no-WebGL2 / reduced-motion) che è anche l'SEO della pagina.
+import { getCollection } from 'astro:content';
+import { SITE, NAV } from '../lib/site';
+import catalog from '../../content-notes/images-catalog.json';
+import fs from 'node:fs';
+import path from 'node:path';
+import '../styles/mondi.css';
+
+/* ---------- dati dalla collection (mai hardcodati) ---------- */
+
+const allWorks = await getCollection('works');
+// Tutti gli slug: servono al redirect dei QR fisici (brama.studio/#<slug>).
+const slugs = allWorks.map((w) => w.id);
+
+const journeyWorks = allWorks
+  .filter((w) => w.data.journey.featured && w.data.journey.order > 0)
+  .sort((a, b) => a.data.journey.order - b.data.journey.order);
+
+/* ---------- catena cromatica dei mondi (≡ CHAIN in engine.js, §4) ---------- */
+
+const CHAIN: Record<string, { entry: string; exit: string; fog: string }> = {
+  'soglia':                { entry: '#050a1a', exit: '#06102c', fog: '#081028' },
+  'vertigine':             { entry: '#06102c', exit: '#030308', fog: '#0a1430' },
+  'abbandono':             { entry: '#030308', exit: '#0b0a10', fog: '#030308' },
+  'fuga':                  { entry: '#0b0a10', exit: '#171008', fog: '#0b0a10' },
+  'ti-devo-lasciare':      { entry: '#171008', exit: '#0d0b06', fog: '#120d06' },
+  'pugno-nel-tempo':       { entry: '#0d0b06', exit: '#050505', fog: '#0d0b06' },
+  'depressione':           { entry: '#050505', exit: '#0d0a08', fog: '#050505' },
+  'la-casa-di-mike':       { entry: '#0d0a08', exit: '#061020', fog: '#0d0a08' },
+  'lu':                    { entry: '#061020', exit: '#0b0a08', fog: '#061020' },
+  'avventura-di-una-vita': { entry: '#0b0a08', exit: '#050a1a', fog: '#0b0a08' },
+};
+
+/* ---------- immagini (build-time: catalogo + verifica su disco) ---------- */
+
+const catalogBySlug = new Map(catalog.works.map((w) => [w.slug, w]));
+const publicPath = (p: string) => p.replace(/^site\/public/, '');
+const PUB = path.resolve(process.cwd(), 'public');
+const existsPub = (rel: string) => fs.existsSync(path.join(PUB, rel.replace(/^\//, '')));
+
+type Pic = {
+  avif: { url: string; w: number }[];
+  webp: { url: string; w: number }[];
+  img: { url: string; w: number; h: number };
+  imgSrcset: string;
+  fullW: number;
+  fullH: number;
+};
+
+function picFor(slug: string): Pic | null {
+  if (slug === 'avventura-di-una-vita') {
+    // niente fotografia: l'opera è il disegno della clessidra (alpha)
+    return {
+      avif: [],
+      webp: [{ url: '/viaggio/avventura-clessidra.webp', w: 1024 }],
+      img: { url: '/viaggio/avventura-clessidra.png', w: 1024, h: 1536 },
+      imgSrcset: '',
+      fullW: 1024,
+      fullH: 1536,
+    };
+  }
+  const cat = catalogBySlug.get(slug);
+  if (!cat) return null;
+  const base = path.basename(cat.image.file).replace(/\.[a-z]+$/i, '');
+  const avif: { url: string; w: number }[] = [];
+  const webp: { url: string; w: number }[] = [];
+  for (const w of [600, 1200, 2000]) {
+    const a = `/images/gen/${base}-${w}.avif`;
+    const p = `/images/gen/${base}-${w}.webp`;
+    if (existsPub(a)) avif.push({ url: a, w });
+    if (existsPub(p)) webp.push({ url: p, w });
+  }
+  const thumbs = [...cat.thumbs].sort((a, b) => a.width - b.width);
+  const big = thumbs[thumbs.length - 1];
+  return {
+    avif,
+    webp,
+    img: { url: publicPath(big.file), w: big.width, h: big.height },
+    imgSrcset: thumbs.map((t) => `${publicPath(t.file)} ${t.width}w`).join(', '),
+    fullW: cat.image.width,
+    fullH: cat.image.height,
+  };
+}
+
+/* ---------- sorgenti texture per il motore (solo file esistenti) ----------
+   Passate all'engine via JSON inline: niente 404 in console, il primo
+   candidato della lista carica sempre. Ordine: qualità decrescente. */
+
+const operaSources: Record<string, string[]> = {};
+for (const w of journeyWorks) {
+  const pic = picFor(w.id);
+  if (!pic) continue;
+  const list: string[] = [];
+  for (const width of [2000, 1200, 600]) {
+    for (const s of pic.avif) if (s.w === width) list.push(s.url);
+    for (const s of pic.webp) if (s.w === width) list.push(s.url);
+  }
+  if (w.id === 'avventura-di-una-vita') {
+    list.push('/viaggio/avventura-clessidra.png');
+  } else {
+    list.push(pic.img.url);
+    const orig = catalogBySlug.get(w.id);
+    if (orig) list.push(publicPath(orig.image.file));
+  }
+  operaSources[w.id] = list;
+}
+
+/* ---------- SEO ---------- */
+
+const title = 'brama — opere materiche, emozioni in materia';
+const description =
+  'brama traduce le emozioni in materia: un viaggio immersivo in nove opere uniche — acrilico, resina epossidica, vetro, ossidiana, oro e fibra ottica — nove ambienti da attraversare, uno per opera.';
+const canonical = new URL('/', SITE.domain).href;
+const jsonLd = [
+  {
+    '@context': 'https://schema.org',
+    '@type': 'WebSite',
+    name: SITE.name,
+    url: SITE.domain,
+    inLanguage: 'it',
+    description,
+  },
+  {
+    '@context': 'https://schema.org',
+    '@type': 'Organization',
+    name: SITE.name,
+    url: SITE.domain,
+    logo: new URL('/images/signature.png', SITE.domain).href,
+    email: SITE.email,
+    sameAs: [SITE.instagram],
+    description: SITE.tagline,
+  },
+];
+
+const CODA_NAV = [
+  { href: '/portfolio', label: 'Portfolio' },
+  { href: '/archivio', label: 'Archivio' },
+  { href: '/contatti', label: 'Contatti' },
+];
+---
+
+<!doctype html>
+<html lang="it">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <link rel="canonical" href={canonical} />
+    <meta name="theme-color" content="#050a1a" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32.png" />
+    <link rel="icon" type="image/png" sizes="192x192" href="/images/favicon-192.png" />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="brama" />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonical} />
+    <meta property="og:image" content={new URL('/images/og-image.jpg', SITE.domain).href} />
+    <meta name="twitter:card" content="summary_large_image" />
+
+    {/* Redirect QR fisici: brama.studio/#<slug> → /opera/<slug>. Inline, prima di tutto. */}
+    <script is:inline define:vars={{ slugs }}>
+      (function () {
+        var h = location.hash.replace(/^#/, '');
+        if (!h) return;
+        try {
+          h = decodeURIComponent(h);
+        } catch (e) {
+          /* hash malformato: nessun redirect */
+        }
+        if (slugs.indexOf(h) !== -1) location.replace('/opera/' + h);
+      })();
+    </script>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,400&family=Cormorant+Garamond:ital@1&family=Inter+Tight:wght@400;500&family=JetBrains+Mono:wght@400&display=swap"
+    />
+
+    <script type="application/ld+json" set:html={JSON.stringify(jsonLd)} />
+    <script
+      type="application/json"
+      id="mondi-opera-sources"
+      set:html={JSON.stringify(operaSources)}
+    />
+  </head>
+
+  <body>
+    <!-- micro-navigazione fissa: punto-logo + hamburger (blend difference) -->
+    <header class="vg-top">
+      <a class="vg-sig-mark" href="/" aria-label="brama — inizio del viaggio">
+        <span class="vg-ink vg-sig-ink" style="--m:url('/images/signature.png')" aria-hidden="true"></span>
+      </a>
+      <button
+        class="vg-burger"
+        aria-label="Apri il menu"
+        aria-expanded="false"
+        aria-controls="vg-menu"
+      >
+        <span class="vg-burger-line"></span>
+        <span class="vg-burger-line"></span>
+      </button>
+    </header>
+
+    <nav id="vg-menu" class="vg-menu" aria-hidden="true" aria-label="Navigazione principale">
+      <ul class="vg-menu-list">
+        {NAV.map((item) => (
+          <li>
+            <a href={item.href} aria-current={item.href === '/' ? 'page' : undefined}>
+              {item.label}
+            </a>
+          </li>
+        ))}
+      </ul>
+      <div class="vg-menu-meta">
+        <a href={SITE.instagram} rel="noopener" target="_blank">Instagram</a>
+        <a href={`mailto:${SITE.email}`}>{SITE.email}</a>
+      </div>
+    </nav>
+
+    <!-- canvas del motore (fixed, sotto la UI; attivo solo con html.js-mondi) -->
+    <canvas id="mondi-canvas" aria-hidden="true"></canvas>
+
+    <main id="mondi-root">
+      <h1 class="vg-sr">brama — il viaggio delle opere</h1>
+
+      <!-- UI hero (solo motore): wordmark + micro-freccia disegnata, via entro p=0.3 -->
+      <div class="mondi-hero-ui" aria-hidden="true">
+        <span class="vg-ink mondi-wordmark" style="--m:url('/images/signature.png')"></span>
+        <span class="vg-ink mondi-arrow" style="--m:url('/viaggio/freccia-scroll.webp')"></span>
+      </div>
+
+      <!-- didascalie (solo motore): l'engine le posiziona sul rect dell'opera in dwell -->
+      <div class="mondi-captions">
+        {journeyWorks.map((w) => (
+          <a class="mondo-caption" data-mondo-caption={w.id} href={`/opera/${w.id}`}>
+            <span class="cap-in">
+              <h2>{w.data.title}</h2>
+              <span class="anno">{w.data.year}</span>
+              {w.data.interaction && <p class="interaction">{w.data.interaction}</p>}
+            </span>
+          </a>
+        ))}
+      </div>
+
+      <!-- coda (solo motore): punto-logo + tre porte, affiora a fine viaggio -->
+      <div class="mondi-coda" aria-hidden="true">
+        <span class="vg-ink mondi-coda-sig" style="--m:url('/images/signature.png')"></span>
+        <nav class="mondi-coda-nav" aria-label="Prosegui la visita">
+          {CODA_NAV.map((item) => <a href={item.href}>{item.label}</a>)}
+        </nav>
+      </div>
+
+      <!-- track: dà l'altezza di scroll al viaggio (2510svh, solo con motore) -->
+      <div id="mondi-track" aria-hidden="true"></div>
+
+      <!-- ══ FALLBACK STATICO (no-JS / no-WebGL2 / reduced-motion) — anche SEO ══ -->
+      <div class="mondi-static-root">
+        <!-- soglia: frame del vortice in CSS + farfalla a inchiostro ferma -->
+        <section class="mondo-static ms-hero" aria-label="brama">
+          <span
+            class="vg-ink ms-farfalla"
+            style="--m:url('/viaggio/creatura-alata.webp')"
+            aria-hidden="true"
+          ></span>
+          <span
+            class="vg-ink ms-hero-wordmark"
+            style="--m:url('/images/signature.png')"
+            aria-hidden="true"
+          ></span>
+        </section>
+
+        {journeyWorks.map((w, i) => {
+          const pic = picFor(w.id);
+          const c = CHAIN[w.id];
+          if (!pic || !c) return null;
+          return (
+            <section
+              class="mondo-static"
+              id={`tappa-${w.id}`}
+              style={`--c-entry:${c.entry};--c-fog:${c.fog};--c-exit:${c.exit}`}
+            >
+              <a class="ms-card" href={`/opera/${w.id}`}>
+                <picture>
+                  {pic.avif.length > 0 && (
+                    <source
+                      type="image/avif"
+                      srcset={pic.avif.map((s) => `${s.url} ${s.w}w`).join(', ')}
+                      sizes="(max-width: 820px) 92vw, 60vw"
+                    />
+                  )}
+                  {pic.webp.length > 0 && (
+                    <source
+                      type="image/webp"
+                      srcset={pic.webp.map((s) => `${s.url} ${s.w}w`).join(', ')}
+                      sizes="(max-width: 820px) 92vw, 60vw"
+                    />
+                  )}
+                  <img
+                    src={pic.img.url}
+                    srcset={pic.imgSrcset || undefined}
+                    sizes={pic.imgSrcset ? '(max-width: 820px) 92vw, 60vw' : undefined}
+                    width={pic.img.w}
+                    height={pic.img.h}
+                    alt={`«${w.data.title}», ${w.data.year} — opera materica`}
+                    loading={i === 0 ? 'eager' : 'lazy'}
+                    decoding="async"
+                  />
+                </picture>
+                <span class="ms-cap">
+                  <h2>{w.data.title}</h2>
+                  <span class="anno">{w.data.year}</span>
+                  {w.data.interaction && <p class="interaction">{w.data.interaction}</p>}
+                </span>
+              </a>
+            </section>
+          );
+        })}
+
+        <!-- coda statica -->
+        <section class="mondo-static ms-coda" style="--c-entry:#050a1a;--c-fog:#050a1a;--c-exit:#050a1a">
+          <span class="vg-ink ms-coda-sig" style="--m:url('/images/signature.png')" aria-hidden="true"></span>
+          <nav class="ms-coda-nav" aria-label="Prosegui la visita">
+            {CODA_NAV.map((item) => <a href={item.href}>{item.label}</a>)}
+          </nav>
+        </section>
+      </div>
+    </main>
+
+    <script>
+      import '../scripts/viaggio/menu.js';
+      import { startMondi, detectSupport } from '../scripts/mondi/engine.js';
+      import * as soglia from '../scripts/mondi/hero.js';
+      import * as vertigine from '../scripts/mondi/ambienti/vertigine.js';
+      import * as abbandono from '../scripts/mondi/ambienti/abbandono.js';
+      import * as fuga from '../scripts/mondi/ambienti/fuga.js';
+      import * as tiDevoLasciare from '../scripts/mondi/ambienti/ti-devo-lasciare.js';
+      import * as pugnoNelTempo from '../scripts/mondi/ambienti/pugno-nel-tempo.js';
+      import * as depressione from '../scripts/mondi/ambienti/depressione.js';
+      import * as laCasaDiMike from '../scripts/mondi/ambienti/la-casa-di-mike.js';
+      import * as lu from '../scripts/mondi/ambienti/lu.js';
+      import * as avventura from '../scripts/mondi/ambienti/avventura-di-una-vita.js';
+
+      const MODS: Record<string, object> = {
+        'vertigine': vertigine,
+        'abbandono': abbandono,
+        'fuga': fuga,
+        'ti-devo-lasciare': tiDevoLasciare,
+        'pugno-nel-tempo': pugnoNelTempo,
+        'depressione': depressione,
+        'la-casa-di-mike': laCasaDiMike,
+        'lu': lu,
+        'avventura-di-una-vita': avventura,
+      };
+      const ORDER = [
+        'vertigine', 'abbandono', 'fuga', 'ti-devo-lasciare', 'pugno-nel-tempo',
+        'depressione', 'la-casa-di-mike', 'lu', 'avventura-di-una-vita',
+      ];
+
+      // sorgenti texture verificate a build-time (niente 404)
+      const dataEl = document.getElementById('mondi-opera-sources');
+      let srcMap: Record<string, string[]> = {};
+      try {
+        srcMap = dataEl ? JSON.parse(dataEl.textContent || '{}') : {};
+      } catch (e) {
+        srcMap = {};
+      }
+      const small = matchMedia('(hover: none), (max-width: 820px)').matches;
+      const pick = (slug: string) => {
+        const list = srcMap[slug];
+        if (!list || !list.length) return undefined;
+        const filtered = small ? list.filter((u) => !u.includes('-2000')) : list;
+        return filtered.length ? filtered : list;
+      };
+
+      const sup = detectSupport();
+      if (sup.webgl2 && !sup.reducedMotion) {
+        // la classe va messa PRIMA dell'avvio: dà al track la sua altezza,
+        // così il primo onResize del motore misura già il viaggio intero.
+        document.documentElement.classList.add('js-mondi');
+
+        window.addEventListener('mondi:phase', ((e: CustomEvent) => {
+          document.documentElement.classList.toggle(
+            'mondi-coda-on',
+            e.detail && e.detail.index === 10
+          );
+        }) as EventListener);
+
+        const worlds = [
+          { module: soglia },
+          ...ORDER.map((slug) => ({
+            module: MODS[slug],
+            opera: { sources: pick(slug) },
+          })),
+        ];
+
+        startMondi({ canvas: '#mondi-canvas', track: '#mondi-track', worlds }).then(
+          (ctrl) => {
+            if (!ctrl) document.documentElement.classList.remove('js-mondi');
+          }
+        );
+      }
+    </script>
+  </body>
+</html>

@@ -1,0 +1,500 @@
+/* ==========================================================================
+   P3 — "IBRIDO" · il tratto
+   DOM scrollabile normale (SEO/a11y) + canvas 2D fixed per il filo nero
+   + micro-canvas WebGL (three) solo dentro le opere per la torcia.
+   Default (no-JS / reduced-motion): sequenza verticale statica curata.
+   ========================================================================== */
+
+.p3 {
+  --p3-ease: cubic-bezier(0.32, 0.72, 0, 1);
+  position: relative;
+  background: var(--bg);
+  color: var(--ink);
+  overflow-x: clip;
+}
+
+/* ---------- filo nero: canvas fixed, solo in modalità viaggio ---------- */
+.p3-thread {
+  display: none;
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100svh;
+  height: 100dvh;
+  pointer-events: none;
+  z-index: 40;
+}
+html.p3-js .p3-thread { display: block; }
+
+/* ---------- tipografia condivisa ---------- */
+.p3-kicker {
+  font-family: var(--mono);
+  font-size: 0.68rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  opacity: 0.72;
+}
+.p3-h2 {
+  font-family: var(--display);
+  font-weight: 300;
+  font-size: clamp(1.9rem, 4.6vw, 3.4rem);
+  line-height: 1.06;
+  letter-spacing: -0.01em;
+  margin-top: 1rem;
+  text-wrap: balance;
+}
+.p3-serif {
+  font-family: var(--serif);
+  font-size: clamp(1.08rem, 1.9vw, 1.35rem);
+  line-height: 1.55;
+  max-width: 34ch;
+  margin-top: 1.1rem;
+}
+
+/* ==========================================================================
+   HERO
+   ========================================================================== */
+.p3-hero {
+  position: relative;
+  min-height: 100svh;
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  text-align: center;
+  padding: 18svh 6vw 12svh;
+  z-index: 50;
+}
+.p3-hero .p3-kicker { color: var(--ink-dim); }
+.p3-title {
+  font-family: var(--display);
+  font-weight: 200;
+  font-size: clamp(3.4rem, 13vw, 9.5rem);
+  line-height: 0.96;
+  letter-spacing: -0.02em;
+  margin-top: 1.2rem;
+}
+.p3-title em {
+  font-style: italic;
+  color: var(--accent);
+}
+.p3-lede {
+  font-family: var(--serif);
+  font-size: clamp(1.05rem, 2.1vw, 1.4rem);
+  line-height: 1.55;
+  color: var(--ink-dim);
+  max-width: 42ch;
+  margin-top: 1.6rem;
+}
+.p3-hint {
+  margin-top: 7svh;
+  font-family: var(--mono);
+  font-size: 0.66rem;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: var(--ink-mute);
+  display: grid;
+  justify-items: center;
+  gap: 0.7rem;
+}
+.p3-hint-line {
+  width: 1px;
+  height: 46px;
+  background: linear-gradient(var(--ink-mute), transparent);
+}
+html.p3-js .p3-hint-line {
+  animation: p3-drip 2.2s var(--p3-ease) infinite;
+  transform-origin: top;
+}
+@keyframes p3-drip {
+  0% { transform: scaleY(0); opacity: 0; }
+  35% { transform: scaleY(1); opacity: 1; }
+  100% { transform: scaleY(1) translateY(18px); opacity: 0; }
+}
+
+/* ==========================================================================
+   TERRITORI DI DISEGNO — carta + inchiostro
+   ========================================================================== */
+.p3-territory {
+  position: relative;
+  background: var(--paper);
+  color: var(--stroke);
+  min-height: 92svh;
+  padding: 16svh 6vw;
+  display: grid;
+  align-content: center;
+  overflow: clip;
+  z-index: 30;
+}
+html.p3-js .p3-territory { min-height: 170svh; }
+
+/* bordo strappato carta ↔ navy (statico e viaggio) */
+.p3-territory::before,
+.p3-territory::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 14svh;
+  pointer-events: none;
+  z-index: 1;
+}
+.p3-territory::before {
+  top: 0;
+  background: linear-gradient(var(--bg), transparent);
+  opacity: 0.9;
+}
+.p3-territory::after {
+  bottom: 0;
+  background: linear-gradient(transparent, var(--bg));
+  opacity: 0.9;
+}
+
+/* texture: pagina di disegni del portfolio, multiply sulla carta */
+.p3-paper-tex {
+  position: absolute;
+  inset: 0;
+  background-size: cover;
+  background-position: center;
+  mix-blend-mode: multiply;
+  opacity: 0.55;
+  pointer-events: none;
+}
+.p3-t2 .p3-paper-tex {
+  transform: scaleX(-1);
+  background-position: 20% 30%;
+  opacity: 0.4;
+}
+
+/* tratteggio vettoriale */
+.p3-hatch {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  opacity: 0.85;
+}
+.p3-hatch path,
+.p3-hatch line {
+  stroke: var(--stroke);
+  fill: none;
+  stroke-linecap: round;
+}
+
+/* frammenti di disegno che emergono dalle anse del filo */
+.p3-frag {
+  position: absolute;
+  width: clamp(150px, 22vw, 300px);
+  border: 1px solid rgba(10, 10, 10, 0.25);
+  background: var(--paper);
+  box-shadow: 10px 14px 0 rgba(10, 10, 10, 0.08);
+  overflow: hidden;
+  z-index: 2;
+}
+.p3-frag img {
+  width: 100%;
+  aspect-ratio: 3 / 4;
+  object-fit: cover;
+  filter: grayscale(1) contrast(1.05);
+  mix-blend-mode: multiply;
+}
+.p3-frag figcaption {
+  font-family: var(--mono);
+  font-size: 0.58rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  padding: 0.5rem 0.7rem;
+  opacity: 0.6;
+}
+html.p3-js .p3-frag { clip-path: inset(0% 0% 0% 0%); }
+.p3-frag-a { top: 16%; right: 8vw; transform: rotate(2.5deg); }
+.p3-frag-a img { object-position: 82% 22%; }
+.p3-frag-b { top: 20%; left: 7vw; transform: rotate(-3deg); }
+.p3-frag-b img { object-position: 78% 88%; }
+
+.p3-territory .p3-copy {
+  position: relative;
+  z-index: 3;
+  max-width: 620px;
+}
+.p3-t1 .p3-copy { margin-inline: 8vw auto; }
+.p3-t2 .p3-copy { margin-inline: auto 8vw; text-align: right; }
+.p3-t2 .p3-serif { margin-inline-start: auto; }
+.p3-territory .p3-kicker { opacity: 0.55; }
+.p3-territory .p3-serif { color: rgba(10, 10, 10, 0.78); }
+
+/* ==========================================================================
+   OPERE — l'ingresso nella materia
+   ========================================================================== */
+.p3-opera {
+  position: relative;
+  background: var(--bg);
+  z-index: 30;
+}
+.p3-opera-stage {
+  position: relative;
+  min-height: 100svh;
+  display: grid;
+  align-items: center;
+  gap: clamp(1.5rem, 4vw, 4rem);
+  padding: max(12svh, 96px) 6vw 10svh;
+  max-width: var(--maxw);
+  margin-inline: auto;
+}
+@media (min-width: 900px) {
+  .p3-vertigine .p3-opera-stage { grid-template-columns: minmax(0, 1.5fr) minmax(280px, 1fr); }
+  .p3-abbandono .p3-opera-stage { grid-template-columns: minmax(280px, 1fr) minmax(0, 1.2fr); }
+  .p3-abbandono .p3-opera-meta { order: -1; text-align: right; }
+  .p3-abbandono .p3-opera-meta .p3-quote,
+  .p3-abbandono .p3-opera-meta .p3-materials { margin-inline-start: auto; }
+}
+
+/* velo carta: nel viaggio copre la scena e si dissolve entrando nella materia */
+.p3-opera-veil {
+  position: absolute;
+  inset: 0;
+  background: var(--paper);
+  opacity: 0;
+  pointer-events: none;
+  z-index: 4;
+}
+
+.p3-artwork {
+  position: relative;
+  justify-self: center;
+  width: 100%;
+  max-width: calc(76svh * 1.505); /* Vertigine 1200×797 */
+  z-index: 2;
+}
+.p3-abbandono .p3-artwork {
+  max-width: calc(80svh * 0.49); /* Abbandono 600×1223 */
+}
+.p3-artwork img {
+  width: 100%;
+  height: auto;
+  display: block;
+  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.55);
+}
+.p3-vertigine .p3-artwork img { aspect-ratio: 1200 / 797; }
+.p3-abbandono .p3-artwork img { aspect-ratio: 600 / 1223; }
+
+/* torcia: canvas WebGL sopra l'immagine (solo viaggio), fallback CSS */
+.p3-torch,
+.p3-torch-fallback {
+  display: none;
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+html.p3-js .p3-torch { display: block; opacity: 0; }
+html.p3-js .p3-torch-fallback[data-on] {
+  display: block;
+  mix-blend-mode: soft-light;
+  background: radial-gradient(
+    circle 24vmin at var(--tx, 50%) var(--ty, 50%),
+    rgba(255, 245, 220, 0.95),
+    rgba(255, 245, 220, 0.25) 55%,
+    transparent 75%
+  );
+}
+
+.p3-opera-meta {
+  position: relative;
+  z-index: 3;
+  display: grid;
+  gap: 0.85rem;
+  align-content: center;
+}
+.p3-opera-title {
+  font-family: var(--display);
+  font-weight: 200;
+  font-size: clamp(2.6rem, 6vw, 4.6rem);
+  line-height: 1;
+  letter-spacing: -0.015em;
+}
+.p3-mono {
+  font-family: var(--mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.18em;
+  color: var(--accent);
+}
+.p3-materials {
+  font-family: var(--sans);
+  font-size: 0.85rem;
+  line-height: 1.5;
+  color: var(--ink-dim);
+  max-width: 34ch;
+}
+.p3-quote {
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: clamp(1.1rem, 1.8vw, 1.35rem);
+  line-height: 1.5;
+  color: var(--ink);
+  max-width: 30ch;
+  margin-top: 0.5rem;
+}
+.p3-quote cite {
+  display: block;
+  font-style: normal;
+  font-family: var(--mono);
+  font-size: 0.62rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--ink-mute);
+  margin-top: 0.6rem;
+}
+.p3-live {
+  font-size: 0.8rem;
+  line-height: 1.55;
+  color: var(--ink-mute);
+  max-width: 38ch;
+  border-inline-start: 2px solid var(--red);
+  padding-inline-start: 0.8rem;
+}
+.p3-abbandono .p3-live {
+  border-inline-start: 0;
+  border-inline-end: 2px solid var(--red);
+  padding-inline: 0 0.8rem;
+}
+.p3-torch-hint {
+  font-family: var(--mono);
+  font-size: 0.62rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--accent);
+  opacity: 0.85;
+}
+html:not(.p3-js) .p3-torch-hint { display: none; }
+
+.p3-cta {
+  justify-self: start;
+  margin-top: 0.6rem;
+  font-family: var(--mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--ink);
+  border: 1px solid var(--line-strong);
+  padding: 0.85em 1.4em;
+  transition: border-color 0.45s var(--p3-ease), background 0.45s var(--p3-ease),
+    color 0.45s var(--p3-ease);
+}
+.p3-cta:hover,
+.p3-cta:focus-visible {
+  border-color: var(--accent);
+  background: rgba(74, 147, 230, 0.12);
+  color: var(--accent);
+}
+.p3-cta:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+.p3-abbandono .p3-cta { justify-self: start; }
+@media (min-width: 900px) {
+  .p3-abbandono .p3-cta { justify-self: end; }
+}
+
+/* mobile: tutto il quadro + meta dentro un viewport durante il pin */
+@media (max-width: 899px) {
+  .p3-opera-stage {
+    padding: max(10svh, 84px) 6vw 8svh;
+    gap: 1.1rem;
+    align-content: center;
+  }
+  .p3-vertigine .p3-artwork { max-width: min(100%, calc(36svh * 1.505)); }
+  .p3-abbandono .p3-artwork { max-width: min(58vw, calc(44svh * 0.49)); }
+  .p3-opera-title { font-size: 2.3rem; }
+  .p3-quote { font-size: 1rem; }
+  .p3-live { font-size: 0.72rem; }
+  .p3-opera-meta { gap: 0.55rem; }
+}
+
+/* ==========================================================================
+   FINALE — il filo si riannoda nella firma
+   ========================================================================== */
+.p3-finale {
+  position: relative;
+  min-height: 92svh;
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  text-align: center;
+  gap: 1.4rem;
+  padding: 16svh 6vw;
+  z-index: 30;
+}
+.p3-finale .p3-kicker { color: var(--ink-mute); }
+.p3-sig {
+  width: clamp(180px, 26vw, 300px);
+  height: auto;
+  filter: var(--sig-tint);
+}
+.p3-tagline {
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: clamp(1rem, 1.8vw, 1.25rem);
+  color: var(--ink-dim);
+}
+.p3-finale-nav {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 1.8rem;
+  margin-top: 2rem;
+}
+.p3-finale-nav a,
+.p3-finale-nav button {
+  font-family: var(--mono);
+  font-size: 0.68rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--ink-dim);
+  border-bottom: 1px solid var(--line);
+  padding-bottom: 0.3em;
+  transition: color 0.45s var(--p3-ease), border-color 0.45s var(--p3-ease);
+}
+.p3-finale-nav a:hover,
+.p3-finale-nav a:focus-visible,
+.p3-finale-nav button:hover,
+.p3-finale-nav button:focus-visible {
+  color: var(--accent);
+  border-color: var(--accent);
+}
+
+/* ==========================================================================
+   FPS meter (?debug=1)
+   ========================================================================== */
+.p3-fps {
+  position: fixed;
+  top: 10px;
+  left: 10px;
+  z-index: 300;
+  font-family: var(--mono);
+  font-size: 11px;
+  line-height: 1.5;
+  color: #9fffb0;
+  background: rgba(0, 0, 0, 0.72);
+  padding: 6px 9px;
+  border-radius: 4px;
+  pointer-events: none;
+  white-space: pre;
+}
+
+/* ==========================================================================
+   Statico curato: no-JS oppure prefers-reduced-motion
+   (html senza .p3-js — è il default markup-only)
+   ========================================================================== */
+html:not(.p3-js) .p3-territory { min-height: 88svh; }
+html:not(.p3-js) .p3-opera-veil { display: none; }
+html:not(.p3-js) .p3-artwork img { opacity: 1; }
+html:not(.p3-js) .p3-frag { position: relative; inset: auto; margin-top: 3rem; }
+html:not(.p3-js) .p3-t1 .p3-frag { margin-inline: 8vw auto; }
+html:not(.p3-js) .p3-t2 .p3-frag { margin-inline: auto 8vw; }
+
+/* crossfade dolce, CSS-only, tra le sezioni statiche */
+html:not(.p3-js) .p3-opera {
+  background: linear-gradient(var(--bg-2), var(--bg) 18svh);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .p3-hint-line { animation: none !important; }
+}

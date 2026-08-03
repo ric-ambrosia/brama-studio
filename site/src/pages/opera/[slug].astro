@@ -1,0 +1,1693 @@
+---
+// /opera/<slug> — pagina statica di ogni opera (destinazione di Viaggio, shop e QR fisici).
+import { getCollection, render } from 'astro:content';
+import Base from '../../layouts/Base.astro';
+import { SITE } from '../../lib/site';
+import {
+  effectiveStatus,
+  STATUS_LABEL,
+  formatSize,
+  formatPrice,
+  byJourneyOrder,
+  priceInfo,
+  type Work,
+} from '../../lib/works';
+import {
+  shippingTier,
+  shippingClientConfig,
+  courierAmount,
+  euro,
+  EU_COUNTRIES,
+  DELIVERY_DAYS,
+  OPTIONS,
+  INSURANCE_NOTE,
+  QUOTE_NOTE,
+} from '../../lib/shipping';
+import catalog from '../../../content-notes/images-catalog.json';
+
+export async function getStaticPaths() {
+  const works = await getCollection('works');
+  return works.map((work) => ({ params: { slug: work.id }, props: { work } }));
+}
+
+interface Props {
+  work: Work;
+}
+
+const { work } = Astro.props;
+const { title, year, city, size, materials, collection, images, video, interaction, philosophy, price, model3d } =
+  work.data;
+const has3d = Boolean(model3d);
+// Con `parti` c'è il montaggio a scroll (Battiti, sezione alta 300svh); senza,
+// il visore mostra solo il meccanismo che gira (Clessidra, altezza normale).
+const hasAssembly = Boolean(model3d?.parti);
+const prices = priceInfo(work.data);
+
+const { Content } = await render(work);
+const hasStory = Boolean(work.body && work.body.trim().length > 0);
+
+// Stato effettivo: frontmatter + stato di vendita runtime (KV) al momento della build.
+const status = await effectiveStatus(work);
+
+// --- Immagini: dimensioni e thumb dal catalogo generato ------------------------
+type CatalogWork = {
+  slug: string;
+  image?: { file: string; width: number; height: number };
+  thumbs?: { file: string; width: number; height: number }[];
+};
+const catalogEntry = (catalog.works as CatalogWork[]).find((c) => c.slug === work.id);
+const mainImage = images.main ?? null;
+const imgWidth = catalogEntry?.image?.width;
+const imgHeight = catalogEntry?.image?.height;
+
+const thumbSources = (catalogEntry?.thumbs ?? []).map((t) => ({
+  url: `/images/thumbs/${t.file.split('/').pop()}`,
+  width: t.width,
+}));
+const srcset =
+  mainImage && imgWidth
+    ? [...thumbSources.map((t) => `${t.url} ${t.width}w`), `${mainImage} ${imgWidth}w`].join(', ')
+    : undefined;
+const sizesAttr = '(min-width: 901px) min(56vw, 800px), calc(100vw - 48px)';
+
+const altText = `«${title}», opera di brama in ${materials.join(', ')}${
+  size ? `, ${formatSize(size)}` : ''
+} (${year}).`;
+
+// --- Navigazione del Viaggio ---------------------------------------------------
+const allWorks = await getCollection('works');
+const coreWorks = allWorks.filter((w) => w.data.collection === 'core').sort(byJourneyOrder);
+const coreIndex = coreWorks.findIndex((w) => w.id === work.id);
+const prevWork = collection === 'core' && coreIndex > 0 ? coreWorks[coreIndex - 1] : null;
+const nextWork =
+  collection === 'core' && coreIndex >= 0 && coreIndex < coreWorks.length - 1
+    ? coreWorks[coreIndex + 1]
+    : null;
+
+// --- Emblema scenico -----------------------------------------------------------
+// Lo stesso asset a inchiostro che fa da protagonista/quinta nella tappa del
+// Viaggio (vedi content-notes/art-direction.md §4) torna qui come sigillo
+// discreto: la pagina è la "scheda" della scena già attraversata.
+const SCENE_EMBLEM: Record<string, string> = {
+  vertigine: 'vertigine-vortice',
+  abbandono: 'abbandono-figura',
+  fuga: 'fuga-figura',
+  'ti-devo-lasciare': 'lasciarti-mano',
+  'pugno-nel-tempo': 'pugno-emblema',
+  depressione: 'depressione-occhio',
+  'la-casa-di-mike': 'mike-casa',
+  lu: 'lu-mezzaluna',
+  'avventura-di-una-vita': 'avventura-clessidra',
+};
+const emblem = SCENE_EMBLEM[work.id] ?? null;
+// Se l'opera non ha foto (avventura-di-una-vita), l'emblema diventa il
+// protagonista del riquadro immagine: niente doppio timbro nella colonna dati.
+const showSigillo = Boolean(emblem && mainImage);
+
+// --- Testi e metadati ----------------------------------------------------------
+const COLLECTION_LABEL: Record<typeof collection, string> = {
+  core: 'Il Viaggio',
+  emozioni: 'Collezione Emozioni',
+  disegni: 'Disegni',
+  cinetica: 'Serie cinetica',
+};
+const pad2 = (n: number) => String(n).padStart(2, '0');
+const eyebrow =
+  collection === 'core' && work.data.journey.featured
+    ? `Il Viaggio · Tappa ${pad2(work.data.journey.order)} / ${pad2(coreWorks.length)}`
+    : work.data.series
+      ? `${work.data.series} · ${COLLECTION_LABEL[collection]}`
+      : COLLECTION_LABEL[collection];
+
+// Taglia al confine di parola, chiudendo su punteggiatura pulita (niente parole spezzate).
+const clip = (s: string, max: number) => {
+  if (s.length <= max) return s;
+  const cut = s.slice(0, max);
+  const at = cut.lastIndexOf(' ');
+  const base = at > max * 0.6 ? cut.slice(0, at) : cut;
+  return base.replace(/[\s,;:.–-]+$/, '') + '…';
+};
+const bodyText = (work.body ?? '')
+  .replace(/^\s*[-*]\s+/gm, '') // togli i marcatori di lista markdown
+  .replace(/[#*_>`[\]]/g, '')
+  .replace(/\s+/g, ' ')
+  .trim();
+const description = bodyText
+  ? clip(bodyText, 155)
+  : `${title} (${year}${city ? `, ${city}` : ''}), opera in ${materials.join(
+      ', '
+    )} della collezione ${collection === 'core' ? 'principale' : collection} di brama.`;
+
+const canonical = new URL(`/opera/${work.id}`, SITE.domain).href;
+
+// --- Acquisto ------------------------------------------------------------------
+// I quadri "grandi" (tutto tranne le tele Emozioni da 25€) non si pagano online:
+// si mostra il prezzo ma si acquistano su richiesta (email → contatto diretto con
+// pagamento e spedizione). Le Emozioni restano a pagamento diretto (Stripe).
+const isEmoz = collection === 'emozioni';
+const canBuy = status === 'available' && price > 0 && isEmoz;
+const requestBuy = status === 'available' && price > 0 && !isEmoz;
+const askPrice = status === 'available' && price <= 0;
+
+// Spedizione: taglia dedotta dall'opera + config per il calcolatore lato client.
+const shipTier = shippingTier(work.data);
+const shipCfg = shippingClientConfig(shipTier);
+const shipInitIT = courierAmount(shipTier, 'IT'); // vista iniziale = Italia (progressive enhancement)
+
+const mailtoPrice = `mailto:${SITE.email}?subject=${encodeURIComponent(
+  `Richiesta prezzo: ${title}`
+)}`;
+const mailtoRequest = `mailto:${SITE.email}?subject=${encodeURIComponent(
+  `Richiesta informazioni: ${title}`
+)}&body=${encodeURIComponent(
+  `Vorrei qualche informazione su «${title}»${size ? ` (${formatSize(size)})` : ''}.\n\n` +
+    `Nome:\n`
+)}`;
+
+// --- JSON-LD -------------------------------------------------------------------
+const jsonLd: Record<string, unknown> = {
+  '@context': 'https://schema.org',
+  '@type': 'VisualArtwork',
+  name: title,
+  url: canonical,
+  dateCreated: String(year),
+  artMedium: materials.join(', '),
+  creator: { '@type': 'Organization', name: 'brama', url: SITE.domain },
+};
+if (size) {
+  jsonLd.width = { '@type': 'Distance', name: `${size.w} cm` };
+  jsonLd.height = { '@type': 'Distance', name: `${size.h} cm` };
+}
+if (mainImage) jsonLd.image = new URL(mainImage, SITE.domain).href;
+if (price > 0 && (status === 'available' || status === 'sold')) {
+  jsonLd.offers = {
+    '@type': 'Offer',
+    price: price,
+    priceCurrency: 'EUR',
+    availability:
+      status === 'available' ? 'https://schema.org/InStock' : 'https://schema.org/SoldOut',
+    url: canonical,
+  };
+}
+---
+
+<Base
+  title={`${title} · brama`}
+  description={description}
+  ogImage={mainImage ?? undefined}
+  jsonLd={jsonLd}
+  showBack
+  backHref="/shop"
+>
+  <article class="page page-wide opera" data-opera data-slug={work.id} data-status={status}>
+    <div class="opera-split">
+      <figure class="opera-media">
+        {
+          video ? (
+            <video
+              class="opera-video"
+              src={video}
+              poster={mainImage ?? undefined}
+              autoplay
+              loop
+              muted
+              playsinline
+              preload="metadata"
+              aria-label={`${title}, il movimento in loop`}
+            />
+          ) : mainImage ? (
+            <button
+              type="button"
+              class:list={['opera-zoom', collection === 'cinetica' && 'is-plain']}
+              data-lightbox-open
+              aria-haspopup="dialog"
+              aria-label={`Ingrandisci l'immagine di «${title}»`}
+            >
+              <img
+                src={mainImage}
+                srcset={srcset}
+                sizes={srcset ? sizesAttr : undefined}
+                width={imgWidth}
+                height={imgHeight}
+                alt={altText}
+                loading="eager"
+                fetchpriority="high"
+                decoding="async"
+              />
+              <span class="opera-zoom-hint" aria-hidden="true">Ingrandisci</span>
+            </button>
+          ) : (
+            <div class="opera-noimage" aria-hidden="true">
+              {emblem && (
+                <span class="opera-noimage-ink" style={`--m:url('/viaggio/${emblem}.webp')`} />
+              )}
+              <span class="opera-noimage-title">{title}</span>
+            </div>
+          )
+        }
+        {
+          !mainImage && (
+            <figcaption class="opera-noimage-note">
+              Documentazione fotografica in preparazione. L'opera è raccolta nel{' '}
+              <a href="/portfolio">portfolio</a>.
+            </figcaption>
+          )
+        }
+      </figure>
+
+      <div class="opera-data">
+        {
+          showSigillo && (
+            <span
+              class="opera-sigillo"
+              style={`--m:url('/viaggio/${emblem}.webp')`}
+              aria-hidden="true"
+            />
+          )
+        }
+        <p class="eyebrow">{eyebrow}</p>
+        <h1 class="opera-title">{title}</h1>
+        <p class="opera-meta">
+          <span>{year}</span>
+          {city && <span aria-hidden="true"> · </span>}
+          {city && <span>{city}</span>}
+          {size && <span aria-hidden="true"> · </span>}
+          {size && <span>{formatSize(size)}</span>}
+        </p>
+        {materials.length > 0 && <p class="opera-materials">{materials.join(' · ')}</p>}
+        <p class="opera-status">
+          <span class={`status-badge is-${status}`} data-status-badge>{STATUS_LABEL[status]}</span>
+        </p>
+
+        {
+          hasStory && (
+            <div class="opera-story">
+              <Content />
+            </div>
+          )
+        }
+
+        {
+          interaction && (
+            <section class="opera-interaction" aria-labelledby="interaction-title">
+              <h2 id="interaction-title" class="opera-interaction-title">
+                <svg
+                  width="18"
+                  height="18"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.5"
+                  stroke-linecap="round"
+                  aria-hidden="true"
+                >
+                  <circle cx="12" cy="12" r="3.2" />
+                  <path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3M5.3 5.3l2.1 2.1M16.6 16.6l2.1 2.1M18.7 5.3l-2.1 2.1M7.4 16.6l-2.1 2.1" />
+                </svg>
+                Come interagire
+              </h2>
+              <p>{interaction}</p>
+              <p class="opera-interaction-note">
+                L'ingegneria nascosta è la firma di brama: ogni opera custodisce un meccanismo che
+                risponde alla luce o alla presenza.
+              </p>
+            </section>
+          )
+        }
+
+        {philosophy && <p class="opera-philosophy">{philosophy}</p>}
+
+        {
+          canBuy && (
+            <section class="opera-buy" aria-labelledby="buy-title" data-buy>
+              <h2 id="buy-title" class="opera-buy-title">Acquisto</h2>
+              <p class="opera-price">
+                {prices.full && <span class="opera-price-full">{prices.full}</span>}
+                <span class="opera-price-now">{prices.current}</span>
+                {prices.discountPct && <span class="opera-price-tag">-{prices.discountPct}%</span>}
+              </p>
+              <div class="ship-calc" data-ship data-cfg={JSON.stringify(shipCfg)}>
+                <label class="ship-dest">
+                  <span>Spedizione verso</span>
+                  <select data-ship-country aria-label="Paese di destinazione">
+                    <option value="IT" selected>Italia</option>
+                    <optgroup label="Unione Europea">
+                      {EU_COUNTRIES.map((c) => <option value={c.code}>{c.name}</option>)}
+                    </optgroup>
+                    <option value="WORLD">Resto del mondo</option>
+                  </select>
+                </label>
+                <fieldset class="ship-zones">
+                  <legend>Consegna</legend>
+                  <label class="ship-option">
+                    <input type="radio" name="ship" value="courier" checked data-ship-courier />
+                    <span class="ship-zone">Corriere assicurato</span>
+                    <span class="ship-rate" data-rate-courier>
+                      {shipInitIT != null
+                        ? `${euro(shipInitIT)} · da ${DELIVERY_DAYS.IT[0]} a ${DELIVERY_DAYS.IT[1]} gg`
+                        : 'su preventivo'}
+                    </span>
+                  </label>
+                  <label class="ship-option">
+                    <input type="radio" name="ship" value="pickup" />
+                    <span class="ship-zone">{OPTIONS.pickup.label}</span>
+                    <span class="ship-rate">Gratis</span>
+                  </label>
+                  <label class="ship-option" data-ship-hand>
+                    <input type="radio" name="ship" value="handMilan" />
+                    <span class="ship-zone">{OPTIONS.handMilan.label}</span>
+                    <span class="ship-rate">{euro(OPTIONS.handMilan.price)}</span>
+                  </label>
+                </fieldset>
+                <p class="ship-note" data-ship-quote hidden>{QUOTE_NOTE}</p>
+                <p class="ship-note">{INSURANCE_NOTE}</p>
+              </div>
+              <button type="button" class="buy-btn" data-buy-btn>Acquista</button>
+            </section>
+          )
+        }
+
+        {
+          requestBuy && (
+            <section class="opera-buy" aria-labelledby="buy-title" data-buy>
+              <h2 id="buy-title" class="opera-buy-title">Informazioni</h2>
+              <p class="opera-price">
+                {prices.full && <span class="opera-price-full">{prices.full}</span>}
+                <span class="opera-price-now">{prices.current}</span>
+                {prices.discountPct && <span class="opera-price-tag">-{prices.discountPct}%</span>}
+              </p>
+              <p class="opera-request-lead">
+                Ti interessa quest'opera? Lasciami i tuoi dati: ricevi subito una conferma e ti
+                scrivo io con tutte le informazioni.
+              </p>
+
+              <details class="opera-request" data-request>
+                <summary class="buy-btn opera-request-toggle">Richiedi informazioni</summary>
+                <form class="opera-request-form" data-request-form data-slug={work.id} novalidate>
+                  <div class="req-grid">
+                    <label class="req-field">
+                      <span>Nome</span>
+                      <input name="nome" type="text" autocomplete="given-name" required />
+                    </label>
+                    <label class="req-field">
+                      <span>Cognome</span>
+                      <input name="cognome" type="text" autocomplete="family-name" required />
+                    </label>
+                  </div>
+                  <label class="req-field">
+                    <span>Email</span>
+                    <input name="email" type="email" autocomplete="email" inputmode="email" required />
+                  </label>
+                  <label class="req-field">
+                    <span>
+                      Messaggio <em>(facoltativo)</em>
+                    </span>
+                    <textarea name="messaggio" rows="3" maxlength="2000" />
+                  </label>
+                  <label class="req-consent">
+                    <input name="consenso" type="checkbox" required />
+                    <span>
+                      Ho letto l'
+                      <a href="/legal/privacy" target="_blank" rel="noopener">
+                        informativa privacy
+                      </a>{' '}
+                      e acconsento al trattamento dei dati per essere ricontattato.
+                    </span>
+                  </label>
+                  <button type="submit" class="buy-btn" data-request-submit>
+                    Invia richiesta
+                  </button>
+                  <p class="req-error" data-request-error role="alert" hidden />
+                </form>
+              </details>
+
+              <noscript>
+                <a class="buy-btn" href={mailtoRequest}>Richiedi informazioni via email</a>
+              </noscript>
+
+              <p class="ship-note">Ti rispondo io da {SITE.email} con tutte le informazioni.</p>
+            </section>
+          )
+        }
+
+        {
+          askPrice && (
+            <section class="opera-buy" aria-labelledby="buy-title" data-buy>
+              <h2 id="buy-title" class="opera-buy-title">Acquisto</h2>
+              <p class="opera-price">{formatPrice(price)}</p>
+              <a class="buy-btn" href={mailtoPrice}>Richiedi il prezzo</a>
+              <p class="ship-note">
+                Rispondiamo da {SITE.email} con prezzo, tempi e dettagli di spedizione.
+              </p>
+            </section>
+          )
+        }
+
+        <p class="opera-live" data-buy-msg role="status" hidden></p>
+
+        {
+          status === 'available' && (
+            <>
+              <p class="opera-note" data-note-sold hidden>
+                Quest'opera è stata venduta, ma resta parte del racconto.{' '}
+                <a href="/shop">Le opere disponibili sono nello shop</a>.
+              </p>
+              <p class="opera-note" data-note-reserved hidden>
+                Quest'opera è momentaneamente riservata: qualcuno sta completando l'acquisto. Se la
+                transazione non si conclude, tornerà disponibile qui.
+              </p>
+            </>
+          )
+        }
+
+        {
+          status === 'sold' && (
+            <p class="opera-note">
+              Le opere vendute restano parte del racconto.{' '}
+              <a href="/shop">Le opere disponibili sono nello shop</a>.
+            </p>
+          )
+        }
+
+        {
+          status === 'coming-soon' && (
+            <p class="opera-note">
+              In lavorazione: quest'opera sta prendendo forma nello studio. Quando sarà pronta,
+              apparirà qui e nel <a href="/shop">nostro shop</a>.
+            </p>
+          )
+        }
+      </div>
+    </div>
+
+    {has3d && (
+      <>
+        <h2 class="opera-3d-heading">Il meccanismo</h2>
+        <section
+          class:list={['opera-3d', !hasAssembly && 'is-simple']}
+          data-paura-section
+          aria-label={`${title}, il meccanismo in 3D`}
+        >
+          <div class="opera-3d-stage" data-paura data-parti={model3d?.parti} data-animato={model3d?.animato}>
+            <canvas class="opera-3d-canvas" data-paura-canvas></canvas>
+            <p class="opera-3d-hint">
+              {hasAssembly ? 'Trascina per ruotare · scorri per montare e smontare' : 'Trascina per ruotare'}
+            </p>
+            <p class="opera-3d-progress" data-paura-progress>Caricamento 0%</p>
+          </div>
+        </section>
+      </>
+    )}
+
+    <nav class="opera-nav" aria-label="Navigazione tra le opere">
+      {
+        collection === 'core' ? (
+          <>
+            <div class="opera-nav-cell prev">
+              {prevWork && (
+                <a href={`/opera/${prevWork.id}`} rel="prev">
+                  <span class="opera-nav-label">← Tappa precedente</span>
+                  <span class="opera-nav-title">{prevWork.data.title}</span>
+                </a>
+              )}
+            </div>
+            <div class="opera-nav-cell center">
+              <a href="/">Il Viaggio</a>
+            </div>
+            <div class="opera-nav-cell next">
+              {nextWork && (
+                <a href={`/opera/${nextWork.id}`} rel="next">
+                  <span class="opera-nav-label">Prossima tappa →</span>
+                  <span class="opera-nav-title">{nextWork.data.title}</span>
+                </a>
+              )}
+            </div>
+          </>
+        ) : (
+          <div class="opera-nav-cell center">
+            <a href="/portfolio">← Torna al portfolio</a>
+          </div>
+        )
+      }
+    </nav>
+  </article>
+
+  {
+    mainImage && (
+      <div
+        class="lightbox"
+        data-lightbox
+        hidden
+        role="dialog"
+        aria-modal="true"
+        aria-label={`Immagine ingrandita di «${title}»`}
+      >
+        <div
+          class="lightbox-scroll"
+          data-lightbox-scroll
+          tabindex="0"
+          aria-label="Area immagine: clic per ingrandire, frecce per scorrere"
+        >
+          <img
+            src={mainImage}
+            width={imgWidth}
+            height={imgHeight}
+            alt={altText}
+            loading="lazy"
+            decoding="async"
+            draggable="false"
+            data-lightbox-img
+          />
+        </div>
+        <button type="button" class="lightbox-close" data-lightbox-close aria-label="Chiudi (Esc)">
+          <svg
+            width="18"
+            height="18"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.5"
+            stroke-linecap="round"
+            aria-hidden="true"
+          >
+            <path d="M5 5l14 14M19 5L5 19" />
+          </svg>
+        </button>
+        <p class="lightbox-hint" aria-hidden="true">clic sull'immagine per ingrandire · Esc per chiudere</p>
+      </div>
+    )
+  }
+</Base>
+
+<style>
+  .opera {
+    padding-bottom: 72px;
+  }
+
+  /* --- ingresso: fade/rise sobrio, una cosa per volta --------------------- */
+  /* prefers-reduced-motion: il reset globale in tokens.css porta la durata a
+     0.01ms, con fill `both` la pagina appare direttamente nello stato finale. */
+  @keyframes opera-enter {
+    from {
+      opacity: 0;
+      transform: translateY(14px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+  .opera-media {
+    animation: opera-enter 0.55s cubic-bezier(0.32, 0.72, 0, 1) both;
+  }
+  .opera-data {
+    animation: opera-enter 0.55s cubic-bezier(0.32, 0.72, 0, 1) 0.1s both;
+  }
+  .opera-nav {
+    animation: opera-enter 0.55s cubic-bezier(0.32, 0.72, 0, 1) 0.18s both;
+  }
+  .opera-split {
+    display: grid;
+    grid-template-columns: minmax(0, 7fr) minmax(0, 5fr);
+    gap: clamp(32px, 5vw, 80px);
+    align-items: start;
+  }
+  @media (max-width: 900px) {
+    .opera-split {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  /* --- opera cinetica: hero 3D a tutta larghezza ------------------------- */
+  .opera-split.is-solo {
+    grid-template-columns: 1fr;
+    max-width: 760px;
+    margin: 0 auto;
+  }
+  .opera-3d-heading {
+    font-family: var(--sans);
+    font-weight: 300;
+    font-size: clamp(20px, 3vw, 30px);
+    letter-spacing: 0.01em;
+    text-align: center;
+    margin: clamp(48px, 9vh, 110px) 0 6px;
+    color: var(--ink);
+  }
+  .opera-3d {
+    position: relative;
+    width: 100vw;
+    margin-left: calc(50% - 50vw);
+    margin-bottom: clamp(40px, 7vh, 96px);
+    min-height: 300svh;              /* alto: si può restare a montare/smontare con calma */
+    background: #e7e8ec;
+  }
+  .opera-3d-stage { position: sticky; top: 0; width: 100%; height: 100svh; overflow: hidden; }
+  /* meccanismo semplice (senza montaggio a scroll): riquadro di altezza normale */
+  .opera-3d.is-simple { min-height: 0; }
+  .opera-3d.is-simple .opera-3d-stage { position: relative; height: 82svh; }
+  .opera-3d-canvas { display: block; width: 100%; height: 100%; touch-action: pan-y; }
+  .opera-3d-hint {
+    position: absolute; left: 50%; bottom: 26px; transform: translateX(-50%);
+    margin: 0; font-family: var(--mono); font-size: 12px; letter-spacing: 0.06em; color: #46506a;
+    pointer-events: none;
+  }
+  .opera-3d-progress {
+    position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
+    margin: 0; font-family: var(--mono); font-size: 13px; color: #46506a;
+  }
+  .opera-3d-stage[data-ready] .opera-3d-progress { display: none; }
+  @media (max-width: 860px) {
+    .opera-3d { min-height: 0; }
+    .opera-3d-stage { position: relative; height: 72svh; }
+    .opera-3d-hint { display: none; }
+  }
+
+  /* --- media ------------------------------------------------------------- */
+  .opera-media {
+    position: sticky;
+    top: 96px;
+  }
+  @media (max-width: 900px) {
+    .opera-media {
+      position: static;
+    }
+  }
+  .opera-zoom {
+    position: relative;
+    display: block;
+    width: 100%;
+    cursor: zoom-in;
+    border: 1px solid var(--line);
+    background: var(--void);
+    border-radius: 2px;
+    overflow: hidden;
+  }
+  .opera-zoom:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 3px;
+  }
+  /* opera cinetica: la foto è un oggetto ritagliato che sta sul blu della
+     pagina, senza box/bordo attorno */
+  .opera-zoom.is-plain {
+    border: none;
+    background: transparent;
+    border-radius: 0;
+  }
+  /* video hero in loop (opere cinetiche col movimento) */
+  .opera-video {
+    display: block;
+    width: 100%;
+    height: auto;
+    aspect-ratio: 720 / 423; /* misura del loop di Avventura di una vita: niente salti di layout */
+    object-fit: cover;
+    border-radius: 3px;
+  }
+  .opera-zoom img {
+    width: 100%;
+    height: auto;
+  }
+  .opera-zoom-hint {
+    position: absolute;
+    right: 12px;
+    bottom: 12px;
+    padding: 6px 12px;
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--ink);
+    background: rgba(5, 10, 26, 0.72);
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    opacity: 0;
+    transform: translateY(4px);
+    transition:
+      opacity 0.32s cubic-bezier(0.32, 0.72, 0, 1),
+      transform 0.32s cubic-bezier(0.32, 0.72, 0, 1);
+  }
+  .opera-zoom:hover .opera-zoom-hint,
+  .opera-zoom:focus-visible .opera-zoom-hint {
+    opacity: 1;
+    transform: none;
+  }
+
+  .opera-noimage {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: clamp(18px, 3vw, 28px);
+    aspect-ratio: 4 / 5;
+    padding: 24px;
+    border: 1px solid var(--line);
+    border-radius: 2px;
+    background:
+      radial-gradient(120% 90% at 18% 8%, var(--resin), transparent 55%),
+      linear-gradient(160deg, var(--bg-2), var(--void));
+  }
+  /* Quando manca la foto, il disegno È l'opera (art-direction §4.9):
+     l'asset della tappa, tinto azzurro come nelle scene notturne. */
+  .opera-noimage-ink {
+    display: block;
+    width: min(72%, 340px);
+    height: min(48%, 340px);
+    flex: none;
+    background: currentColor;
+    -webkit-mask: var(--m) center / contain no-repeat;
+    mask: var(--m) center / contain no-repeat;
+    color: var(--accent);
+    opacity: 0.85;
+  }
+  .opera-noimage-title {
+    font-family: var(--sans);
+    font-style: italic;
+    font-weight: 300;
+    font-size: clamp(28px, 4vw, 52px);
+    line-height: 1.1;
+    text-align: center;
+    color: rgba(240, 244, 255, 0.34);
+    user-select: none;
+  }
+  .opera-noimage-note {
+    margin-top: 12px;
+    font-family: var(--mono);
+    font-size: 12px;
+    line-height: 1.6;
+    color: var(--ink-mute);
+  }
+  .opera-noimage-note a {
+    color: var(--ink-dim);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+  .opera-noimage-note a:hover,
+  .opera-noimage-note a:focus-visible {
+    color: var(--accent);
+  }
+
+  /* --- colonna dati ------------------------------------------------------ */
+  /* Sigillo scenico: lo stesso asset a inchiostro della tappa del Viaggio,
+     piccolo e solo, come un timbro in testa alla scheda (art-direction §5). */
+  .opera-sigillo {
+    display: block;
+    width: 72px;
+    height: 72px;
+    margin-bottom: 22px;
+    background: currentColor;
+    -webkit-mask: var(--m) left center / contain no-repeat;
+    mask: var(--m) left center / contain no-repeat;
+    color: var(--accent);
+    opacity: 0.55;
+  }
+
+  .opera .opera-title {
+    font-family: var(--sans);
+    font-weight: 300;
+    letter-spacing: -0.02em;
+    font-size: clamp(36px, 4.6vw, 58px);
+    margin-bottom: 12px;
+  }
+  .opera-meta {
+    font-family: var(--mono);
+    font-size: 13px;
+    letter-spacing: 0.04em;
+    color: var(--ink-dim);
+    margin-bottom: 6px;
+  }
+  .opera-materials {
+    font-family: var(--sans);
+    font-style: italic;
+    font-size: 17px;
+    color: var(--ink-mute);
+    margin-bottom: 20px;
+  }
+  .opera-status {
+    margin-bottom: 8px;
+  }
+  .status-badge {
+    display: inline-block;
+    padding: 6px 14px;
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    border: 1px solid var(--line-strong);
+    border-radius: 999px;
+    color: var(--ink-dim);
+  }
+  .status-badge.is-available {
+    color: var(--accent);
+    border-color: rgba(74, 147, 230, 0.45);
+    background: var(--resin);
+  }
+  .status-badge.is-sold {
+    color: #e8b4ae;
+    border-color: rgba(200, 40, 28, 0.5);
+    background: rgba(122, 16, 16, 0.22);
+  }
+  .status-badge.is-reserved {
+    color: var(--paper);
+    border-color: rgba(244, 240, 224, 0.35);
+    background: rgba(244, 240, 224, 0.06);
+  }
+
+  .opera-story {
+    margin-top: 32px;
+  }
+  .opera-story :global(p) {
+    font-family: var(--sans);
+    font-size: clamp(18px, 2.2vw, 21px);
+    line-height: 1.75;
+    color: var(--ink);
+    margin-bottom: 16px;
+  }
+  .opera-story :global(ul),
+  .opera-story :global(ol) {
+    margin: 0 0 16px 20px;
+    line-height: 1.7;
+    color: var(--ink-dim);
+  }
+  .opera-story :global(li) {
+    margin-bottom: 8px;
+  }
+
+  .opera-interaction {
+    margin-top: 36px;
+    padding: 24px 24px 20px;
+    border: 1px solid var(--line-strong);
+    border-radius: 4px;
+    background:
+      radial-gradient(140% 120% at 8% 0%, var(--resin), transparent 60%),
+      rgba(10, 20, 48, 0.4);
+  }
+  .opera .opera-interaction-title {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 0 0 12px;
+    font-family: var(--mono);
+    font-size: 12px;
+    font-weight: 400;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--accent);
+  }
+  .opera-interaction p {
+    line-height: 1.7;
+    color: var(--ink);
+    margin-bottom: 10px;
+  }
+  .opera-interaction .opera-interaction-note {
+    font-size: 14px;
+    color: var(--ink-mute);
+    margin-bottom: 0;
+  }
+
+  .opera-philosophy {
+    margin-top: 28px;
+    padding-left: 18px;
+    border-left: 2px solid var(--accent-soft);
+    font-family: var(--sans);
+    font-style: italic;
+    font-size: clamp(18px, 2.2vw, 21px);
+    color: var(--ink-dim);
+  }
+
+  /* --- acquisto ----------------------------------------------------------- */
+  .opera-buy {
+    margin-top: 40px;
+    padding-top: 28px;
+    border-top: 1px solid var(--line);
+  }
+  .opera .opera-buy-title {
+    margin: 0 0 14px;
+    font-family: var(--mono);
+    font-size: 12px;
+    font-weight: 400;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--ink-mute);
+  }
+  .opera-price {
+    font-family: var(--sans);
+    font-weight: 300;
+    font-size: clamp(26px, 3.4vw, 36px);
+    color: var(--ink);
+    margin-bottom: 20px;
+    display: flex;
+    align-items: baseline;
+    gap: 14px;
+    flex-wrap: wrap;
+  }
+  .opera-price-full {
+    color: var(--ink-mute);
+    text-decoration: line-through;
+    font-size: 0.66em;
+  }
+  .opera-price-tag {
+    font-family: var(--mono);
+    font-size: 12px;
+    letter-spacing: 0.08em;
+    color: var(--accent);
+    border: 1px solid var(--accent);
+    border-radius: 999px;
+    padding: 3px 9px;
+    align-self: center;
+  }
+  .ship-zones {
+    border: 0;
+    margin-bottom: 12px;
+  }
+  .ship-zones legend {
+    font-family: var(--mono);
+    font-size: 12px;
+    letter-spacing: 0.08em;
+    color: var(--ink-dim);
+    margin-bottom: 12px;
+  }
+  .ship-option {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--line);
+    cursor: pointer;
+  }
+  .ship-option input {
+    accent-color: var(--accent);
+    width: 16px;
+    height: 16px;
+    flex: none;
+    align-self: center;
+    cursor: pointer;
+  }
+  .ship-option input:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+  .ship-zone {
+    font-size: 15px;
+    color: var(--ink);
+  }
+  .ship-rate {
+    margin-left: auto;
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--ink-mute);
+    text-align: right;
+  }
+  .ship-note {
+    font-size: 13px;
+    line-height: 1.6;
+    color: var(--ink-mute);
+    margin-bottom: 4px;
+  }
+  /* Acquisto su richiesta (quadri grandi) */
+  .opera-request-lead {
+    font-family: var(--sans);
+    font-size: clamp(15px, 1.6vw, 17px);
+    line-height: 1.55;
+    color: var(--ink-dim);
+    margin: 6px 0 20px;
+  }
+  .opera-ship-label {
+    font-family: var(--mono);
+    font-size: 12px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--ink-mute);
+    margin: 0 0 9px;
+  }
+  .opera-ship-opts {
+    list-style: none;
+    margin: 0 0 24px;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+    font-family: var(--sans);
+    font-size: 15px;
+    color: var(--ink-dim);
+  }
+  .opera-ship-opts li {
+    position: relative;
+    padding-left: 16px;
+  }
+  .opera-ship-opts li::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0.6em;
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: var(--accent);
+  }
+  /* Modulo "richiesta d'acquisto" (opere grandi) */
+  .opera-request {
+    margin-top: 8px;
+  }
+  .opera-request-toggle {
+    cursor: pointer;
+    list-style: none;
+    user-select: none;
+  }
+  .opera-request-toggle::-webkit-details-marker {
+    display: none;
+  }
+  .opera-request[open] > .opera-request-toggle {
+    display: none;
+  }
+  .opera-request-form {
+    margin-top: 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    animation: reqIn 0.4s cubic-bezier(0.32, 0.72, 0, 1);
+  }
+  @keyframes reqIn {
+    from {
+      opacity: 0;
+      transform: translateY(6px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  .req-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
+  .req-field {
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+  }
+  .req-field > span {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--ink-mute);
+  }
+  .req-field > span em {
+    font-style: normal;
+    text-transform: none;
+    letter-spacing: 0;
+    opacity: 0.75;
+  }
+  .req-field input,
+  .req-field select,
+  .req-field textarea {
+    width: 100%;
+    font-family: var(--sans);
+    font-size: 15px;
+    color: var(--ink);
+    background: rgba(240, 244, 255, 0.04);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 11px 13px;
+    transition:
+      border-color 0.2s,
+      background 0.2s;
+    -webkit-appearance: none;
+    appearance: none;
+  }
+  .req-field textarea {
+    resize: vertical;
+    min-height: 76px;
+  }
+  .req-field select {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8' fill='none'%3E%3Cpath d='M1 1.5 6 6.5 11 1.5' stroke='%236e88b8' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 13px center;
+    padding-right: 36px;
+    cursor: pointer;
+  }
+  .req-field input:focus,
+  .req-field select:focus,
+  .req-field textarea:focus {
+    outline: none;
+    border-color: var(--accent);
+    background: rgba(240, 244, 255, 0.07);
+  }
+  .req-consent {
+    display: flex;
+    align-items: flex-start;
+    gap: 11px;
+    font-family: var(--sans);
+    font-size: 13.5px;
+    line-height: 1.5;
+    color: var(--ink-dim);
+    cursor: pointer;
+  }
+  .req-consent input {
+    accent-color: var(--accent);
+    width: 17px;
+    height: 17px;
+    flex: none;
+    margin-top: 1px;
+    cursor: pointer;
+  }
+  .req-consent a {
+    color: var(--ink);
+    text-decoration: underline;
+    text-underline-offset: 2px;
+  }
+  .opera-request-form .buy-btn {
+    margin-top: 4px;
+    align-self: flex-start;
+    border: 0;
+    cursor: pointer;
+  }
+  .req-error {
+    margin: 0;
+    font-size: 13.5px;
+    line-height: 1.5;
+    color: #ff9d9d;
+  }
+  .opera-request-done {
+    margin-top: 18px;
+    padding: 18px 20px;
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    background: rgba(240, 244, 255, 0.03);
+  }
+  .opera-request-done .req-done-title {
+    font-family: var(--sans);
+    font-weight: 500;
+    font-size: 17px;
+    color: var(--ink);
+    margin: 0 0 6px;
+  }
+  .opera-request-done p {
+    margin: 0;
+    font-size: 14.5px;
+    line-height: 1.6;
+    color: var(--ink-dim);
+  }
+  @media (max-width: 520px) {
+    .req-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+  .ship-dest {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 6px;
+    font-family: var(--mono);
+    font-size: 12px;
+    letter-spacing: 0.08em;
+    color: var(--ink-dim);
+  }
+  .ship-dest select {
+    font-family: var(--sans);
+    font-size: 15px;
+    letter-spacing: 0;
+    color: var(--ink);
+    background: rgba(240, 244, 255, 0.04);
+    border: 1px solid var(--line-strong);
+    border-radius: 6px;
+    padding: 8px 12px;
+    min-width: 160px;
+    cursor: pointer;
+    transition: border-color 0.2s;
+  }
+  .ship-dest select:hover { border-color: var(--accent); }
+  .ship-dest select:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .ship-calc [data-ship-hand][hidden] { display: none; }
+  .buy-btn {
+    display: inline-block;
+    margin-top: 16px;
+    padding: 14px 36px;
+    font-family: var(--sans);
+    font-weight: 600;
+    font-size: 15px;
+    letter-spacing: 0.02em;
+    color: #04101f;
+    background: var(--accent);
+    border-radius: 999px;
+    text-align: center;
+    transition:
+      background 0.32s cubic-bezier(0.32, 0.72, 0, 1),
+      transform 0.32s cubic-bezier(0.32, 0.72, 0, 1);
+  }
+  .buy-btn:hover {
+    background: var(--foam);
+    transform: translateY(-1px);
+  }
+  .buy-btn:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 3px;
+  }
+  .buy-btn:disabled {
+    opacity: 0.55;
+    cursor: wait;
+    transform: none;
+  }
+
+  .opera-live {
+    margin-top: 16px;
+    font-size: 14px;
+    line-height: 1.6;
+    color: var(--ink-dim);
+  }
+  .opera-note {
+    margin-top: 24px;
+    padding-top: 20px;
+    border-top: 1px solid var(--line);
+    font-family: var(--sans);
+    font-size: 17px;
+    line-height: 1.7;
+    color: var(--ink-dim);
+  }
+  .opera-note a {
+    color: var(--accent);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+
+  /* --- navigazione viaggio ------------------------------------------------ */
+  .opera-nav {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    gap: 16px;
+    align-items: center;
+    margin-top: clamp(56px, 8vw, 96px);
+    padding-top: 28px;
+    border-top: 1px solid var(--line);
+  }
+  .opera-nav-cell.center {
+    grid-column: 2;
+    text-align: center;
+  }
+  .opera-nav-cell.next {
+    text-align: right;
+  }
+  .opera-nav-cell a {
+    display: inline-block;
+    transition: color 0.2s;
+  }
+  .opera-nav-cell a:hover .opera-nav-title,
+  .opera-nav-cell a:focus-visible .opera-nav-title {
+    color: var(--accent);
+  }
+  .opera-nav-cell a:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 4px;
+  }
+  .opera-nav-label {
+    display: block;
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--ink-mute);
+    margin-bottom: 6px;
+  }
+  .opera-nav-title {
+    font-family: var(--sans);
+    font-weight: 300;
+    font-size: clamp(18px, 2.4vw, 24px);
+    color: var(--ink);
+    transition: color 0.2s;
+  }
+  .opera-nav-cell.center a {
+    font-family: var(--mono);
+    font-size: 12px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--ink-dim);
+  }
+  .opera-nav-cell.center a:hover,
+  .opera-nav-cell.center a:focus-visible {
+    color: var(--accent);
+  }
+  @media (max-width: 640px) {
+    .opera-nav {
+      grid-template-columns: 1fr 1fr;
+    }
+    .opera-nav-cell.center {
+      grid-column: 1 / -1;
+      order: 3;
+    }
+  }
+
+  /* --- lightbox ----------------------------------------------------------- */
+  .lightbox {
+    position: fixed;
+    inset: 0;
+    z-index: 300;
+    background: rgba(2, 5, 14, 0.94);
+    -webkit-backdrop-filter: blur(10px);
+    backdrop-filter: blur(10px);
+  }
+  .lightbox[hidden] {
+    display: none;
+  }
+  .lightbox-scroll {
+    position: absolute;
+    inset: 0;
+    overflow: auto;
+    display: flex;
+    -webkit-overflow-scrolling: touch;
+    touch-action: pan-x pan-y pinch-zoom;
+  }
+  .lightbox-scroll:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: -4px;
+  }
+  .lightbox-scroll img {
+    margin: auto;
+    padding: 24px;
+    width: auto;
+    height: auto;
+    max-width: 100vw;
+    max-height: 100svh;
+    object-fit: contain;
+    cursor: zoom-in;
+  }
+  .lightbox.zoomed .lightbox-scroll img {
+    max-width: none;
+    max-height: none;
+    padding: 0;
+    cursor: zoom-out;
+  }
+  .lightbox-close {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    width: 44px;
+    height: 44px;
+    display: grid;
+    place-items: center;
+    color: var(--ink);
+    background: rgba(5, 10, 26, 0.7);
+    border: 1px solid var(--line-strong);
+    border-radius: 999px;
+    transition: color 0.2s, border-color 0.2s;
+  }
+  .lightbox-close:hover {
+    color: var(--accent);
+    border-color: var(--accent);
+  }
+  .lightbox-close:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 3px;
+  }
+  .lightbox-hint {
+    position: absolute;
+    left: 50%;
+    bottom: 18px;
+    transform: translateX(-50%);
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.12em;
+    color: var(--ink-mute);
+    pointer-events: none;
+    white-space: nowrap;
+  }
+</style>
+
+<script>
+  // ============================================================================
+  // Lightbox: click → overlay a schermo intero; click sull'immagine → zoom 1:1
+  // con pan via scroll (rotella/trackpad/touch); Esc, X o click sul fondo → chiude.
+  // ============================================================================
+  const lightbox = document.querySelector<HTMLElement>('[data-lightbox]');
+  const openBtn = document.querySelector<HTMLButtonElement>('[data-lightbox-open]');
+  if (lightbox && openBtn) {
+    const scroller = lightbox.querySelector<HTMLElement>('[data-lightbox-scroll]')!;
+    const img = lightbox.querySelector<HTMLImageElement>('[data-lightbox-img]')!;
+    const closeBtn = lightbox.querySelector<HTMLButtonElement>('[data-lightbox-close]')!;
+    let lastFocus: HTMLElement | null = null;
+
+    const isOpen = () => !lightbox.hidden;
+
+    const open = () => {
+      lastFocus = document.activeElement as HTMLElement;
+      lightbox.hidden = false;
+      lightbox.classList.remove('zoomed');
+      document.body.style.overflow = 'hidden';
+      closeBtn.focus();
+    };
+
+    const close = () => {
+      lightbox.hidden = true;
+      lightbox.classList.remove('zoomed');
+      document.body.style.overflow = '';
+      lastFocus?.focus();
+    };
+
+    openBtn.addEventListener('click', open);
+    closeBtn.addEventListener('click', close);
+
+    // Click sul fondo (fuori dall'immagine) chiude; click sull'immagine fa zoom.
+    scroller.addEventListener('click', (e) => {
+      if (e.target === scroller) close();
+    });
+
+    img.addEventListener('click', (e) => {
+      const zoomingIn = !lightbox.classList.contains('zoomed');
+      if (zoomingIn) {
+        const rect = img.getBoundingClientRect();
+        const rx = (e.clientX - rect.left) / rect.width;
+        const ry = (e.clientY - rect.top) / rect.height;
+        lightbox.classList.add('zoomed');
+        // Centra lo scroll sul punto cliccato, dopo il reflow.
+        requestAnimationFrame(() => {
+          scroller.scrollLeft = img.offsetWidth * rx - scroller.clientWidth / 2;
+          scroller.scrollTop = img.offsetHeight * ry - scroller.clientHeight / 2;
+        });
+      } else {
+        lightbox.classList.remove('zoomed');
+      }
+    });
+
+    document.addEventListener('keydown', (e) => {
+      if (!isOpen()) return;
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        close();
+        return;
+      }
+      // Focus circoscritto al dialog (due soli elementi focalizzabili).
+      if (e.key === 'Tab') {
+        const focusables = [closeBtn, scroller];
+        const i = focusables.indexOf(document.activeElement as HTMLElement);
+        const nextIdx = e.shiftKey
+          ? (i - 1 + focusables.length) % focusables.length
+          : (i + 1) % focusables.length;
+        e.preventDefault();
+        focusables[nextIdx].focus();
+      }
+    });
+  }
+
+  // ============================================================================
+  // Stato di vendita runtime + checkout.
+  // La pagina è statica: all'idratazione verifichiamo /api/state e, se l'opera
+  // è stata venduta o riservata dopo l'ultimo deploy, sostituiamo il CTA.
+  // ============================================================================
+  const root = document.querySelector<HTMLElement>('[data-opera]');
+  if (root && root.dataset.status === 'available') {
+    const slug = root.dataset.slug!;
+    const badge = root.querySelector<HTMLElement>('[data-status-badge]');
+    const buyBox = root.querySelector<HTMLElement>('[data-buy]');
+    const msg = root.querySelector<HTMLElement>('[data-buy-msg]');
+    const noteSold = root.querySelector<HTMLElement>('[data-note-sold]');
+    const noteReserved = root.querySelector<HTMLElement>('[data-note-reserved]');
+
+    const showMsg = (text: string) => {
+      if (!msg) return;
+      msg.textContent = text;
+      msg.hidden = false;
+    };
+
+    const applyState = (state: string) => {
+      if (state !== 'sold' && state !== 'reserved') return;
+      if (badge) {
+        badge.textContent = state === 'sold' ? 'Venduto' : 'Riservato';
+        badge.className = badge.className.replace(/is-[a-z-]+/, `is-${state}`);
+      }
+      buyBox?.remove();
+      if (state === 'sold') noteSold?.removeAttribute('hidden');
+      else noteReserved?.removeAttribute('hidden');
+    };
+
+    const fetchState = async (): Promise<string | null> => {
+      try {
+        const res = await fetch(`/api/state?slug=${encodeURIComponent(slug)}`);
+        if (!res.ok) return null;
+        const data = await res.json();
+        return typeof data.state === 'string' ? data.state : null;
+      } catch {
+        return null;
+      }
+    };
+
+    // Verifica iniziale all'idratazione.
+    fetchState().then((state) => {
+      if (state) applyState(state);
+    });
+
+    // Calcolatore spedizione + Checkout (presenti solo se il prezzo è definito).
+    const shipRoot = root.querySelector<HTMLElement>('[data-ship]');
+    const buyBtn = root.querySelector<HTMLButtonElement>('[data-buy-btn]');
+    if (shipRoot && buyBtn) {
+      const cfg = JSON.parse(shipRoot.dataset.cfg || '{}');
+      const countrySel = shipRoot.querySelector<HTMLSelectElement>('[data-ship-country]')!;
+      const courierInput = shipRoot.querySelector<HTMLInputElement>('[data-ship-courier]')!;
+      const rateEl = shipRoot.querySelector<HTMLElement>('[data-rate-courier]')!;
+      const handRow = shipRoot.querySelector<HTMLElement>('[data-ship-hand]')!;
+      const handInput = handRow.querySelector<HTMLInputElement>('input')!;
+      const quoteNote = shipRoot.querySelector<HTMLElement>('[data-ship-quote]')!;
+      const mailtoQuote = `mailto:riccardo@brama.studio?subject=${encodeURIComponent('Preventivo spedizione ' + slug)}`;
+      const euro = (c: number) =>
+        new Intl.NumberFormat('it-IT', {
+          style: 'currency',
+          currency: 'EUR',
+          maximumFractionDigits: c % 100 === 0 ? 0 : 2,
+        }).format(c / 100);
+      const zoneOf = (cc: string) => (cc === 'IT' ? 'IT' : (cfg.eu || []).includes(cc) ? 'EU' : 'WORLD');
+      const state = { country: 'IT', method: 'courier', quote: false };
+      const refresh = () => {
+        const country = countrySel.value;
+        const zone = zoneOf(country);
+        const rate = cfg.rates ? cfg.rates[zone] : null;
+        if (rate == null) {
+          rateEl.textContent = 'su preventivo';
+        } else {
+          const d = cfg.days[zone];
+          rateEl.textContent = `${euro(rate)} · da ${d[0]} a ${d[1]} gg`;
+        }
+        // consegna a mano solo in Italia
+        handRow.hidden = zone !== 'IT';
+        if (zone !== 'IT' && handInput.checked) courierInput.checked = true;
+        const method =
+          shipRoot.querySelector<HTMLInputElement>('input[name="ship"]:checked')?.value || 'courier';
+        const quote = method === 'courier' && rate == null;
+        quoteNote.hidden = !quote;
+        state.country = country;
+        state.method = method;
+        state.quote = quote;
+        buyBtn.textContent = quote ? 'Richiedi preventivo' : 'Acquista';
+      };
+      countrySel.addEventListener('change', refresh);
+      shipRoot
+        .querySelectorAll<HTMLInputElement>('input[name="ship"]')
+        .forEach((m) => m.addEventListener('change', refresh));
+      refresh();
+
+      buyBtn.addEventListener('click', async () => {
+        if (state.quote) {
+          window.location.href = mailtoQuote;
+          return;
+        }
+        const label = buyBtn.textContent;
+        buyBtn.disabled = true;
+        buyBtn.textContent = 'Apertura del checkout…';
+        try {
+          const res = await fetch('/api/checkout', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ slug, country: state.country, method: state.method }),
+          });
+          const data = await res.json().catch(() => ({}));
+          if (res.ok && data.url) {
+            window.location.href = data.url;
+            return;
+          }
+          if (res.status === 409) {
+            showMsg(
+              "Quest'opera è appena stata riservata da qualcun altro. Se la transazione non si conclude, tornerà disponibile qui a breve."
+            );
+            const state = await fetchState();
+            applyState(state ?? 'reserved');
+            return;
+          }
+          showMsg(
+            'Non è stato possibile aprire il checkout. Riprova tra qualche istante o scrivi a riccardo@brama.studio.'
+          );
+        } catch {
+          showMsg(
+            'Non è stato possibile aprire il checkout. Verifica la connessione e riprova, oppure scrivi a riccardo@brama.studio.'
+          );
+        }
+        buyBtn.disabled = false;
+        buyBtn.textContent = label;
+      });
+    }
+
+    // Modulo "richiesta d'acquisto" per le opere grandi (nessun checkout diretto):
+    // invio i dati a /api/request-buy, poi sostituisco il form con la conferma.
+    const reqForm = root.querySelector<HTMLFormElement>('[data-request-form]');
+    if (reqForm) {
+      const submitBtn = reqForm.querySelector<HTMLButtonElement>('[data-request-submit]')!;
+      const errEl = reqForm.querySelector<HTMLElement>('[data-request-error]')!;
+      reqForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        errEl.hidden = true;
+        if (!reqForm.reportValidity()) return;
+        const fd = new FormData(reqForm);
+        const payload = {
+          slug: reqForm.dataset.slug,
+          nome: String(fd.get('nome') || '').trim(),
+          cognome: String(fd.get('cognome') || '').trim(),
+          email: String(fd.get('email') || '').trim(),
+          messaggio: String(fd.get('messaggio') || '').trim(),
+          consenso: fd.get('consenso') === 'on',
+        };
+        const label = submitBtn.textContent;
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Invio…';
+        try {
+          const res = await fetch('/api/request-buy', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload),
+          });
+          const data = await res.json().catch(() => ({}));
+          if (res.ok && data.ok) {
+            const done = document.createElement('div');
+            done.className = 'opera-request-done';
+            const h = document.createElement('p');
+            h.className = 'req-done-title';
+            h.textContent = 'Richiesta inviata.';
+            const p = document.createElement('p');
+            p.textContent =
+              'Ti ho mandato una conferma via email. Ti scrivo io a breve da riccardo@brama.studio con tutte le informazioni.';
+            done.append(h, p);
+            const details = reqForm.closest('[data-request]');
+            (details || reqForm).replaceWith(done);
+            return;
+          }
+          errEl.textContent =
+            typeof data.error === 'string'
+              ? data.error
+              : 'Non è stato possibile inviare la richiesta. Riprova o scrivi a riccardo@brama.studio.';
+          errEl.hidden = false;
+        } catch {
+          errEl.textContent =
+            'Non è stato possibile inviare la richiesta. Verifica la connessione e riprova, oppure scrivi a riccardo@brama.studio.';
+          errEl.hidden = false;
+        }
+        submitBtn.disabled = false;
+        submitBtn.textContent = label;
+      });
+    }
+  }
+
+  // Visore 3D per le opere cinetiche (campo model3d): three.js + i GLB si
+  // caricano solo su questa pagina, con barra di progresso.
+  const paura3d = document.querySelector<HTMLElement>('[data-paura]');
+  if (paura3d) {
+    import('../../scripts/paura/paura.js')
+      .then((m) => m.initPaura(paura3d))
+      .catch((err) => console.error('paura', err));
+  }
+</script>

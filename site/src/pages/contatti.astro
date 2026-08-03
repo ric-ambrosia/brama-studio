@@ -1,0 +1,233 @@
+---
+import Base from '../layouts/Base.astro';
+import { SITE } from '../lib/site';
+
+const pageUrl = `${SITE.domain}/contatti`;
+const description =
+  'Per richieste, informazioni e disponibilità delle opere: riccardo@brama.studio.';
+
+const jsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'ContactPage',
+  name: 'Contatti',
+  url: pageUrl,
+  description,
+  mainEntity: {
+    '@type': 'Organization',
+    name: SITE.name,
+    url: SITE.domain,
+    email: SITE.email,
+    sameAs: [SITE.instagram],
+    contactPoint: {
+      '@type': 'ContactPoint',
+      contactType: 'richieste e commissioni',
+      email: SITE.email,
+      availableLanguage: 'it',
+    },
+  },
+};
+---
+
+<Base title="Contatti · brama" description={description} jsonLd={jsonLd}>
+  <div class="ct-stage">
+    <!-- Quinta: la figura coronata si affaccia dal margine destro, tagliata dal bordo.
+         Solo su schermi larghi, fuori dalla colonna di lettura. -->
+    <div class="ct-quinta" aria-hidden="true"></div>
+
+    <section class="page ct">
+      <!-- Emblema araldico del Ciclo A: la busta, come timbro di intestazione -->
+      <div class="ct-emblema" aria-hidden="true"></div>
+
+      <p class="eyebrow">Contatti</p>
+      <h1>Scrivere</h1>
+      <p class="lead">Per richieste, informazioni e disponibilità delle opere.</p>
+
+      <dl class="ct-list">
+        <div class="ct-row">
+          <dt>Email</dt>
+          <dd>
+            <a class="ct-mail" href={`mailto:${SITE.email}`}>{SITE.email}</a>
+          </dd>
+        </div>
+        <div class="ct-row">
+          <dt>Instagram</dt>
+          <dd>
+            <a class="ct-link" href={SITE.instagram} target="_blank" rel="noopener">
+              Il profilo<span class="ct-ext" aria-hidden="true">&nbsp;↗</span>
+            </a>
+          </dd>
+        </div>
+        <div class="ct-row">
+          <dt>Tempi di risposta</dt>
+          <dd class="ct-plain">Di solito entro due o tre giorni.</dd>
+        </div>
+      </dl>
+
+      <h2>Commissioni</h2>
+      <p>
+        Le opere su commissione nascono da un dialogo. Da lì prende forma un pezzo unico.
+      </p>
+      <p>
+        Per iniziare, scrivere a
+        <a class="ct-inline" href={`mailto:${SITE.email}`}>{SITE.email}</a>.
+      </p>
+      <a
+        class="ct-cta"
+        href={`mailto:${SITE.email}?subject=${encodeURIComponent('Commissione')}`}
+      >
+        Scrivere per una commissione<span aria-hidden="true">&nbsp;→</span>
+      </a>
+    </section>
+  </div>
+</Base>
+
+<style>
+  /* La scena: contiene la quinta e la clippa sul bordo destro
+     (le quinte sono sempre parzialmente fuori campo, mai intere). */
+  .ct-stage {
+    position: relative;
+    overflow: hidden;
+  }
+  .ct {
+    position: relative;
+    z-index: 1;
+  }
+
+  /* Asset a inchiostro del Ciclo A: maschera + currentColor (la tinta la dà il CSS) */
+  .ct-emblema,
+  .ct-quinta {
+    background: currentColor;
+    -webkit-mask: var(--m) center / contain no-repeat;
+    mask: var(--m) center / contain no-repeat;
+  }
+
+  /* Emblema-timbro: la busta, sola, con aria intorno */
+  .ct-emblema {
+    --m: url('/viaggio/contatti-busta.webp');
+    width: 84px;
+    height: 84px;
+    margin-bottom: 32px;
+    color: var(--accent);
+    opacity: 0.9;
+  }
+
+  /* Quinta destra: la figura coronata, tinta azzurra tenue sulla notte */
+  .ct-quinta {
+    --m: url('/viaggio/figura-coronata.webp');
+    display: none;
+    position: absolute;
+    top: 110px;
+    right: -110px;
+    width: 430px;
+    height: 700px;
+    color: var(--accent);
+    opacity: 0.13;
+    pointer-events: none;
+  }
+  @media (min-width: 1200px) {
+    .ct-quinta {
+      display: block;
+    }
+  }
+
+  .ct-list {
+    margin: 56px 0 40px;
+    border-top: 1px solid var(--line);
+  }
+  .ct-row {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 4px 32px;
+    padding: 22px 0;
+    border-bottom: 1px solid var(--line);
+  }
+  @media (min-width: 640px) {
+    .ct-row {
+      grid-template-columns: 180px 1fr;
+      align-items: baseline;
+    }
+  }
+  .ct-row dt {
+    font-family: var(--mono);
+    font-size: 12px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--ink-mute);
+  }
+  .ct-row dd {
+    margin: 0;
+  }
+
+  .ct-mail {
+    font-family: var(--sans);
+    font-weight: 300;
+    font-size: clamp(20px, 3.4vw, 30px);
+    color: var(--ink);
+    border-bottom: 1px solid var(--line-strong);
+    padding-bottom: 2px;
+    transition: color 0.2s, border-color 0.2s;
+    overflow-wrap: anywhere;
+  }
+  .ct-mail:hover {
+    color: var(--accent);
+    border-color: var(--accent);
+  }
+
+  .ct-link {
+    font-family: var(--sans);
+    font-size: 19px;
+    color: var(--ink);
+    transition: color 0.2s;
+  }
+  .ct-link:hover {
+    color: var(--accent);
+  }
+  .ct-ext {
+    font-family: var(--sans);
+    font-size: 14px;
+    color: var(--ink-mute);
+  }
+
+  .ct-plain {
+    color: var(--ink-dim);
+    line-height: 1.7;
+  }
+
+  .ct-scope {
+    max-width: 56ch;
+  }
+
+  .ct-inline {
+    color: var(--ink);
+    border-bottom: 1px solid var(--line-strong);
+    transition: color 0.2s, border-color 0.2s;
+  }
+  .ct-inline:hover {
+    color: var(--accent);
+    border-color: var(--accent);
+  }
+
+  /* L'unico accento rosso della scena: l'hover del gesto decisivo */
+  .ct-cta {
+    display: inline-block;
+    margin-top: 16px;
+    font-family: var(--sans);
+    font-weight: 300;
+    font-size: 19px;
+    color: var(--ink);
+    border-bottom: 1px solid var(--line-strong);
+    padding-bottom: 4px;
+    transition: color 0.2s, border-color 0.2s;
+  }
+  .ct-cta:hover {
+    color: var(--red);
+    border-color: var(--red);
+  }
+  .ct-cta:focus-visible,
+  .ct-mail:focus-visible,
+  .ct-link:focus-visible,
+  .ct-inline:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 4px;
+  }
+</style>

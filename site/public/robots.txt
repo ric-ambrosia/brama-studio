@@ -1,0 +1,7 @@
+User-agent: *
+Allow: /
+Disallow: /lab/
+Disallow: /api/
+Disallow: /grazie
+
+Sitemap: https://brama.studio/sitemap-index.xml

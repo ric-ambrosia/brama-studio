@@ -1,0 +1,111 @@
+---
+import LegalPage from '../../components/LegalPage.astro';
+---
+
+<LegalPage
+  title="Diritto di recesso"
+  metaTitle="Diritto di recesso · brama"
+  description="Diritto di recesso per gli acquisti di opere brama: 14 giorni dal ricevimento, modalità di restituzione, rimborso e modulo tipo, ai sensi del Codice del Consumo."
+>
+  <h2 id="premessa">1. Premessa</h2>
+  <p>
+    Ai sensi del Codice del Consumo (D.lgs. 206/2005, artt. 52 e ss., in attuazione della Direttiva
+    2011/83/UE), il <strong>consumatore</strong> che acquista a distanza ha diritto di recedere dal
+    contratto <strong>entro 14 giorni</strong>, senza dover fornire alcuna motivazione.
+  </p>
+  {/* NOTA INTERNA (non pubblicare): venditore = Riccardo Bramani / futura entità giuridica del brand.
+      Da confermare con commercialista; P.IVA da definire. Aggiornare la dicitura al go-live. */}
+  <p>
+    Venditore: <strong>brama di Riccardo Bramani</strong>, P.IVA 13355710966, Viale Monte Nero 78/80, 20135 Milano, contatto:
+    <a href="mailto:riccardo@brama.studio"><strong>riccardo@brama.studio</strong></a>.
+  </p>
+
+  <h2 id="termine">2. Termine</h2>
+  <p>
+    Il periodo di recesso scade <strong>14 giorni dopo il giorno in cui il consumatore (o un terzo da lui
+    designato, diverso dal vettore) acquisisce il possesso fisico dell&rsquo;opera</strong>.
+  </p>
+
+  <h2 id="come">3. Come esercitare il recesso</h2>
+  <p>
+    Prima della scadenza del termine, il consumatore invia una <strong>dichiarazione esplicita</strong>
+    della decisione di recedere, ad esempio:
+  </p>
+  <ul>
+    <li>via email a <a href="mailto:riccardo@brama.studio"><strong>riccardo@brama.studio</strong></a>, oppure</li>
+    <li>utilizzando il <a href="#modulo">modulo tipo riportato al punto 7</a> (non obbligatorio).</li>
+  </ul>
+  <p>È sufficiente che la comunicazione sia inviata entro il termine di 14 giorni.</p>
+
+  <h2 id="restituzione">4. Restituzione dell&rsquo;opera</h2>
+  <ul>
+    <li>
+      L&rsquo;opera va restituita <strong>senza indebito ritardo e comunque entro 14 giorni</strong> dalla
+      comunicazione del recesso, all&rsquo;indirizzo che sarà indicato dal Venditore in risposta alla
+      comunicazione.
+    </li>
+    <li><strong>I costi diretti di restituzione sono a carico del consumatore.</strong></li>
+    <li>
+      Trattandosi di opere d&rsquo;arte di valore, si richiede la restituzione tramite
+      <strong>spedizione assicurata e tracciata</strong>, utilizzando un imballo adeguato (idealmente
+      quello originale).
+      {/* NOTA INTERNA (non pubblicare): da validare la formulazione della richiesta di spedizione
+          assicurata come onere del consumatore. */}
+    </li>
+    <li>
+      Il consumatore è responsabile della <strong>diminuzione di valore</strong> dell&rsquo;opera risultante
+      da una manipolazione diversa da quella necessaria a stabilirne natura, caratteristiche e stato.
+    </li>
+  </ul>
+
+  <h2 id="rimborso">5. Rimborso</h2>
+  <ul>
+    <li>
+      Il Venditore rimborsa <strong>tutti i pagamenti ricevuti, compresi i costi di consegna
+      standard</strong>, senza indebito ritardo e comunque <strong>entro 14 giorni</strong> dal giorno in
+      cui è informato del recesso.
+    </li>
+    <li>
+      Il rimborso avviene con lo stesso mezzo di pagamento usato per l&rsquo;acquisto (tramite Stripe),
+      senza costi aggiuntivi per il consumatore.
+    </li>
+    <li>
+      Il Venditore può <strong>trattenere il rimborso</strong> finché non abbia ricevuto l&rsquo;opera o
+      finché il consumatore non abbia fornito prova dell&rsquo;avvenuta spedizione, a seconda di quale
+      situazione si verifichi per prima.
+    </li>
+    <li>
+      I costi di consegna supplementari derivanti dalla scelta di una modalità di spedizione diversa da
+      quella standard non sono rimborsabili.
+    </li>
+  </ul>
+
+  <h2 id="eccezioni">6. Eccezioni</h2>
+  <p>
+    Il diritto di recesso non si applica, tra l&rsquo;altro, ai <strong>beni confezionati su misura o
+    chiaramente personalizzati</strong> (art. 59, lett. c, Codice del Consumo).
+  </p>
+  {/* NOTA INTERNA (non pubblicare) — da validare con legale: le opere uniche già realizzate e vendute
+      come pronte non rientrano, in linea di principio, in questa eccezione — il recesso si applica.
+      L'eccezione riguarderebbe eventuali opere su commissione. Se in futuro il sito offrirà
+      commissioni, prevedere una clausola dedicata. */}
+
+  <h2 id="modulo">7. Modulo tipo di recesso (facoltativo)</h2>
+  <div class="legal-module">
+    {/* NOTA INTERNA (non pubblicare): destinatario = Riccardo Bramani / futura entità giuridica del
+        brand — da confermare; completare con ragione sociale e indirizzo al go-live. */}
+    <p>Destinatario: brama di Riccardo Bramani, P.IVA 13355710966, Viale Monte Nero 78/80, 20135 Milano, riccardo@brama.studio</p>
+    <p>
+      Con la presente io/noi (*) notifichiamo il recesso dal contratto di vendita dei seguenti beni (*):
+    </p>
+    <ul>
+      <li>Opera: _____________________</li>
+      <li>Ordinata il (*)/ricevuta il (*): _____________________</li>
+      <li>Nome del/dei consumatore/i: _____________________</li>
+      <li>Indirizzo del/dei consumatore/i: _____________________</li>
+      <li>Firma del/dei consumatore/i (solo se il modulo è inviato in versione cartacea): _____________________</li>
+      <li>Data: _____________________</li>
+    </ul>
+    <p class="module-note">(*) Cancellare la dicitura inutile.</p>
+  </div>
+</LegalPage>

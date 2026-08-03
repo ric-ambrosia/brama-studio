@@ -1,0 +1,238 @@
+---
+// lab/p1c — IL TEATRO (variante Emergence)
+// Registro radicale ispirato a emergenceprojects.com:
+// ZERO scritte visibili. I disegni a pennarello del portfolio diventano
+// scenografia teatrale su campi chiari carta-azzurrata; le opere si
+// ricompongono (motore p1b, approvato) dentro sezioni blu notte.
+// Le opere composte SONO i link (aria-label solo per screen reader).
+// Documento autonomo (niente layout Base): nessun header, nessun menu,
+// nessun font esterno — nulla tra lo spettatore e la scena.
+// Motivazioni e mappa delle scene in content-notes/lab/README-p1c.md.
+import '../../styles/lab/p1c.css';
+---
+
+<!doctype html>
+<html lang="it">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>brama</title>
+    <meta
+      name="description"
+      content="brama — le opere si ricompongono davanti a te, dentro un teatro disegnato a pennarello."
+    />
+    <meta name="theme-color" content="#e8ecf4" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32.png" />
+    <link rel="icon" type="image/png" sizes="192x192" href="/images/favicon-192.png" />
+    <!-- le didascalie delle opere sono le uniche scritte visibili: solo i pesi necessari -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300&family=Cormorant+Garamond:ital@1&display=swap"
+    />
+  </head>
+  <body>
+    <!-- ornamenti vettoriali in stile pennarello, riusati via <use> -->
+    <svg class="pc-defs" aria-hidden="true" focusable="false">
+      <symbol id="pc-star8" viewBox="0 0 100 100">
+        <path
+          fill="currentColor"
+          d="M50 0 L58 36 L85 15 L62 42 L100 50 L62 58 L85 85 L58 64 L50 100 L42 64 L15 85 L38 58 L0 50 L38 42 L15 15 L42 36 Z"
+        ></path>
+      </symbol>
+      <symbol id="pc-spark" viewBox="0 0 100 100">
+        <path
+          fill="currentColor"
+          d="M50 0 C54 32 68 46 100 50 C68 54 54 68 50 100 C46 68 32 54 0 50 C32 46 46 32 50 0 Z"
+        ></path>
+      </symbol>
+      <symbol id="pc-planet" viewBox="0 0 100 100">
+        <circle cx="50" cy="52" r="23" fill="currentColor"></circle>
+        <ellipse
+          cx="50"
+          cy="52"
+          rx="43"
+          ry="10"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="4"
+          transform="rotate(-16 50 52)"
+        ></ellipse>
+        <circle cx="88" cy="41" r="3.4" fill="currentColor"></circle>
+      </symbol>
+    </svg>
+
+    <main class="pc" id="pc-root">
+      <h1 class="pc-sr">brama — il teatro delle opere</h1>
+
+      <!-- ══ scena I · la soglia — teatro chiaro con la figura coronata ══ -->
+      <section class="pc-scene pc-soglia" aria-hidden="true">
+        <div class="pc-frieze pc-ink" data-plx="-14">
+          <img src="/portfolio/page-03.jpg" alt="" fetchpriority="low" decoding="async" />
+          <img src="/portfolio/page-03.jpg" alt="" fetchpriority="low" decoding="async" />
+        </div>
+
+        <div class="pc-quinta pc-quinta-l" data-plx="-8"></div>
+        <div class="pc-quinta pc-quinta-r" data-plx="-8"></div>
+
+        <!-- elementi appesi a fili verticali, oscillazione impercettibile -->
+        <div class="pc-hang pc-h1" data-plx="-26" style="--hx:11%; --hl:30svh; --hs:52px; --hd:7.8s; --ha:1.1deg;">
+          <div class="pc-sway">
+            <span class="pc-line"></span>
+            <i class="pc-bead" style="top:34%"></i>
+            <i class="pc-bead" style="top:58%"></i>
+            <svg class="pc-orn" aria-hidden="true"><use href="#pc-star8"></use></svg>
+          </div>
+        </div>
+        <div class="pc-hang pc-h2" data-plx="-32" style="--hx:19%; --hl:43svh; --hs:62px; --hd:9.6s; --ha:0.8deg; --hdel:-3.1s;">
+          <div class="pc-sway">
+            <span class="pc-line"></span>
+            <i class="pc-bead" style="top:26%"></i>
+            <svg class="pc-orn" aria-hidden="true"><use href="#pc-planet"></use></svg>
+          </div>
+        </div>
+        <div class="pc-hang pc-h3" data-plx="-20" style="--hx:27%; --hl:17svh; --hs:26px; --hd:6.4s; --ha:1.4deg; --hdel:-1.6s;">
+          <div class="pc-sway">
+            <span class="pc-line"></span>
+            <svg class="pc-orn" aria-hidden="true"><use href="#pc-spark"></use></svg>
+          </div>
+        </div>
+        <div class="pc-hang pc-h4" data-plx="-22" style="--hx:74%; --hl:24svh; --hs:24px; --hd:7.1s; --ha:1.3deg; --hdel:-4.2s;">
+          <div class="pc-sway">
+            <span class="pc-line"></span>
+            <i class="pc-bead" style="top:44%"></i>
+            <svg class="pc-orn" aria-hidden="true"><use href="#pc-spark"></use></svg>
+          </div>
+        </div>
+        <!-- unico accento rosso della scena -->
+        <div class="pc-hang pc-h5 pc-red" data-plx="-30" style="--hx:83%; --hl:37svh; --hs:40px; --hd:8.8s; --ha:1deg; --hdel:-2.4s;">
+          <div class="pc-sway">
+            <span class="pc-line"></span>
+            <i class="pc-bead" style="top:30%"></i>
+            <i class="pc-bead" style="top:55%"></i>
+            <svg class="pc-orn" aria-hidden="true"><use href="#pc-star8"></use></svg>
+          </div>
+        </div>
+        <div class="pc-hang pc-h6" data-plx="-24" style="--hx:90%; --hl:21svh; --hs:44px; --hd:7.4s; --ha:1.2deg; --hdel:-5.3s;">
+          <div class="pc-sway">
+            <span class="pc-line"></span>
+            <svg class="pc-orn" aria-hidden="true"><use href="#pc-planet"></use></svg>
+          </div>
+        </div>
+
+        <!-- la protagonista: figura coronata alla finestra (page-16, ritagliata) -->
+        <figure class="pc-panel pc-ink" data-plx="-4">
+          <img src="/portfolio/page-16.jpg" alt="" fetchpriority="high" decoding="async" />
+        </figure>
+
+        <!-- la sentinella alata col reticolo (page-06), in piedi sul pavimento -->
+        <figure class="pc-fig pc-ink" data-plx="6">
+          <img src="/portfolio/page-06.jpg" alt="" decoding="async" />
+        </figure>
+
+        <!-- micro-indicatore di scroll disegnato -->
+        <div class="pc-arrow">
+          <svg viewBox="0 0 24 64" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 2 v50"></path>
+            <path d="M4 44 l8 12 8 -12"></path>
+          </svg>
+        </div>
+
+        <!-- pavimento teatrale: fila di bulbi + scacchiera -->
+        <div class="pc-floor" data-plx="10">
+          <div class="pc-floor-fringe"></div>
+          <div class="pc-floor-check"></div>
+        </div>
+      </section>
+
+      <div class="pc-fade" aria-hidden="true"></div>
+
+      <!-- ══ scena II · VERTIGINE — blu notte, pioggia di schegge ══ -->
+      <section class="pc-opera pc-vert" id="vertigine">
+        <a
+          class="pc-opera-link"
+          href="/opera/vertigine"
+          aria-label="Vertigine — vortice di pennellate blu con una farfalla al centro e schegge di vetro rosso. Entra nell'opera"
+        >
+          <span class="pc-frame">
+            <img
+              class="pc-art"
+              src="/images/thumbs/Vertigine-1200.jpg"
+              data-full="/images/Vertigine.jpeg"
+              alt=""
+              loading="lazy"
+              decoding="async"
+            />
+            <canvas class="pc-scatter" aria-hidden="true"></canvas>
+          </span>
+        </a>
+        <div class="pc-caption">
+          <p class="pc-caption-title">Vertigine, 2025</p>
+          <p class="pc-caption-how">Dal vivo, una torcia sulla striscia di fibre ottiche a destra accende il vortice.</p>
+        </div>
+      </section>
+
+      <div class="pc-fade" aria-hidden="true"></div>
+
+      <!-- ══ scena III · interludio — la creatura alata sospesa ══ -->
+      <section class="pc-scene pc-interludio" id="interludio" aria-hidden="true">
+        <div class="pc-hang pc-hc" data-plx="-20" style="--hx:40%; --hl:22svh; --hd:11s; --ha:0.6deg;">
+          <div class="pc-sway">
+            <span class="pc-line"></span>
+            <figure class="pc-creature pc-ink">
+              <img src="/portfolio/page-01.jpg" alt="" loading="lazy" decoding="async" />
+            </figure>
+          </div>
+        </div>
+
+        <!-- unico accento rosso della scena -->
+        <svg class="pc-spark-red" aria-hidden="true"><use href="#pc-spark"></use></svg>
+
+        <!-- l'emblema lune/triangoli posato nel campo vuoto -->
+        <div class="pc-emblem-shadow" data-plx="8"></div>
+        <figure class="pc-emblem pc-ink" data-plx="8">
+          <img src="/portfolio/page-07.jpg" alt="" loading="lazy" decoding="async" />
+        </figure>
+      </section>
+
+      <div class="pc-fade" aria-hidden="true"></div>
+
+      <!-- ══ scena IV · ABBANDONO — blu notte, lastre verticali ══ -->
+      <section class="pc-opera pc-abb" id="abbandono">
+        <a
+          class="pc-opera-link"
+          href="/opera/abbandono"
+          aria-label="Abbandono — campo verticale blu notte con un'esplosione di ossidiana al centro. Entra nell'opera"
+        >
+          <span class="pc-frame">
+            <img
+              class="pc-art"
+              src="/images/thumbs/Abbandono-600.jpg"
+              data-full="/images/Abbandono.jpg"
+              alt=""
+              loading="lazy"
+              decoding="async"
+            />
+            <canvas class="pc-scatter" aria-hidden="true"></canvas>
+          </span>
+        </a>
+        <div class="pc-caption">
+          <p class="pc-caption-title">Abbandono, 2025</p>
+          <p class="pc-caption-how">Dal vivo, la torcia accende punti dispersi e svela lo specchio infinito al centro.</p>
+        </div>
+      </section>
+
+      <div class="pc-fade" aria-hidden="true"></div>
+
+      <!-- ══ scena V · il sigillo ══ -->
+      <section class="pc-sigillo" id="sigillo" aria-hidden="true">
+        <img class="pc-sig" src="/images/signature.png" alt="" width="240" height="88" loading="lazy" decoding="async" />
+      </section>
+    </main>
+
+    <script>
+      import '../../scripts/lab/p1c/journey.js';
+    </script>
+  </body>
+</html>

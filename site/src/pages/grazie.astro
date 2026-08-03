@@ -1,0 +1,181 @@
+---
+import Base from '../layouts/Base.astro';
+import { SITE } from '../lib/site';
+
+// Pagina post-acquisto (success_url di Stripe Checkout). Noindex: non è una
+// destinazione di navigazione, ci si arriva solo a pagamento completato.
+// Regia: scena notte, quieta. Il sigillo del Ciclo A vive rosso di default
+// (art-direction §4, chiusura): qui timbra l'acquisto — unico rosso in scena.
+---
+
+<Base
+  title="Grazie · brama"
+  description="Acquisto completato: l’opera sta per iniziare il suo viaggio."
+  showBack
+>
+  <Fragment slot="head">
+    <meta name="robots" content="noindex, nofollow" />
+  </Fragment>
+
+  <section class="page grazie">
+    <span class="grazie-sigillo" aria-hidden="true"></span>
+    <p class="eyebrow">Acquisto completato</p>
+    <h1>Grazie.</h1>
+    <p class="lead">
+      L’opera sta per iniziare il suo viaggio. Da questo momento non è più
+      soltanto materia in uno studio: ha una destinazione, e la sua ingegneria
+      nascosta ha qualcuno per cui accendersi.
+    </p>
+
+    <h2>Cosa succede ora</h2>
+    <ol class="steps">
+      <li>
+        <strong>Conferma dell’ordine</strong>
+        <p>
+          Una email con la ricevuta del pagamento arriva in pochi minuti da
+          Stripe, il circuito sicuro che gestisce l’acquisto. Se non compare,
+          vale la pena controllare la posta indesiderata.
+        </p>
+      </li>
+      <li>
+        <strong>Spedizione assicurata</strong>
+        <p>
+          Entro 48 ore scriviamo all’indirizzo indicato per organizzare la
+          spedizione assicurata: imballo su misura per un pezzo unico e tempi
+          di consegna concordati insieme.
+        </p>
+      </li>
+      <li>
+        <strong>Certificato di autenticità</strong>
+        <p>
+          Ogni opera viaggia con il suo certificato di autenticità, incluso:
+          attesta il pezzo, i materiali e l’anno, e resta con l’opera per
+          sempre.
+        </p>
+      </li>
+    </ol>
+
+    <p>
+      Per qualunque domanda basta scrivere a{' '}
+      <a class="mail" href={`mailto:${SITE.email}`}>{SITE.email}</a>.
+    </p>
+
+    <nav class="grazie-links" aria-label="Continua la visita">
+      <a href="/portfolio">
+        <span>Scopri le opere</span>
+        <span aria-hidden="true">→</span>
+      </a>
+      <a href="/contatti">
+        <span>Contatti</span>
+        <span aria-hidden="true">→</span>
+      </a>
+    </nav>
+  </section>
+</Base>
+
+<style>
+  /* il sigillo (Ciclo A) timbra la pagina: rosso, solo, con aria intorno */
+  .grazie-sigillo {
+    display: block;
+    width: clamp(72px, 9vw, 96px);
+    aspect-ratio: 1;
+    margin-bottom: 32px;
+    color: var(--red);
+    background: currentColor;
+    -webkit-mask: url('/viaggio/sigillo-emblema.webp') center / contain no-repeat;
+    mask: url('/viaggio/sigillo-emblema.webp') center / contain no-repeat;
+    opacity: 0.92;
+  }
+
+  .grazie h1 { margin-bottom: 20px; }
+  .grazie .lead { max-width: 52ch; }
+  .grazie h2 { margin-top: 72px; }
+
+  .steps {
+    list-style: none;
+    counter-reset: step;
+    margin: 28px 0 48px;
+    display: flex;
+    flex-direction: column;
+  }
+  .steps li {
+    counter-increment: step;
+    position: relative;
+    padding: 28px 0 28px 64px;
+    border-top: 1px solid var(--line);
+  }
+  .steps li:last-child { border-bottom: 1px solid var(--line); }
+  .steps li::before {
+    content: '0' counter(step);
+    position: absolute;
+    left: 0;
+    top: 31px;
+    font-family: var(--mono);
+    font-size: 13px;
+    letter-spacing: 0.08em;
+    color: var(--accent);
+  }
+  .steps strong {
+    display: block;
+    font-family: var(--sans);
+    font-weight: 300;
+    font-size: clamp(19px, 2.4vw, 24px);
+    color: var(--ink);
+    margin-bottom: 6px;
+  }
+  .steps p {
+    margin-bottom: 0;
+    max-width: 58ch;
+  }
+
+  .mail {
+    color: var(--ink);
+    border-bottom: 1px solid var(--line-strong);
+    transition: color 0.2s, border-color 0.2s;
+  }
+  .mail:hover {
+    color: var(--accent);
+    border-color: var(--accent);
+  }
+  .mail:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 3px;
+  }
+
+  .grazie-links {
+    margin-top: 56px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+  }
+  .grazie-links a {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 22px;
+    border: 1px solid var(--line-strong);
+    border-radius: 999px;
+    font-family: var(--mono);
+    font-size: 13px;
+    letter-spacing: 0.06em;
+    color: var(--ink-dim);
+    transition: color 0.25s, border-color 0.25s, background 0.25s;
+  }
+  .grazie-links a span:last-child {
+    transition: transform 0.5s cubic-bezier(0.32, 0.72, 0, 1);
+  }
+  .grazie-links a:hover,
+  .grazie-links a:focus-visible {
+    color: var(--ink);
+    border-color: var(--accent);
+    background: rgba(74, 147, 230, 0.08);
+  }
+  .grazie-links a:hover span:last-child,
+  .grazie-links a:focus-visible span:last-child {
+    transform: translateX(4px);
+  }
+  .grazie-links a:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 3px;
+  }
+</style>

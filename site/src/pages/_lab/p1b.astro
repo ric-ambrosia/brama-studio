@@ -1,0 +1,161 @@
+---
+// lab/p1b — IL TRATTO · BLU (variante P1-BIS)
+// Base P1 ("filo 2D") con tre variazioni:
+// 1. palette brand (blu notte / azzurro / rosso), niente fasi carta;
+// 2. niente torcia / rivelazione dal buio — opere piene e vivide;
+// 3. le opere partono SCOMPOSTE e si ricompongono su scroll (three.js).
+import Base from '../../layouts/Base.astro';
+import '../../styles/lab/p1b.css';
+---
+
+<Base
+  title="il tratto · blu — il viaggio nelle opere | brama"
+  description="Un filo azzurro si disegna da solo nel blu notte e conduce alle opere: Vertigine e Abbandono si ricompongono davanti agli occhi, scheggia dopo scheggia."
+  bare
+>
+  <div class="p1b" id="p1b-root">
+    <div class="p1b-spacer" aria-hidden="true"></div>
+
+    <div class="p1b-stage">
+      <div class="p1b-world">
+        <svg class="p1b-thread" aria-hidden="true" focusable="false">
+          <g class="p1b-deco"></g>
+          <path class="p1b-main"></path>
+          <circle class="p1b-tip" r="4.5" fill="currentColor" opacity="0"></circle>
+        </svg>
+
+        <!-- tappa 0: soglia -->
+        <section class="p1b-station p1b-hero" data-wx="50" data-wy="50" style="--sw:min(92vw,760px)">
+          <div class="p1b-hero-inner">
+            <p class="p1b-kicker">brama · il viaggio · variante blu</p>
+            <h1>il tratto</h1>
+            <p class="p1b-sub">
+              Un filo azzurro si disegna da solo nel blu della notte.
+              Le opere che incontrerai non ci sono ancora:
+              si ricompongono davanti a te, scheggia dopo scheggia.
+            </p>
+            <p class="p1b-scrollhint">scorri</p>
+          </div>
+        </section>
+
+        <!-- territorio i · verso la vertigine -->
+        <section class="p1b-station p1b-territory p1b-t1a" data-wx="135" data-wy="105" style="--srot:-4deg; --sw:min(80vw,520px)">
+          <figure class="p1b-plate">
+            <div class="p1b-cropwrap p1b-cropwrap-16">
+              <img
+                src="/portfolio/page-16.jpg"
+                alt="Disegno a pennarello su carta: una figura con la corona si affaccia da una finestra e solleva una coperta a scacchi"
+                loading="lazy"
+                decoding="async"
+              />
+            </div>
+            <figcaption class="p1b-platenote">quaderno · il segno, ridisegnato in azzurro</figcaption>
+          </figure>
+          <p class="p1b-frag">Prima del colore c'è il segno:<br />logiche interne, geometrie che respirano.</p>
+        </section>
+
+        <section class="p1b-station p1b-territory p1b-t1b" data-wx="185" data-wy="152" style="--srot:-6deg; --sw:min(84vw,560px)">
+          <p class="p1b-frag">Il tratto si avvita.<br /><em>Ogni scelta è un affaccio sul vuoto.</em></p>
+        </section>
+
+        <!-- tappa 1: VERTIGINE — pioggia di schegge che si posano -->
+        <section class="p1b-station p1b-materia p1b-vert" id="vertigine" data-wx="252" data-wy="215" style="--sw:min(92vw,940px)">
+          <figure class="p1b-panel" data-opera="vertigine">
+            <div class="p1b-frame">
+              <img
+                class="p1b-art"
+                src="/images/thumbs/Vertigine-1200.jpg"
+                data-full="/images/Vertigine.jpeg"
+                alt="Vertigine (2025): un vortice di pennellate blu precipita verso il centro, dove una farfalla riposa in una cavità scura; schegge di vetro rosso incastonate nella resina"
+                loading="lazy"
+                decoding="async"
+              />
+              <canvas class="p1b-scatter" aria-hidden="true"></canvas>
+            </div>
+            <figcaption class="p1b-label">
+              <h2>vertigine</h2>
+              <p class="p1b-meta">2025 · 150 × 100 cm · acrilici, pennarello, resina, vetro, carta, fibra ottica, acciaio</p>
+              <blockquote class="p1b-quote">
+                «L'angoscia è la vertigine della libertà.»
+                <span class="p1b-cite">— Søren Kierkegaard</span>
+              </blockquote>
+              <p class="p1b-scrubnote">
+                Scorri piano: le schegge piovono sul telaio e si posano.
+                Torna indietro — il vortice si disfa di nuovo.
+              </p>
+              <a class="p1b-cta" href="/opera/vertigine" data-focus-t="4.7">entra nell'opera<span aria-hidden="true"> →</span></a>
+            </figcaption>
+          </figure>
+        </section>
+
+        <!-- territorio ii · la caduta -->
+        <section class="p1b-station p1b-territory p1b-t2a" data-wx="240" data-wy="330" style="--srot:5deg; --sw:min(78vw,480px)">
+          <figure class="p1b-plate">
+            <div class="p1b-cropwrap p1b-cropwrap-14">
+              <img
+                src="/portfolio/page-14.jpg"
+                alt="Frammento d'archivio: schizzi di inchiostro dispersi su carta, dall'opera Ansia"
+                loading="lazy"
+                decoding="async"
+              />
+            </div>
+            <figcaption class="p1b-platenote">archivio emozioni · frammenti dispersi</figcaption>
+          </figure>
+          <p class="p1b-frag p1b-frag-soft">Il segno si fa rado.<br />Ciò che resta, precipita.</p>
+        </section>
+
+        <section class="p1b-station p1b-territory p1b-t2b" data-wx="200" data-wy="405" style="--srot:8deg; --sw:min(84vw,560px)">
+          <p class="p1b-frag">Non si sceglie di cadere.<br /><em>Si è gettati — poi si impara il blu.</em></p>
+        </section>
+
+        <!-- tappa 2: ABBANDONO — lastre di ossidiana che scivolano in posizione -->
+        <section class="p1b-station p1b-materia p1b-abb" id="abbandono" data-wx="158" data-wy="480" style="--sw:min(92vw,720px)">
+          <figure class="p1b-panel" data-opera="abbandono">
+            <div class="p1b-frame">
+              <img
+                class="p1b-art"
+                src="/images/thumbs/Abbandono-600.jpg"
+                data-full="/images/Abbandono.jpg"
+                alt="Abbandono (2025): campo verticale blu notte attraversato da un rombo scuro; al centro un'esplosione di ossidiana con schegge gialle e rosse, contornata da trame bianche a pennarello"
+                loading="lazy"
+                decoding="async"
+              />
+              <canvas class="p1b-scatter" aria-hidden="true"></canvas>
+            </div>
+            <figcaption class="p1b-label">
+              <h2>abbandono</h2>
+              <p class="p1b-meta">2025 · 80 × 150 cm · acrilici, resina, ossidiana, fibra ottica</p>
+              <blockquote class="p1b-quote">
+                «Geworfenheit: si è gettati nel mondo, senza averlo scelto.»
+                <span class="p1b-cite">— Martin Heidegger</span>
+              </blockquote>
+              <p class="p1b-scrubnote">
+                Le lastre di ossidiana arrivano dai lati e dall'alto
+                e si posano dal basso, una fila alla volta.
+              </p>
+              <a class="p1b-cta" href="/opera/abbandono" data-focus-t="9.0">entra nell'opera<span aria-hidden="true"> →</span></a>
+            </figcaption>
+          </figure>
+        </section>
+
+        <!-- chiusura: il filo si riannoda nella firma -->
+        <section class="p1b-station p1b-fine" data-wx="68" data-wy="545" style="--sw:min(88vw,560px)">
+          <div class="p1b-fine-inner">
+            <img class="p1b-sig" src="/images/signature.png" alt="brama — firma dell'artista" width="240" height="88" loading="lazy" decoding="async" />
+            <p class="p1b-frag">Ogni emozione si scompone e si ricompone.<br />Questa era la prima.</p>
+            <nav class="p1b-fine-nav" aria-label="continua il percorso">
+              <a class="p1b-cta" href="/opere" data-focus-t="10.3">tutte le opere<span aria-hidden="true"> →</span></a>
+              <a class="p1b-cta p1b-restart" href="#p1b-root" data-focus-t="10.3">ricomincia il viaggio</a>
+            </nav>
+          </div>
+        </section>
+      </div>
+    </div>
+
+    <p class="p1b-way" aria-hidden="true">il tratto · blu</p>
+  </div>
+</Base>
+
+<script>
+  import '../../scripts/lab/p1b/journey.js';
+</script>

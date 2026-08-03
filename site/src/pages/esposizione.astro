@@ -1,0 +1,173 @@
+---
+import Base from '../layouts/Base.astro';
+import { SITE, VENUE } from '../lib/site';
+
+const jsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'ExhibitionEvent',
+  name: 'brama in mostra a The Seed, Milano',
+  startDate: VENUE.from,
+  endDate: VENUE.to,
+  eventStatus: 'https://schema.org/EventScheduled',
+  location: {
+    '@type': 'Place',
+    name: `${VENUE.name} ${VENUE.city}`,
+    address: {
+      '@type': 'PostalAddress',
+      streetAddress: VENUE.address,
+      postalCode: VENUE.cap,
+      addressLocality: VENUE.city,
+      addressCountry: 'IT',
+    },
+  },
+  organizer: { '@type': 'Organization', name: SITE.name },
+};
+---
+
+<Base
+  title="Esposizione · brama a The Seed, Milano"
+  description={`Le opere di brama in mostra a ${VENUE.name}, ${VENUE.city}, in ${VENUE.address}, ${VENUE.dateLabel}.`}
+  ogImage="/images/Vertigine.jpeg"
+  jsonLd={jsonLd}
+>
+  <section class="expo" aria-labelledby="expo-h">
+    <!-- il volantino -->
+    <article class="poster">
+      <div class="poster-media">
+        <img src="/images/Vertigine.jpeg" alt="Vertigine, opera di brama" />
+        <img class="poster-sig" src="/images/signature.png" alt="brama" />
+      </div>
+      <div class="poster-body">
+        <p class="poster-eyebrow"><span class="poster-live-dot" aria-hidden="true"></span>Mostra temporanea</p>
+        <h1 id="expo-h" class="poster-title">Dove le emozioni<br />prendono corpo.</h1>
+        <p class="poster-dates">{VENUE.dateLabel}</p>
+        <div class="poster-venue">
+          <p class="poster-venue-name">{VENUE.name} · {VENUE.city}</p>
+          <p class="poster-venue-addr">{VENUE.address} · {VENUE.cap} {VENUE.city}</p>
+        </div>
+        <div class="poster-cta">
+          <a class="poster-btn" href={VENUE.maps} rel="noopener noreferrer" target="_blank">Come arrivare</a>
+          <a class="poster-link" href="/portfolio">Vedi le opere</a>
+        </div>
+        <p class="poster-foot">brama.studio</p>
+      </div>
+    </article>
+
+    <!-- nota + rimandi -->
+    <div class="expo-note">
+      <p>
+        Acrilici, resina, vetro, ossidiana, oro e fibra ottica: dal vivo le opere si
+        possono guardare da vicino, e quelle con fibre ottiche si accendono con la luce.
+      </p>
+      <p class="expo-links">
+        <a href="/shop">Acquista un'opera</a>
+        <span aria-hidden="true">·</span>
+        <a href="/contatti">Scrivici</a>
+      </p>
+    </div>
+  </section>
+</Base>
+
+<style>
+  .expo {
+    max-width: var(--maxw);
+    margin: 0 auto;
+    padding: clamp(120px, 16vh, 200px) 24px clamp(72px, 12vh, 120px);
+  }
+
+  /* ---------- il volantino ---------- */
+  .poster {
+    display: grid;
+    grid-template-columns: 46% 1fr;
+    max-width: 1040px;
+    margin: 0 auto;
+    border: 1px solid var(--line-strong);
+    border-radius: 4px;
+    overflow: hidden;
+    background: linear-gradient(180deg, #0a1430, #050a1a);
+    box-shadow: 0 50px 120px rgba(0, 0, 0, 0.55);
+  }
+  .poster-media { position: relative; min-height: 420px; }
+  .poster-media img:first-child {
+    position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover;
+  }
+  .poster-media::after {
+    content: ""; position: absolute; inset: 0;
+    background: linear-gradient(105deg, transparent 55%, rgba(5, 10, 26, 0.9));
+    pointer-events: none;
+  }
+  .poster-sig {
+    position: absolute; top: 22px; left: 22px; z-index: 2;
+    height: 56px; width: auto; filter: var(--sig-tint);
+  }
+  .poster-body {
+    padding: clamp(32px, 4vw, 56px);
+    display: flex; flex-direction: column; gap: 16px;
+    align-content: center;
+  }
+  .poster-eyebrow {
+    font-family: var(--mono); font-size: 12px; letter-spacing: 0.24em; text-transform: uppercase;
+    color: var(--accent); margin: 0;
+    display: inline-flex; align-items: center; gap: 9px;
+  }
+  .poster-live-dot {
+    width: 7px; height: 7px; border-radius: 50%; background: var(--accent); flex: none;
+    box-shadow: 0 0 0 0 rgba(74,147,230,0.6);
+    animation: posterPulse 2.2s ease-out infinite;
+  }
+  @keyframes posterPulse {
+    0% { box-shadow: 0 0 0 0 rgba(74,147,230,0.5); }
+    70% { box-shadow: 0 0 0 8px rgba(74,147,230,0); }
+    100% { box-shadow: 0 0 0 0 rgba(74,147,230,0); }
+  }
+  @media (prefers-reduced-motion: reduce) { .poster-live-dot { animation: none; } }
+  .poster-title {
+    font-family: var(--sans); font-style: italic; font-weight: 400;
+    font-size: clamp(34px, 3.8vw, 54px); line-height: 1.1; letter-spacing: 0;
+    color: var(--ink); margin: 6px 0 0;
+  }
+  .poster-dates {
+    font-family: var(--sans); font-style: italic;
+    font-size: clamp(19px, 2.2vw, 26px); color: var(--ink); margin: 8px 0 0;
+  }
+  .poster-venue { margin-top: 6px; }
+  .poster-venue-name { font-family: var(--sans); font-weight: 500; font-size: 18px; color: var(--ink); margin: 0; }
+  .poster-venue-addr { font-family: var(--mono); font-size: 13px; letter-spacing: 0.03em; color: var(--ink-dim); margin: 4px 0 0; }
+  .poster-cta { display: flex; align-items: center; gap: 22px; margin-top: 14px; flex-wrap: wrap; }
+  .poster-btn {
+    font-family: var(--mono); font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase;
+    color: var(--ink); background: var(--accent-soft);
+    padding: 12px 22px; border-radius: 999px;
+    transition: background 0.2s;
+  }
+  .poster-btn:hover { background: var(--accent); }
+  .poster-link {
+    font-family: var(--sans); font-size: 15px; color: var(--ink-dim);
+    border-bottom: 1px solid transparent; transition: color 0.2s, border-color 0.2s;
+  }
+  .poster-link:hover { color: var(--ink); border-color: var(--accent); }
+  .poster-foot {
+    margin-top: auto; padding-top: 20px;
+    font-family: var(--mono); font-size: 12px; letter-spacing: 0.1em; color: var(--ink-mute);
+  }
+
+  /* ---------- nota ---------- */
+  .expo-note {
+    max-width: 620px; margin: clamp(48px, 8vh, 88px) auto 0; text-align: center;
+  }
+  .expo-note p {
+    font-family: var(--sans); font-size: clamp(17px, 2vw, 21px); line-height: 1.6; color: var(--ink-dim); margin: 0;
+  }
+  .expo-links { margin-top: 24px !important; display: flex; gap: 16px; justify-content: center; }
+  .expo-links a {
+    font-family: var(--mono); font-size: 13px; letter-spacing: 0.06em; color: var(--accent);
+    transition: color 0.2s;
+  }
+  .expo-links a:hover { color: var(--ink); }
+
+  @media (max-width: 760px) {
+    .poster { grid-template-columns: 1fr; }
+    .poster-media { min-height: 300px; }
+    .poster-media::after { background: linear-gradient(180deg, transparent 55%, rgba(5, 10, 26, 0.95)); }
+  }
+</style>

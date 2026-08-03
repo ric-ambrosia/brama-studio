@@ -1,0 +1,748 @@
+---
+import Base from '../layouts/Base.astro';
+import { SITE } from '../lib/site';
+
+const title = 'Manifesto — brama traduce le emozioni in materia';
+const description =
+  'Il manifesto di brama: la visione, le emozioni come lingua, sei materie e l’ingegneria nascosta che risponde alla luce e alla presenza — dall’Archive Collection 2021 alla materia che diventa indossabile.';
+
+const jsonLd = {
+  '@context': 'https://schema.org',
+  '@type': ['Organization', 'Brand'],
+  '@id': `${SITE.domain}/#brama`,
+  name: SITE.name,
+  url: SITE.domain,
+  logo: `${SITE.domain}/images/signature.png`,
+  email: SITE.email,
+  slogan: SITE.tagline,
+  description:
+    'brama traduce le emozioni in materia: opere in acrilico, resina epossidica, vetro, ossidiana, oro, gesso e fibra ottica, con meccanismi nascosti che si attivano con la torcia e con la presenza.',
+  foundingDate: '2021',
+  sameAs: [SITE.instagram],
+  mainEntityOfPage: `${SITE.domain}/manifesto`,
+};
+
+const sezioni = [
+  { id: 'visione', n: '01', label: 'Visione' },
+  { id: 'emozioni', n: '02', label: 'Le emozioni' },
+  { id: 'materia', n: '03', label: 'La materia' },
+  { id: 'ingegneria', n: '04', label: 'L’ingegneria nascosta' },
+  { id: 'futuro', n: '05', label: 'Il futuro' },
+];
+
+const filosofie = [
+  {
+    autore: 'Kierkegaard',
+    concetto: 'La vertigine della libertà',
+    testo:
+      'L’angoscia non come difetto, ma come misura del possibile: ciò che dà le vertigini è tutto quello che si potrebbe ancora scegliere.',
+    href: '/opera/vertigine',
+    opera: 'Vertigine, 2025',
+  },
+  {
+    autore: 'Heidegger',
+    concetto: 'Geworfenheit',
+    testo:
+      'L’essere gettati in una situazione che non si è scelta — e da lì, esattamente da lì, cominciare.',
+    href: '/opera/abbandono',
+    opera: 'Abbandono, 2025',
+  },
+  {
+    autore: 'Bergson',
+    concetto: 'Durée',
+    testo:
+      'Il tempo come lo si vive, non come lo si conta: la durata che un’opera chiede a chi la guarda prima di concedersi.',
+    href: '/opera/avventura-di-una-vita',
+    opera: 'Avventura di una vita',
+  },
+];
+
+const materie = [
+  {
+    n: '01',
+    nome: 'Colori acrilici',
+    testo:
+      'La parte istintiva dell’opera. Campi cromatici, gesti immediati, variazioni di intensità: l’acrilico è l’emozione allo stato grezzo, prima che il pensiero la ordini.',
+  },
+  {
+    n: '02',
+    nome: 'Disegno a pennarello',
+    testo:
+      'Il contrappunto razionale. Il tratto definisce logiche interne, geometrie, strutture che dialogano con l’astrazione del colore: dove l’acrilico sente, il pennarello ragiona.',
+  },
+  {
+    n: '03',
+    nome: 'Resina epossidica',
+    testo:
+      'Lo strato che unifica. Colata come chiusura, tiene insieme tecniche diverse, protegge la superficie e dà continuità a disegno, colore e componenti costruttive: una sola pelle sopra molti corpi.',
+  },
+  {
+    n: '04',
+    nome: 'Fibra ottica',
+    testo:
+      'Il canale dell’interazione. Corre sul retro dell’opera e attende: la luce di una torcia la attiva, e sulla superficie si accendono riflessi e percorsi luminosi che esistono solo per chi li cerca.',
+  },
+  {
+    n: '05',
+    nome: 'Stampa 3D',
+    testo:
+      'L’officina invisibile. Supporti e componenti disegnati su misura reggono i sistemi di fibra ottica e i meccanismi nascosti: la parte dell’opera che non si espone, ma senza cui nulla si muove.',
+  },
+  {
+    n: '06',
+    nome: 'Altri materiali',
+    testo:
+      'Vetro, metalli, minerali, specchi, gesso. Scelti uno a uno per accentuare profondità, riflessi, contrasti: la qualità materica come intensificatore dell’emozione, mai come decorazione.',
+  },
+];
+---
+
+<Base title={title} description={description} ogImage="/images/thumbs/Vertigine-1200.jpg" jsonLd={jsonLd}>
+  <div class="mf">
+    <!-- ============ Apertura — notte, sola tipografia ============ -->
+    <header class="mf-scena mf-dark mf-hero">
+      <div class="mf-hero-inner mf-reveal">
+        <p class="eyebrow">Manifesto</p>
+        <h1>brama traduce le<br /> emozioni in materia.</h1>
+        <p class="mf-hero-lead">
+          Non un archivio di cose fatte: una dichiarazione di metodo. Cinque movimenti
+          — una visione, una lingua, sei materie, un meccanismo nascosto, una direzione.
+        </p>
+        <nav class="mf-index" aria-label="Sezioni del manifesto">
+          <ol>
+            {sezioni.map((s) => (
+              <li>
+                <a href={`#${s.id}`}><span aria-hidden="true">{s.n}</span> {s.label}</a>
+              </li>
+            ))}
+          </ol>
+        </nav>
+      </div>
+      <a class="mf-giu" href="#visione" aria-label="Scendi alla prima sezione, Visione">
+        <span class="mf-giu-ink" aria-hidden="true"></span>
+      </a>
+    </header>
+
+    <!-- ============ 01 Visione — carta ============ -->
+    <section id="visione" class="mf-scena mf-light" aria-labelledby="h-visione">
+      <div class="mf-wrap mf-grid mf-grid-visione">
+        <div class="mf-prose mf-reveal">
+          <p class="eyebrow">01 — Visione</p>
+          <h2 id="h-visione">Ogni opera nasce due&nbsp;volte</h2>
+          <p class="mf-lead">
+            Prima come impulso — un gesto, un colore, un’urgenza che non chiede permesso —
+            poi come costruzione.
+          </p>
+          <p>
+            Sotto la superficie lavora un’ingegneria nascosta: meccanismi, fibre, percorsi
+            di luce che si rivelano solo a chi si avvicina, illumina, resta.
+          </p>
+          <p>
+            brama non rappresenta le emozioni: le mette in condizione di accadere di nuovo.
+          </p>
+          <p class="mf-lead mf-lead-em">Ciò che si prova diventa ciò che si tocca.</p>
+        </div>
+        <figure class="mf-fig mf-reveal">
+          <img
+            src="/images/thumbs/Abbandono-600.jpg"
+            width="600"
+            height="1223"
+            sizes="(min-width: 900px) 38vw, 92vw"
+            alt="Abbandono: tela verticale blu e nera percorsa da un’esplosione chiara al centro, con ossidiana e fibra ottica sotto la resina."
+            loading="eager"
+            fetchpriority="high"
+          />
+          <figcaption>Abbandono, 2025 — acrilici, resina, ossidiana, fibra ottica.</figcaption>
+        </figure>
+      </div>
+    </section>
+
+    <!-- ============ 02 Le emozioni — notte, il cuore ============ -->
+    <section id="emozioni" class="mf-scena mf-dark" aria-labelledby="h-emozioni">
+      <div class="mf-wrap">
+        <span class="mf-vignetta mf-vignetta-cuore mf-reveal" aria-hidden="true"></span>
+        <div class="mf-prose mf-prose-center mf-reveal">
+          <p class="eyebrow">02 — Le emozioni</p>
+          <h2 id="h-emozioni">Non un soggetto. Una&nbsp;lingua.</h2>
+          <p>
+            Il vocabolario di brama comincia nel 2021 con l’<a
+              class="mf-link"
+              href="/archivio">Archive Collection «Emozioni»</a
+            >: trentatré tele in acrilico, una per ogni emozione — non temi, ma titoli propri.
+            Da quell’archivio le opere core ereditano il metodo: partire da un’emozione
+            precisa e costruirle intorno un corpo. E nella stessa lingua entrano tre
+            riferimenti filosofici, usati come materiali tra i materiali.
+          </p>
+        </div>
+      </div>
+      <div class="mf-wrap">
+        <ul class="mf-philo mf-reveal" role="list">
+          {filosofie.map((f) => (
+            <li class="mf-philo-item">
+              <p class="mf-philo-autore">{f.autore}</p>
+              <p class="mf-philo-concetto">{f.concetto}</p>
+              <p class="mf-philo-testo">{f.testo}</p>
+              <a class="mf-link mf-philo-opera" href={f.href}>
+                {f.opera} <span aria-hidden="true">→</span>
+              </a>
+            </li>
+          ))}
+        </ul>
+      </div>
+    </section>
+
+    <!-- ============ 03 La materia — carta, le mani ============ -->
+    <section id="materia" class="mf-scena mf-light mf-light-2" aria-labelledby="h-materia">
+      <div class="mf-wrap">
+        <span class="mf-vignetta mf-vignetta-mani mf-reveal" aria-hidden="true"></span>
+        <div class="mf-prose mf-prose-center mf-reveal">
+          <p class="eyebrow">03 — La materia</p>
+          <h2 id="h-materia">Sei materie, un solo movimento</h2>
+          <p class="mf-lead">Dall’impulso alla costruzione.</p>
+        </div>
+        <dl class="mf-materie mf-reveal">
+          {materie.map((m) => (
+            <div class="mf-materia">
+              <dt>
+                <span class="mf-materia-n" aria-hidden="true">{m.n}</span>
+                {m.nome}
+              </dt>
+              <dd>{m.testo}</dd>
+            </div>
+          ))}
+        </dl>
+        <div class="mf-trittico mf-reveal">
+          <figure class="mf-fig">
+            <img
+              src="/images/thumbs/Depressione-600.jpg"
+              srcset="/images/thumbs/Depressione-600.jpg 600w, /images/thumbs/Depressione-1200.jpg 1200w"
+              sizes="(min-width: 900px) 30vw, 92vw"
+              width="600"
+              height="426"
+              alt="Depressione, dettaglio: rilievo materico blu con pieghe di gesso e due mani nere strette attorno a un centro bianco."
+              loading="lazy"
+            />
+            <figcaption>Depressione, 2023 — gesso, ossidiana, oro.</figcaption>
+          </figure>
+          <figure class="mf-fig">
+            <img
+              src="/images/thumbs/Pugno_Nel_Tempo-600.jpg"
+              srcset="/images/thumbs/Pugno_Nel_Tempo-600.jpg 600w, /images/thumbs/Pugno_Nel_Tempo-1200.jpg 1200w"
+              sizes="(min-width: 900px) 30vw, 92vw"
+              width="600"
+              height="601"
+              alt="Pugno nel tempo, dettaglio: superficie materica nera e blu con un nucleo chiaro e un piccolo origami al centro."
+              loading="lazy"
+            />
+            <figcaption>Pugno nel tempo, 2023 — gesso e resina.</figcaption>
+          </figure>
+          <figure class="mf-fig">
+            <img
+              src="/images/thumbs/Ti_Devo_Lasciare-600.jpg"
+              srcset="/images/thumbs/Ti_Devo_Lasciare-600.jpg 600w, /images/thumbs/Ti_Devo_Lasciare-1200.jpg 1200w"
+              sizes="(min-width: 900px) 30vw, 92vw"
+              width="600"
+              height="357"
+              alt="Lasciarti andare, dettaglio: due mani nere in rilievo al centro di un campo scuro, tra fiammate rosse e verdi e schegge d’oro."
+              loading="lazy"
+            />
+            <figcaption>Lasciarti andare, 2023 — gesso e oro.</figcaption>
+          </figure>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ 04 L’ingegneria nascosta — notte ============ -->
+    <section id="ingegneria" class="mf-scena mf-dark mf-dark-2" aria-labelledby="h-ingegneria">
+      <div class="mf-wrap mf-grid mf-grid-ingegneria">
+        <figure class="mf-fig mf-reveal">
+          <img
+            src="/images/thumbs/Lu-600.jpg"
+            srcset="/images/thumbs/Lu-600.jpg 600w, /images/thumbs/Lu-1200.jpg 1200w"
+            sizes="(min-width: 900px) 42vw, 92vw"
+            width="600"
+            height="598"
+            alt="Lu: esplosione di acrilico rosso e blu attorno a un piccolo specchio circolare incastonato al centro della tela, con trame a pennarello lungo i margini."
+            loading="lazy"
+          />
+          <figcaption>Lu, 2024 — vetro, fibra ottica; al centro, uno specchio.</figcaption>
+        </figure>
+        <div class="mf-prose mf-reveal">
+          <p class="eyebrow">04 — L’ingegneria nascosta</p>
+          <h2 id="h-ingegneria">Ogni opera ha un retro che&nbsp;lavora</h2>
+          <p>
+            Meccanismi, fibre ottiche, specchi: un sistema costruito per non farsi vedere
+            frontalmente e per rispondere, invece, alla presenza.
+          </p>
+          <p>
+            Una torcia puntata sull’opera attiva le fibre: la luce entra da un punto e
+            riemerge altrove, disegnando percorsi che la visione diretta non prevede. Gli
+            specchi restituiscono ciò che sta fuori dal quadro — compreso chi guarda.
+          </p>
+          <p>
+            L’ingegneria nascosta chiede all’osservatore lo stesso movimento che chiede
+            un’emozione vera — avvicinarsi, illuminare, aspettare. La stessa grammatica
+            governa questo sito, a partire dal <a class="mf-link" href="/">Viaggio</a>.
+          </p>
+        </div>
+      </div>
+      <div class="mf-wrap">
+        <p class="mf-pull mf-reveal">Ciò che non si vede non è assente.<br /> È in attesa.</p>
+      </div>
+    </section>
+
+    <!-- ============ 05 Il futuro — carta, sola tipografia ============ -->
+    <section id="futuro" class="mf-scena mf-light" aria-labelledby="h-futuro">
+      <div class="mf-wrap">
+        <div class="mf-prose mf-prose-center mf-reveal">
+          <p class="eyebrow">05 — Il futuro</p>
+          <h2 id="h-futuro">La materia non resterà&nbsp;appesa</h2>
+          <p>
+            brama lavora perché il suo linguaggio — colore, geometria, superfici che
+            reagiscono — possa lasciare la parete e arrivare addosso: l’opera che diventa
+            indossabile, l’emozione che si porta con sé nel movimento di chi la sceglie.
+          </p>
+          <p class="mf-lead mf-lead-em">
+            Non è un annuncio. È una direzione: la stessa di sempre, estesa a una materia
+            che cammina.
+          </p>
+          <a class="mf-cta" href="/">Attraversa il Viaggio <span aria-hidden="true">→</span></a>
+        </div>
+      </div>
+    </section>
+  </div>
+</Base>
+
+<style>
+  /* ------------------------------------------------------------
+     Chrome sopra i campi chiari: stessa soluzione del Viaggio
+     (blend difference: segno chiaro che diventa inchiostro sulla
+     carta, senza JS). Solo su questa pagina, additivo.
+     ------------------------------------------------------------ */
+  :global(.site-header) {
+    mix-blend-mode: difference;
+  }
+  :global(.site-header .site-sig img) {
+    filter: brightness(0) invert(1);
+    opacity: 0.92;
+  }
+  :global(.site-menu) {
+    background: rgba(5, 10, 26, 0.97);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+
+  .mf {
+    --wrap: 1160px;
+    --ease: cubic-bezier(0.32, 0.72, 0, 1);
+    overflow-x: clip;
+  }
+
+  /* ---------- scene: campi pieni alternati chiaro/scuro ---------- */
+  .mf-scena {
+    padding: clamp(96px, 13vw, 168px) 24px;
+    scroll-margin-top: 0;
+  }
+  .mf-dark {
+    background: var(--bg);
+  }
+  .mf-dark-2 {
+    background: var(--bg-2);
+  }
+  .mf-light {
+    background: #e8ecf4;
+    color: var(--ink);
+    /* registro cromatico della carta (solo dentro la scena) */
+    --ink: #0a0a0a;
+    --ink-dim: #35425f;
+    --ink-mute: #46608f;
+    --line: rgba(10, 16, 38, 0.16);
+    --line-strong: rgba(10, 16, 38, 0.34);
+    --accent: #2456b3;
+  }
+  .mf-light-2 {
+    background: #dfe6f2;
+  }
+
+  .mf-wrap {
+    max-width: var(--wrap);
+    margin: 0 auto;
+  }
+  .mf-wrap + .mf-wrap {
+    margin-top: clamp(48px, 6vw, 80px);
+  }
+
+  /* ---------- apertura ---------- */
+  .mf-hero {
+    position: relative;
+    min-height: 100vh;
+    min-height: 100svh;
+    display: grid;
+    place-items: center;
+    text-align: center;
+    padding-top: 128px;
+    padding-bottom: 128px;
+  }
+  .mf-hero-inner {
+    max-width: 880px;
+    margin: 0 auto;
+  }
+  .mf-hero .eyebrow {
+    letter-spacing: 0.3em;
+  }
+  .mf-hero h1 {
+    font-family: var(--display);
+    font-weight: 200;
+    font-size: clamp(42px, 7.5vw, 84px);
+    line-height: 1.04;
+    letter-spacing: -0.01em;
+    margin-bottom: 28px;
+  }
+  .mf-hero-lead {
+    font-family: var(--serif);
+    font-size: clamp(19px, 2.6vw, 24px);
+    line-height: 1.55;
+    color: var(--ink-dim);
+    max-width: 34em;
+    margin-inline: auto;
+  }
+  .mf-index {
+    margin-top: 48px;
+  }
+  .mf-index ol {
+    list-style: none;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 10px 28px;
+  }
+  .mf-index a {
+    font-family: var(--mono);
+    font-size: 13px;
+    letter-spacing: 0.06em;
+    color: var(--ink-dim);
+    transition: color 0.2s;
+  }
+  .mf-index a span {
+    color: var(--accent);
+    margin-right: 2px;
+  }
+  .mf-index a:hover {
+    color: var(--ink);
+  }
+
+  /* micro-freccia disegnata (stesso segno del Viaggio) */
+  .mf-giu {
+    position: absolute;
+    left: 50%;
+    bottom: calc(18px + env(safe-area-inset-bottom));
+    translate: -50% 0;
+    display: block;
+    padding: 10px;
+    color: var(--accent);
+  }
+  .mf-giu-ink {
+    display: block;
+    width: 34px;
+    aspect-ratio: 1;
+    background: currentColor;
+    -webkit-mask: url('/viaggio/freccia-scroll.webp') center / contain no-repeat;
+    mask: url('/viaggio/freccia-scroll.webp') center / contain no-repeat;
+    opacity: 0.8;
+    animation: mf-bob 2.6s ease-in-out infinite alternate;
+  }
+  @keyframes mf-bob {
+    from {
+      transform: translateY(0);
+    }
+    to {
+      transform: translateY(7px);
+    }
+  }
+
+  /* ---------- vignette a inchiostro (capilettera delle sezioni chiave) ---------- */
+  .mf-vignetta {
+    display: block;
+    width: clamp(120px, 18vw, 184px);
+    aspect-ratio: 1;
+    margin: 0 auto clamp(28px, 4vw, 44px);
+    background: currentColor;
+    -webkit-mask: var(--m) center / contain no-repeat;
+    mask: var(--m) center / contain no-repeat;
+  }
+  /* il cuore è l'unico accento rosso della scena: sangue, non decorazione */
+  .mf-vignetta-cuore {
+    --m: url('/viaggio/manifesto-cuore.webp');
+    color: var(--red);
+    transform-origin: 50% 55%;
+    animation: mf-battito 5.6s ease-in-out infinite;
+  }
+  .mf-vignetta-mani {
+    --m: url('/viaggio/manifesto-mani.webp');
+    color: var(--stroke);
+  }
+  @keyframes mf-battito {
+    0%,
+    26%,
+    100% {
+      transform: scale(1);
+    }
+    6% {
+      transform: scale(1.04);
+    }
+    12% {
+      transform: scale(1);
+    }
+    18% {
+      transform: scale(1.05);
+    }
+  }
+
+  /* ---------- tipografia ---------- */
+  .mf h2 {
+    font-family: var(--display);
+    font-weight: 300;
+    font-size: clamp(30px, 4.5vw, 48px);
+    line-height: 1.12;
+    margin-bottom: 24px;
+    text-wrap: balance;
+  }
+
+  .mf-prose p {
+    line-height: 1.75;
+    color: var(--ink-dim);
+    margin-bottom: 18px;
+    max-width: 62ch;
+  }
+  .mf-prose-center {
+    text-align: center;
+  }
+  .mf-prose-center p {
+    margin-inline: auto;
+  }
+  .mf-lead {
+    font-family: var(--serif);
+    font-size: clamp(19px, 2.4vw, 23px);
+    line-height: 1.55;
+    color: var(--ink);
+  }
+  .mf-lead-em {
+    font-style: italic;
+    margin-top: 28px;
+  }
+
+  .mf-link {
+    color: var(--ink);
+    border-bottom: 1px solid var(--accent);
+    transition: color 0.2s, border-color 0.2s;
+  }
+  .mf-link:hover {
+    color: var(--accent);
+  }
+  .mf a:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 3px;
+    border-radius: 2px;
+  }
+
+  .mf-cta {
+    display: inline-block;
+    margin-top: 16px;
+    font-family: var(--mono);
+    font-size: 13px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--ink);
+    border-bottom: 1px solid var(--accent);
+    padding-bottom: 4px;
+    transition: color 0.2s, border-color 0.2s;
+  }
+  .mf-cta:hover {
+    color: var(--accent);
+  }
+
+  /* ---------- griglie editoriali ---------- */
+  .mf-grid {
+    display: grid;
+    gap: clamp(40px, 6vw, 88px);
+    align-items: start;
+  }
+  @media (min-width: 900px) {
+    .mf-grid-visione {
+      grid-template-columns: 7fr 5fr;
+    }
+    .mf-grid-visione .mf-fig {
+      margin-top: 56px;
+    }
+    .mf-grid-ingegneria {
+      grid-template-columns: 6fr 6fr;
+      align-items: center;
+    }
+  }
+
+  /* ---------- figure ---------- */
+  .mf-fig img {
+    width: 100%;
+    height: auto;
+  }
+  .mf-fig figcaption {
+    font-family: var(--mono);
+    font-size: 12px;
+    line-height: 1.6;
+    color: var(--ink-mute);
+    margin-top: 10px;
+  }
+
+  /* ---------- filosofie (su notte) ---------- */
+  .mf-philo {
+    list-style: none;
+    display: grid;
+    gap: 1px;
+    background: var(--line);
+    border-block: 1px solid var(--line);
+  }
+  @media (min-width: 900px) {
+    .mf-philo {
+      grid-template-columns: repeat(3, 1fr);
+    }
+  }
+  .mf-philo-item {
+    background: var(--bg);
+    padding: 32px 28px 36px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    text-align: left;
+  }
+  .mf-philo-autore {
+    font-family: var(--mono);
+    font-size: 12px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--ink-mute);
+  }
+  .mf-philo-concetto {
+    font-family: var(--display);
+    font-weight: 300;
+    font-size: clamp(21px, 2.4vw, 26px);
+    line-height: 1.2;
+  }
+  .mf-philo-testo {
+    font-family: var(--serif);
+    font-size: 17px;
+    line-height: 1.6;
+    color: var(--ink-dim);
+    flex-grow: 1;
+  }
+  .mf-philo-opera {
+    align-self: flex-start;
+    font-family: var(--mono);
+    font-size: 13px;
+    padding-bottom: 2px;
+  }
+
+  /* ---------- materie (su carta) ---------- */
+  .mf-materie {
+    display: grid;
+    gap: clamp(36px, 4vw, 56px) clamp(40px, 6vw, 96px);
+    margin-top: clamp(48px, 6vw, 72px);
+  }
+  @media (min-width: 720px) {
+    .mf-materie {
+      grid-template-columns: 1fr 1fr;
+    }
+  }
+  .mf-materia dt {
+    font-family: var(--sans);
+    font-weight: 600;
+    font-size: 15px;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    display: flex;
+    align-items: baseline;
+    gap: 14px;
+    padding-top: 14px;
+    border-top: 1px solid var(--line-strong);
+    margin-bottom: 10px;
+  }
+  .mf-materia-n {
+    font-family: var(--mono);
+    font-weight: 400;
+    font-size: 12px;
+    color: var(--accent);
+  }
+  .mf-materia dd {
+    line-height: 1.7;
+    color: var(--ink-dim);
+    max-width: 56ch;
+  }
+
+  .mf-trittico {
+    display: grid;
+    gap: clamp(20px, 3vw, 32px);
+    margin-top: clamp(56px, 7vw, 88px);
+  }
+  @media (min-width: 720px) {
+    .mf-trittico {
+      grid-template-columns: repeat(3, 1fr);
+    }
+  }
+  .mf-trittico img {
+    aspect-ratio: 1;
+    object-fit: cover;
+  }
+
+  /* ---------- citazione ---------- */
+  .mf-pull {
+    font-family: var(--serif);
+    font-style: italic;
+    font-weight: 300;
+    font-size: clamp(26px, 4.4vw, 44px);
+    line-height: 1.3;
+    text-align: center;
+    color: var(--ink);
+    max-width: 20em;
+    margin: 0 auto;
+    padding-top: clamp(24px, 4vw, 48px);
+  }
+
+  /* ---------- entrate teatrali (solo con JS e senza reduced-motion) ---------- */
+  :global(.mf-anim) .mf-reveal {
+    opacity: 0;
+    transform: translateY(24px);
+    transition: opacity 0.7s ease, transform 0.9s var(--ease);
+  }
+  :global(.mf-anim) .mf-reveal.is-in {
+    opacity: 1;
+    transform: none;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .mf-giu-ink,
+    .mf-vignetta-cuore {
+      animation: none;
+    }
+  }
+</style>
+
+<script>
+  // Entrate teatrali: il contenuto è sempre nel DOM e visibile senza JS;
+  // solo se il motion è permesso si nasconde e si rivela all'ingresso in scena.
+  const ridotto = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const veli = document.querySelectorAll('.mf-reveal');
+  if (!ridotto && 'IntersectionObserver' in window && veli.length) {
+    document.documentElement.classList.add('mf-anim');
+    const oss = new IntersectionObserver(
+      (voci) => {
+        for (const v of voci) {
+          if (v.isIntersecting) {
+            v.target.classList.add('is-in');
+            oss.unobserve(v.target);
+          }
+        }
+      },
+      { threshold: 0.12, rootMargin: '0px 0px -10% 0px' }
+    );
+    veli.forEach((el) => oss.observe(el));
+  }
+</script>

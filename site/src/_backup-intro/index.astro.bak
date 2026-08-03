@@ -1,0 +1,132 @@
+---
+import '../styles/tokens.css';
+import '../styles/intro.css';
+import { getCollection } from 'astro:content';
+import { SITE } from '../lib/site';
+
+// Slug delle opere per il redirect dei QR fisici legacy (#slug → /opera/<slug>).
+const works = await getCollection('works');
+const slugs = works.map((w) => w.id);
+
+const SECTIONS = [
+  { href: '/portfolio', label: 'Portfolio' },
+  { href: '/shop', label: 'Shop' },
+  { href: '/manifesto', label: 'Manifesto' },
+  { href: '/archivio', label: 'Archivio' },
+  { href: '/contatti', label: 'Contatti' },
+];
+
+const jsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'WebSite',
+  name: 'brama',
+  url: SITE.domain,
+  description: SITE.tagline,
+};
+---
+
+<!doctype html>
+<html lang="it">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>brama — opere materiche, emozioni in materia</title>
+    <meta
+      name="description"
+      content="brama traduce le emozioni in gesto, colore e materia: opere in acrilico, resina, vetro, ossidiana, oro e fibra ottica."
+    />
+    <link rel="canonical" href={SITE.domain} />
+    <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32.png" />
+    <link rel="icon" type="image/png" sizes="192x192" href="/images/favicon-192.png" />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="brama — emozioni in materia" />
+    <meta property="og:image" content={`${SITE.domain}/images/og-image.jpg`} />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400&family=Fraunces:opsz,wght@9..144,200;9..144,300&family=Inter+Tight:wght@400;500&family=JetBrains+Mono:wght@400&display=swap"
+    />
+    <script type="application/ld+json" set:html={JSON.stringify(jsonLd)} />
+    {/* Config del vortice (valori v1 esatti) — letti da /vertigine.js */}
+    <script is:inline>
+      window.__BRAMA_CONFIG__ = { density: 400, butterfly: 'glass', coreSize: 1.6, coreColor: '#1296de', overlapFade: 0.95, titleFont: 'cormorant-roman' };
+      window.__brama_density = 400;
+      window.__brama_coreSize = 1.6;
+      window.__brama_coreColor = '#1296de';
+    </script>
+    {/* Redirect QR legacy: brama.studio/#<slug> → /opera/<slug>. Deve girare per primo. */}
+    <script is:inline define:vars={{ slugs }}>
+      (function () {
+        var h = location.hash.replace(/^#/, '');
+        if (!h) return;
+        try { h = decodeURIComponent(h); } catch (e) { return; }
+        if (slugs.indexOf(h) !== -1) location.replace('/opera/' + h);
+      })();
+    </script>
+  </head>
+  <body class="grain">
+    <!-- logo v1 (top-left) -->
+    <div class="nav-fixed">
+      <img class="nav-sig" src="/images/signature.png" alt="brama" />
+    </div>
+
+    <div class="intro-track">
+      <!-- HERO identico alla v1: vortice + farfalla di vetro (senza corpo) + hint -->
+      <section class="hero">
+        <canvas id="vertigine"></canvas>
+
+        <div class="hero-mark" aria-hidden="true">
+          <div class="fly-shift">
+            <div class="butterfly-wrap">
+              <div class="butterfly-bloom"></div>
+              <div class="butterfly butterfly-glass">
+                <div class="wing-slot left">
+                  <div class="g-wing g-wing-l">
+                    <div class="shard s-a"></div>
+                    <div class="shard s-c"></div>
+                    <div class="shard s-d"></div>
+                    <div class="shard s-e"></div>
+                  </div>
+                </div>
+                <div class="wing-slot right">
+                  <div class="g-wing g-wing-r">
+                    <div class="shard s-a"></div>
+                    <div class="shard s-c"></div>
+                    <div class="shard s-d"></div>
+                    <div class="shard s-e"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- sezioni: si posano come pezzi del vortice, una alla volta (intro.js) -->
+        <nav class="hub" id="sezioni" aria-label="Sezioni">
+          {SECTIONS.map((s, i) => (
+            <a class="hub-item" href={s.href} data-i={String(i + 1).padStart(2, '0')}>{s.label}</a>
+          ))}
+        </nav>
+        <div class="hub-foot">
+          <a href={SITE.instagram} rel="noopener" target="_blank">Instagram</a>
+          <a href={`mailto:${SITE.email}`}>{SITE.email}</a>
+        </div>
+
+        <a class="hint-pointer" href="#sezioni" aria-label="Scorri per le sezioni">
+          <span class="hint-inner">
+            <span class="hint-label">scorri</span>
+            <svg viewBox="0 0 24 36" aria-hidden="true">
+              <path d="M 12 2 L 12 28 M 4 20 L 12 30 L 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+            </svg>
+          </span>
+        </a>
+      </section>
+    </div>
+
+    <script is:inline src="/vertigine.js"></script>
+    <script>
+      import '../scripts/intro/intro.js';
+    </script>
+  </body>
+</html>
