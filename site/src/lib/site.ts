@@ -19,6 +19,8 @@ export const FEATURES = features as {
   prints: boolean;
   lang_en: boolean;
   newsletter: boolean;
+  // Pagamento diretto Stripe sulle Emozioni. Spento = tutto su richiesta.
+  directCheckout: boolean;
 };
 
 export const SHIPPING = shipping;

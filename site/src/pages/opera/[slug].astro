@@ -2,7 +2,7 @@
 // /opera/<slug> — pagina statica di ogni opera (destinazione di Viaggio, shop e QR fisici).
 import { getCollection, render } from 'astro:content';
 import Base from '../../layouts/Base.astro';
-import { SITE } from '../../lib/site';
+import { SITE, FEATURES } from '../../lib/site';
 import {
   effectiveStatus,
   STATUS_LABEL,
@@ -141,12 +141,13 @@ const description = bodyText
 const canonical = new URL(`/opera/${work.id}`, SITE.domain).href;
 
 // --- Acquisto ------------------------------------------------------------------
-// I quadri "grandi" (tutto tranne le tele Emozioni da 25€) non si pagano online:
-// si mostra il prezzo ma si acquistano su richiesta (email → contatto diretto con
-// pagamento e spedizione). Le Emozioni restano a pagamento diretto (Stripe).
+// Vendita gestita SOLO su richiesta: si mostra il prezzo e le opzioni di
+// consegna/ritiro, ma si contatta il venditore con il modulo (niente checkout
+// online). Il pagamento diretto Stripe per le Emozioni è dietro il flag
+// `directCheckout` (per ora spento, riaccendibile in config/features.json).
 const isEmoz = collection === 'emozioni';
-const canBuy = status === 'available' && price > 0 && isEmoz;
-const requestBuy = status === 'available' && price > 0 && !isEmoz;
+const canBuy = status === 'available' && price > 0 && isEmoz && FEATURES.directCheckout;
+const requestBuy = status === 'available' && price > 0 && !canBuy;
 const askPrice = status === 'available' && price <= 0;
 
 // Spedizione: taglia dedotta dall'opera + config per il calcolatore lato client.
@@ -425,6 +426,13 @@ if (price > 0 && (status === 'available' || status === 'sold')) {
                 <a class="buy-btn" href={mailtoRequest}>Richiedi informazioni via email</a>
               </noscript>
 
+              <div class="opera-ship-info">
+                <p class="ship-note">
+                  <strong>Consegna e ritiro.</strong> Corriere assicurato e tracciato, ritiro
+                  all'esposizione (The Seed, Milano) o consegna a mano a Milano e dintorni.
+                </p>
+              </div>
+
               <p class="ship-note">Ti rispondo io da {SITE.email} con tutte le informazioni.</p>
             </section>
           )
@@ -433,7 +441,7 @@ if (price > 0 && (status === 'available' || status === 'sold')) {
         {
           askPrice && (
             <section class="opera-buy" aria-labelledby="buy-title" data-buy>
-              <h2 id="buy-title" class="opera-buy-title">Acquisto</h2>
+              <h2 id="buy-title" class="opera-buy-title">Informazioni</h2>
               <p class="opera-price">{formatPrice(price)}</p>
               <a class="buy-btn" href={mailtoPrice}>Richiedi il prezzo</a>
               <p class="ship-note">

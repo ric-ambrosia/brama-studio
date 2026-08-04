@@ -293,31 +293,26 @@ const quoteMailto = `mailto:${SITE.email}?subject=${encodeURIComponent(
         <p class="eyebrow">Spedizioni</p>
         <h2 id="shipping-h">Come viaggiano le opere</h2>
         <p>
-          Corriere assicurato e tracciato in Italia, UE e resto del mondo. Il costo esatto
-          lo calcoli su ogni opera scegliendo la destinazione.
+          Ogni opera viaggia con corriere assicurato e tracciato, in Italia, UE e resto del
+          mondo. In alternativa puoi ritirarla di persona.
         </p>
         <dl class="ship-list">
           <div class="ship-row">
-            <dt>Emozioni (40×50)</dt>
-            <dd>Italia {fmtShip(shipTiers.emozioni.IT)} · UE {fmtShip(shipTiers.emozioni.EU)}</dd>
-          </div>
-          <div class="ship-row">
-            <dt>Opere grandi</dt>
-            <dd>
-              <a href={quoteMailto}>spedizione su preventivo</a>, oppure ritiro gratis
-            </dd>
+            <dt>Corriere</dt>
+            <dd>Assicurato e tracciato, ovunque</dd>
           </div>
           <div class="ship-row">
             <dt>Ritiro all’esposizione</dt>
-            <dd>The Seed, Milano · gratis</dd>
+            <dd>The Seed, Milano</dd>
           </div>
           <div class="ship-row">
             <dt>Consegna a mano</dt>
-            <dd>Milano e dintorni · {fmtShip(shipOpts.handMilan.price)}</dd>
+            <dd>Milano e dintorni</dd>
           </div>
         </dl>
         <p class="ship-legal">
-          Condizioni complete in <a href="/legal/spedizioni">Spedizioni e resi</a>.
+          Costi e tempi te li confermo io insieme alle informazioni. Condizioni complete in
+          <a href="/legal/spedizioni">Spedizioni e resi</a>.
         </p>
       </section>
     </div>

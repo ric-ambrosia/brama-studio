@@ -2,5 +2,6 @@
   "apparel": false,
   "prints": false,
   "lang_en": false,
-  "newsletter": false
+  "newsletter": false,
+  "directCheckout": false
 }
