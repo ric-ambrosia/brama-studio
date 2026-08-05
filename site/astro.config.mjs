@@ -21,6 +21,8 @@ export default defineConfig({
     // Il canale Instagram passa da un redirect interno: l'handle attuale contiene
     // il nome personale e non deve comparire nell'HTML pubblicato (audit brand §8).
     '/instagram': 'https://instagram.com/riccardo_bramani',
+    // La pagina Opere era /portfolio: teniamo il vecchio indirizzo con un redirect.
+    '/portfolio': '/opere',
   },
   build: {
     inlineStylesheets: 'auto',
