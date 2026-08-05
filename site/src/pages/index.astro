@@ -9,7 +9,7 @@ const works = await getCollection('works');
 const slugs = works.map((w) => w.id);
 
 const SECTIONS = [
-  { href: '/portfolio', label: 'Portfolio' },
+  { href: '/portfolio', label: 'Opere' },
   { href: '/shop', label: 'Shop' },
   { href: '/contatti', label: 'Contatti' },
   { href: '/esposizione', label: 'Esposizione', temp: true },
@@ -97,7 +97,7 @@ const jsonLd = {
           <li class={s.temp ? 'hpm-temp' : undefined}>
             <a href={s.href}>
               {s.label}
-              {s.temp && <span class="hpm-temp-tag"><span class="nav-dot" aria-hidden="true"></span>mostra a tempo</span>}
+              {s.temp && <span class="hpm-temp-tag"><span class="nav-dot" aria-hidden="true"></span>fino al 9 settembre</span>}
             </a>
           </li>
         ))}
@@ -148,7 +148,7 @@ const jsonLd = {
           {SECTIONS.map((s) => (
             <a class={s.temp ? 'hub-item hub-temp' : 'hub-item'} href={s.href}>
               {s.label}
-              {s.temp && <span class="hub-temp-tag"><span class="nav-dot" aria-hidden="true"></span>mostra a tempo</span>}
+              {s.temp && <span class="hub-temp-tag"><span class="nav-dot" aria-hidden="true"></span>fino al 9 settembre</span>}
             </a>
           ))}
         </nav>

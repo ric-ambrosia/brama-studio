@@ -28,7 +28,7 @@ export const SHIPPING = shipping;
 // Sezioni della barra di navigazione (la home è il logo).
 // L'Esposizione è in fondo e staccata: è una mostra a tempo (flag `temp`).
 export const NAV = [
-  { href: '/portfolio', label: 'Portfolio' },
+  { href: '/portfolio', label: 'Opere' },
   { href: '/shop', label: 'Shop' },
   { href: '/contatti', label: 'Contatti' },
   { href: '/esposizione', label: 'Esposizione', temp: true },

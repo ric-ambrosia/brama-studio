@@ -86,7 +86,7 @@ const isActive = (href: string) => path === href || path.startsWith(href + '/');
             >
               {item.temp && <span class="nav-dot" aria-hidden="true"></span>}
               {item.label}
-              {item.temp && <span class="nav-temp-tag">mostra a tempo</span>}
+              {item.temp && <span class="nav-temp-tag">fino al 9 settembre</span>}
             </a>
           ))}
         </nav>
@@ -107,7 +107,7 @@ const isActive = (href: string) => path === href || path.startsWith(href + '/');
             <li class={item.temp ? 'menu-temp' : undefined}>
               <a href={item.href} aria-current={isActive(item.href) ? 'page' : undefined}>
                 {item.label}
-                {item.temp && <span class="menu-temp-tag"><span class="nav-dot" aria-hidden="true"></span>mostra a tempo</span>}
+                {item.temp && <span class="menu-temp-tag"><span class="nav-dot" aria-hidden="true"></span>fino al 9 settembre</span>}
               </a>
             </li>
           ))}
@@ -132,7 +132,7 @@ const isActive = (href: string) => path === href || path.startsWith(href + '/');
             <div class="footer-col">
               <a href={`mailto:${SITE.email}`}>{SITE.email}</a>
               <a href={SITE.instagram} rel="noopener" target="_blank">Instagram</a>
-              <a href="/portfolio">Portfolio</a>
+              <a href="/portfolio">Opere</a>
             </div>
             <div class="footer-col">
               {LEGAL_NAV.map((item) => <a href={item.href}>{item.label}</a>)}
