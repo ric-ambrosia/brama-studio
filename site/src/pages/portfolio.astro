@@ -8,8 +8,8 @@ import { SITE } from '../lib/site';
 // assemblandosi (le componenti si muovono da direzioni diverse, variano per
 // scena), la camera zooma/scorre DENTRO il quadro, poi il tutto scorre via
 // naturalmente mentre arriva l'opera dopo — flusso continuo, mai un vuoto.
-// Ordine cronologico (dalla più vecchia alla più recente): prima "Lasciarti andare", ultima Vertigine.
-const order = ['ti-devo-lasciare', 'depressione', 'pugno-nel-tempo', 'fuga', 'abbandono', 'vertigine'];
+// Studio della materia, dalla più recente alla più vecchia (portfolio invertito).
+const order = ['vertigine', 'abbandono', 'fuga', 'pugno-nel-tempo', 'depressione', 'ti-devo-lasciare'];
 const works = await getCollection('works');
 const byId = Object.fromEntries(works.map((w) => [w.id, w]));
 const scenes = order.map((id) => byId[id]).filter(Boolean);
@@ -94,64 +94,10 @@ const jsonLd = {
       </a>
     </div>
 
-    <!-- Capitolo 1 · Le emozioni -->
-    <section id="pf-first" class="pf-chapter" aria-label="All’inizio c’erano solo emozioni">
+    <!-- Sezione 1 · Opere cinetiche interattive (le più recenti) -->
+    <section id="pf-first" class="pf-chapter" aria-label="Opere cinetiche interattive">
       <div class="pf-chapter-inner">
-        <h2 class="pf-chapter-big">All’inizio c’erano solo emozioni.</h2>
-        <p class="pf-chapter-small">Tecniche varie, poco ricercate. Solo tanta voglia di esprimere l’inconscio.</p>
-      </div>
-    </section>
-
-    <section class="pf-emo-gallery" aria-label="Archivio Emozioni" data-tl-year="2021">
-      <ul class="pf-emo-grid" role="list">
-        {emozioni.map(([slug, label]) => (
-          <li class="pf-emo-item">
-            <div class="pf-emo-frame">
-              <img src={`/portfolio/emozioni/${slug}.jpg`} alt={`${label}, tela dell'Archivio Emozioni`} loading="lazy" decoding="async" />
-            </div>
-            <span class="pf-emo-label">{label}</span>
-          </li>
-        ))}
-      </ul>
-    </section>
-
-    <!-- Capitolo 2 · I materiali e la luce -->
-    <section class="pf-chapter" aria-label="Poi è iniziato lo studio dei materiali e della luce">
-      <div class="pf-chapter-inner">
-        <h2 class="pf-chapter-big">Poi è iniziato lo studio dei materiali e della luce.</h2>
-        <p class="pf-chapter-small">Fibra ottica, resine, vetri; nascono le prime forme tridimensionali.</p>
-      </div>
-    </section>
-
-    <!-- ══ Opere ══ -->
-    {scenes.map((w, i) => {
-      const d = w.data;
-      const side = i % 2 === 0 ? 'media-left' : 'media-right';
-      return (
-        <section class={`pf-work ${side}`} data-i={i} aria-label={d.title} data-tl-year={d.year}>
-          <div class="pf-work-inner">
-            <a class="pf-work-media" href={`/opera/${w.id}`} aria-label={`Apri l'opera ${d.title}`}>
-              <div class="pf-work-frame">
-                <img class="pf-work-img" src={d.images.main} alt={`${d.title}, opera`} loading="lazy" decoding="async" />
-              </div>
-            </a>
-            <div class="pf-work-info">
-              <p class="pf-work-idx">{String(i + 1).padStart(2, '0')} / {String(scenes.length).padStart(2, '0')}</p>
-              <h2 class="pf-work-title"><a href={`/opera/${w.id}`}>{d.title}</a></h2>
-              <p class="pf-work-meta">{meta(d)}</p>
-              <p class="pf-work-mat">{d.materials.join(', ')}</p>
-              <a class="pf-work-cta" href={`/opera/${w.id}`}>Vedi l'opera</a>
-            </div>
-          </div>
-        </section>
-      );
-    })}
-
-    <!-- Capitolo 3 · Elettronica, cinetica, robotica -->
-    <section class="pf-chapter" aria-label="Ora l’opera prende vita">
-      <div class="pf-chapter-inner">
-        <h2 class="pf-chapter-big">Ora l’opera prende vita.</h2>
-        <p class="pf-chapter-small">Elettronica, cinetica, robotica; sensori, motori e fibre ottiche fanno muovere, accendere, reagire la materia.</p>
+        <h2 class="pf-chapter-big">Opere cinetiche interattive</h2>
       </div>
     </section>
 
@@ -195,6 +141,57 @@ const jsonLd = {
         </p>
         <span class="pf-cinetica-cta">Scopri l'opera<span aria-hidden="true">&nbsp;→</span></span>
       </a>
+    </section>
+
+    <!-- Sezione 2 · Studio della materia -->
+    <section class="pf-chapter" aria-label="Studio della materia">
+      <div class="pf-chapter-inner">
+        <h2 class="pf-chapter-big">Studio della materia</h2>
+      </div>
+    </section>
+
+    <!-- ══ Opere ══ -->
+    {scenes.map((w, i) => {
+      const d = w.data;
+      const side = i % 2 === 0 ? 'media-left' : 'media-right';
+      return (
+        <section class={`pf-work ${side}`} data-i={i} aria-label={d.title} data-tl-year={d.year}>
+          <div class="pf-work-inner">
+            <a class="pf-work-media" href={`/opera/${w.id}`} aria-label={`Apri l'opera ${d.title}`}>
+              <div class="pf-work-frame">
+                <img class="pf-work-img" src={d.images.main} alt={`${d.title}, opera`} loading="lazy" decoding="async" />
+              </div>
+            </a>
+            <div class="pf-work-info">
+              <p class="pf-work-idx">{String(i + 1).padStart(2, '0')} / {String(scenes.length).padStart(2, '0')}</p>
+              <h2 class="pf-work-title"><a href={`/opera/${w.id}`}>{d.title}</a></h2>
+              <p class="pf-work-meta">{meta(d)}</p>
+              <p class="pf-work-mat">{d.materials.join(', ')}</p>
+              <a class="pf-work-cta" href={`/opera/${w.id}`}>Vedi l'opera</a>
+            </div>
+          </div>
+        </section>
+      );
+    })}
+
+    <!-- Sezione 3 · Emozioni (le più vecchie) -->
+    <section class="pf-chapter" aria-label="Emozioni">
+      <div class="pf-chapter-inner">
+        <h2 class="pf-chapter-big">Emozioni</h2>
+      </div>
+    </section>
+
+    <section class="pf-emo-gallery" aria-label="Archivio Emozioni" data-tl-year="2021">
+      <ul class="pf-emo-grid" role="list">
+        {emozioni.map(([slug, label]) => (
+          <li class="pf-emo-item">
+            <div class="pf-emo-frame">
+              <img src={`/portfolio/emozioni/${slug}.jpg`} alt={`${label}, tela dell'Archivio Emozioni`} loading="lazy" decoding="async" />
+            </div>
+            <span class="pf-emo-label">{label}</span>
+          </li>
+        ))}
+      </ul>
     </section>
 
     <div class="pf-after">
