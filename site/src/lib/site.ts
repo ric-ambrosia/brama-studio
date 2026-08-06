@@ -11,7 +11,11 @@ export const SITE = {
   // Redirect interno (vedi astro.config.mjs): l'handle reale contiene il nome
   // personale e non deve comparire nell'HTML pubblicato (audit brand §8).
   instagram: '/instagram',
-  tagline: 'brama traduce le emozioni in materia',
+  // Niente slogan. Prima qui c'era "brama traduce le emozioni in materia",
+  // una frase che avevo scritto io e che non dice cosa sono le opere. Al suo
+  // posto la descrizione concreta dei materiali e del meccanismo.
+  descrizione:
+    'Opere in acrilico, resina epossidica, vetro, ossidiana, oro e fibra ottica, con meccanismi nascosti che si accendono con la luce.',
 };
 
 export const FEATURES = features as {

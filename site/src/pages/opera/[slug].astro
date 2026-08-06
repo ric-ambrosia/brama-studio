@@ -308,10 +308,6 @@ if (price > 0 && (status === 'available' || status === 'sold')) {
                 Come interagire
               </h2>
               <p>{interaction}</p>
-              <p class="opera-interaction-note">
-                L'ingegneria nascosta è la firma di brama: ogni opera custodisce un meccanismo che
-                risponde alla luce o alla presenza.
-              </p>
             </section>
           )
         }
@@ -427,10 +423,12 @@ if (price > 0 && (status === 'available' || status === 'sold')) {
               </noscript>
 
               <div class="opera-ship-info">
-                <p class="ship-note">
-                  <strong>Consegna e ritiro.</strong> Corriere assicurato e tracciato, ritiro
-                  all'esposizione (The Seed, Milano) o consegna a mano a Milano e dintorni.
-                </p>
+                <p class="opera-ship-label">Come viaggiano le opere</p>
+                <ul class="opera-ship-opts">
+                  <li>Corriere assicurato e tracciato, ovunque</li>
+                  <li>Ritiro all'esposizione (The Seed, Milano)</li>
+                  <li>Consegna a mano a Milano e dintorni</li>
+                </ul>
               </div>
 
               <p class="ship-note">Ti rispondo io da {SITE.email} con tutte le informazioni.</p>

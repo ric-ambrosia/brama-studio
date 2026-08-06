@@ -17,8 +17,8 @@ interface Props {
 }
 
 const {
-  title = 'brama · opere materiche, emozioni in materia',
-  description = 'brama traduce le emozioni in gesto, colore e materia: opere in acrilico, resina, vetro, ossidiana, oro e fibra ottica, con meccanismi nascosti che si accendono con la luce.',
+  title = 'brama · opere materiche',
+  description = 'Opere in acrilico, resina epossidica, vetro, ossidiana, oro e fibra ottica, con meccanismi nascosti che si accendono con la luce.',
   ogImage = '/images/og-image.jpg',
   jsonLd,
   bare = false,
@@ -127,7 +127,6 @@ const isActive = (href: string) => path === href || path.startsWith(href + '/');
       <footer class="site-footer">
         <div class="footer-inner">
           <img class="footer-sig" src="/images/signature.png" alt="brama" width="100" height="37" />
-          <p class="footer-tagline">{SITE.tagline}</p>
           <div class="footer-cols">
             <div class="footer-col">
               <a href={`mailto:${SITE.email}`}>{SITE.email}</a>

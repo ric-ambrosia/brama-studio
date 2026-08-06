@@ -67,7 +67,6 @@ const jsonLd = {
       <section class="pf-cover" aria-label="Copertina">
         <div class="pf-cover-text">
           <h1 class="pf-title">Opere</h1>
-          <p class="pf-brand">brama</p>
           <img class="pf-creature" src="/viaggio/creatura-alata.png" alt="" aria-hidden="true" />
         </div>
         <div class="pf-vertigine">
@@ -94,10 +93,17 @@ const jsonLd = {
       </a>
     </div>
 
-    <!-- Sezione 1 · Opere cinetiche interattive (le più recenti) -->
-    <section id="pf-first" class="pf-chapter" aria-label="Opere cinetiche interattive">
+    <!-- 3 tasti che portano al punto giusto della pagina -->
+    <nav class="pf-jump" aria-label="Sezioni delle opere">
+      <a class="pf-jump-btn" href="#pf-first">Serie cinetica</a>
+      <a class="pf-jump-btn" href="#studio-materia">Studio della materia</a>
+      <a class="pf-jump-btn" href="#emozioni">Emozioni</a>
+    </nav>
+
+    <!-- Sezione 1 · Serie cinetica (le più recenti) -->
+    <section id="pf-first" class="pf-chapter pf-chapter--cin" aria-label="Serie cinetica">
       <div class="pf-chapter-inner">
-        <h2 class="pf-chapter-big">Opere cinetiche interattive</h2>
+        <h2 class="pf-chapter-big pf-cin-hero">Serie cinetica</h2>
       </div>
     </section>
 
@@ -144,7 +150,7 @@ const jsonLd = {
     </section>
 
     <!-- Sezione 2 · Studio della materia -->
-    <section class="pf-chapter" aria-label="Studio della materia">
+    <section id="studio-materia" class="pf-chapter" aria-label="Studio della materia">
       <div class="pf-chapter-inner">
         <h2 class="pf-chapter-big">Studio della materia</h2>
       </div>
@@ -175,7 +181,7 @@ const jsonLd = {
     })}
 
     <!-- Sezione 3 · Emozioni (le più vecchie) -->
-    <section class="pf-chapter" aria-label="Emozioni">
+    <section id="emozioni" class="pf-chapter" aria-label="Emozioni">
       <div class="pf-chapter-inner">
         <h2 class="pf-chapter-big">Emozioni</h2>
       </div>
@@ -196,7 +202,6 @@ const jsonLd = {
 
     <div class="pf-after">
       <p>Altre tavole in preparazione.</p>
-      <a class="pf-pdf" href="/presentazione.pdf" download>Scarica le opere (PDF, 18&nbsp;MB)</a>
     </div>
   </div>
 
@@ -331,11 +336,6 @@ const jsonLd = {
     font-size: clamp(54px, 11vw, 154px); line-height: 0.98; letter-spacing: -0.02em;
     color: var(--ink); margin: 0;
   }
-  .pf-brand {
-    font-family: var(--sans); font-style: italic;
-    font-size: clamp(20px, 2.6vw, 30px); color: var(--ink-dim);
-    margin: 18px 0 0; letter-spacing: 0.02em;
-  }
   .pf-creature {
     position: absolute; right: clamp(-10px, 2vw, 40px); bottom: clamp(-70px, -6vw, -30px);
     width: clamp(120px, 16vw, 220px); opacity: 0.85; pointer-events: none;
@@ -360,8 +360,41 @@ const jsonLd = {
 
   /* ---------- Capitolo (scritta della storia) ---------- */
   .pf-chapter {
-    min-height: 100svh; display: grid; place-items: center; text-align: center;
-    padding: clamp(60px, 12vh, 140px) clamp(28px, 8vw, 160px);
+    min-height: 58svh; display: grid; place-items: center; text-align: center;
+    padding: clamp(44px, 8vh, 96px) clamp(28px, 8vw, 160px);
+    scroll-margin-top: 76px;
+  }
+
+  /* 3 tasti di salto alle sezioni (come i pill del menu) */
+  .pf-jump {
+    display: flex; flex-wrap: wrap; justify-content: center;
+    gap: 12px; padding: clamp(28px, 6vh, 56px) 24px;
+  }
+  .pf-jump-btn {
+    font-family: var(--mono); font-size: 12px; letter-spacing: 0.08em;
+    text-transform: uppercase; color: var(--ink-dim); text-decoration: none;
+    border: 1px solid var(--line-strong); border-radius: 999px;
+    padding: 10px 20px; transition: color 0.2s, border-color 0.2s, background 0.2s;
+  }
+  .pf-jump-btn:hover, .pf-jump-btn:focus-visible {
+    color: var(--ink); border-color: var(--accent);
+    background: rgba(120, 150, 240, 0.08);
+  }
+
+  /* Serie cinetica: il titolo scende da dietro la copertina, poi un riflesso luminoso */
+  .pf-chapter--cin { overflow: hidden; }
+  .pf-cin-hero { position: relative; display: inline-block; }
+  .pf-cin-hero::after {
+    content: ""; position: absolute; inset: 0; pointer-events: none;
+    background: linear-gradient(105deg, transparent 38%, rgba(200, 220, 255, 0.9) 50%, transparent 62%);
+    transform: translateX(-160%); opacity: 0; mix-blend-mode: screen;
+  }
+  .pf-cin-hero.is-shined::after { animation: cinShine 1.15s ease-out 0.05s 1 forwards; }
+  @keyframes cinShine {
+    0% { transform: translateX(-160%); opacity: 0; }
+    18% { opacity: 1; }
+    82% { opacity: 1; }
+    100% { transform: translateX(160%); opacity: 0; }
   }
   .pf-chapter-inner { max-width: 30ch; }
   @media (min-width: 820px) {
@@ -429,7 +462,7 @@ const jsonLd = {
 
   /* ---------- Battiti — teaser serie cinetica (link alla pagina 3D) ---------- */
   .pf-cinetica {
-    padding: clamp(60px, 14vh, 160px) clamp(28px, 7vw, 130px);
+    padding: clamp(20px, 3.5vh, 44px) clamp(28px, 7vw, 130px);
     display: flex;
     align-items: center;
     gap: clamp(28px, 5vw, 80px);
@@ -503,13 +536,6 @@ const jsonLd = {
   /* ---------- coda ---------- */
   .pf-after { text-align: center; padding: clamp(60px, 14vh, 140px) 24px; }
   .pf-after p { font-family: var(--sans); font-style: italic; color: var(--ink-dim); margin: 0 0 24px; }
-  .pf-pdf {
-    display: inline-block; font-family: var(--mono);
-    font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-dim);
-    border: 1px solid var(--line-strong); border-radius: 999px; padding: 12px 22px;
-    transition: color 0.2s, border-color 0.2s;
-  }
-  .pf-pdf:hover { color: var(--ink); border-color: var(--accent); }
 
   /* le info opera partono nascoste solo col motore attivo (entrano allo scroll) */
   :global(html.js-anim) .pf-work-idx, :global(html.js-anim) .pf-work-title,

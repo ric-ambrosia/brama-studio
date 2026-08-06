@@ -32,6 +32,20 @@ if (document.documentElement.classList.contains('js-anim')) {
   qa('.pf-chapter').forEach((el) => {
     const big = q('.pf-chapter-big', el);
     const small = q('.pf-chapter-small', el);
+    // "Serie cinetica": scende dall'alto (da dietro la copertina) con un rimbalzo
+    // allegro ma preciso, poi un riflesso luminoso attraversa il testo.
+    if (big && big.classList.contains('pf-cin-hero')) {
+      gsap.set(big, { autoAlpha: 0, yPercent: -170 });
+      ScrollTrigger.create({
+        trigger: el, start: 'top 74%',
+        onEnter: () =>
+          gsap.to(big, {
+            autoAlpha: 1, yPercent: 0, duration: 1.05, ease: 'back.out(1.5)', overwrite: true,
+            onComplete: () => big.classList.add('is-shined'),
+          }),
+      });
+      return;
+    }
     gsap.set([big, small], { autoAlpha: 0, yPercent: 26 });
     ScrollTrigger.create({
       trigger: el, start: 'top 68%',
