@@ -202,7 +202,7 @@ if (price > 0 && (status === 'available' || status === 'sold')) {
 >
   <article class="page page-wide opera" data-opera data-slug={work.id} data-status={status}>
     <div class="opera-split">
-      <figure class="opera-media">
+      <figure class:list={['opera-media', collection === 'emozioni' && 'opera-media--cap']}>
         {
           video ? (
             <video
@@ -606,6 +606,8 @@ if (price > 0 && (status === 'available' || status === 'sold')) {
   .opera-media {
     animation: opera-enter 0.55s cubic-bezier(0.32, 0.72, 0, 1) both;
   }
+  /* Emozioni: la foto sorgente e' ~885px; la limito cosi' non viene ingrandita e sgranata */
+  .opera-media--cap { max-width: 460px; margin-inline: auto; }
   .opera-data {
     animation: opera-enter 0.55s cubic-bezier(0.32, 0.72, 0, 1) 0.1s both;
   }

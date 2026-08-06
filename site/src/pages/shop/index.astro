@@ -46,6 +46,16 @@ const emo = entries
   .sort((a, b) => (emoRank[a.status] - emoRank[b.status]) || a.w.data.title.localeCompare(b.w.data.title, 'it'));
 const emoAvail = emo.filter((e) => e.status === 'available' || e.status === 'reserved').length;
 
+// I 3 settori dello shop: Serie cinetica (collezione cinetica, mostrata anche se non
+// in vendita), Studio della materia (le opere "core"), Emozioni (sopra).
+const cinRank: Record<string, number> = { available: 0, reserved: 1, 'coming-soon': 2, 'not-for-sale': 3, sold: 4 };
+const cinetica = entries
+  .filter((e) => e.w.data.collection === 'cinetica')
+  .sort((a, b) => (cinRank[a.status] ?? 9) - (cinRank[b.status] ?? 9));
+const studio = entries
+  .filter((e) => e.w.data.collection === 'core' && ['available', 'reserved', 'sold', 'coming-soon'].includes(e.status))
+  .sort((a, b) => byJourneyOrder(a.w, b.w));
+
 // Thumbs dal catalogo immagini: -600 per tutte, -1200 dove esiste.
 type ShopMedia = { src: string; srcset?: string; width: number; height: number };
 const toPublic = (f: string) => f.replace(/^site\/public/, '');
@@ -179,7 +189,7 @@ const quoteMailto = `mailto:${SITE.email}?subject=${encodeURIComponent(
     <!-- testata: notte, solo "shop" con disegni a inchiostro che riempiono lo spazio -->
     <div class="page page-wide shop-head-wrap">
       <header class="shop-head shop-head--banner">
-        <h1 class="shop-banner-title">shop</h1>
+        <h1 class="shop-banner-title">Shop</h1>
         <div class="shop-banner-art" aria-hidden="true">
           <span class="shop-art shop-art--pacco"></span>
           <span class="shop-art shop-art--sigillo"></span>
@@ -209,44 +219,65 @@ const quoteMailto = `mailto:${SITE.email}?subject=${encodeURIComponent(
           )}
         </div>
 
-        {gridItems.length > 0 ? (
-          <ul class="shop-grid" role="list">
-            {gridItems.map((e, i) => (
-              <li>
-                <ShopCard
-                  href={`/opera/${e.w.id}`}
-                  title={e.w.data.title}
-                  series={e.w.data.series}
-                  meta={metaLine(e.w)}
-                  status={e.status}
-                  priceLabel={
-                    e.status === 'available' || e.status === 'reserved'
-                      ? priceInfo(e.w.data).current
-                      : undefined
-                  }
-                  priceFullLabel={
-                    e.status === 'available' || e.status === 'reserved'
-                      ? priceInfo(e.w.data).full
-                      : null
-                  }
-                  media={media.get(e.w.id) ?? null}
-                  alt={altText(e.w)}
-                  lightActivated={hasFiber(e.w)}
-                  eager={i < 2}
-                />
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <p class="shop-empty">
-            Nessuna opera disponibile in questo momento. Le prossime stanno
-            prendendo forma in studio. Per una commissione:
-            <a href={commissionMailto}>{SITE.email}</a>.
-          </p>
+        <!-- 3 tasti che portano al settore giusto della pagina -->
+        <nav class="shop-jump" aria-label="Settori dello shop">
+          <a class="shop-jump-btn" href="#serie-cinetica">Serie cinetica</a>
+          <a class="shop-jump-btn" href="#studio-materia">Studio della materia</a>
+          <a class="shop-jump-btn" href="#archivio-emozioni">Emozioni</a>
+        </nav>
+
+        {cinetica.length > 0 && (
+          <section id="serie-cinetica" class="shop-cat" aria-labelledby="cat-cin-h">
+            <div class="shop-cat-head"><h2 id="cat-cin-h">Serie cinetica</h2></div>
+            <ul class="shop-grid" role="list">
+              {cinetica.map((e, i) => (
+                <li>
+                  <ShopCard
+                    href={`/opera/${e.w.id}`}
+                    title={e.w.data.title}
+                    series={e.w.data.series}
+                    meta={metaLine(e.w)}
+                    status={e.status}
+                    priceLabel={e.status === 'available' || e.status === 'reserved' ? priceInfo(e.w.data).current : undefined}
+                    priceFullLabel={e.status === 'available' || e.status === 'reserved' ? priceInfo(e.w.data).full : null}
+                    media={media.get(e.w.id) ?? null}
+                    alt={altText(e.w)}
+                    lightActivated={hasFiber(e.w)}
+                    eager={i < 2}
+                  />
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
+
+        {studio.length > 0 && (
+          <section id="studio-materia" class="shop-cat" aria-labelledby="cat-stu-h">
+            <div class="shop-cat-head"><h2 id="cat-stu-h">Studio della materia</h2></div>
+            <ul class="shop-grid" role="list">
+              {studio.map((e) => (
+                <li>
+                  <ShopCard
+                    href={`/opera/${e.w.id}`}
+                    title={e.w.data.title}
+                    series={e.w.data.series}
+                    meta={metaLine(e.w)}
+                    status={e.status}
+                    priceLabel={e.status === 'available' || e.status === 'reserved' ? priceInfo(e.w.data).current : undefined}
+                    priceFullLabel={e.status === 'available' || e.status === 'reserved' ? priceInfo(e.w.data).full : null}
+                    media={media.get(e.w.id) ?? null}
+                    alt={altText(e.w)}
+                    lightActivated={hasFiber(e.w)}
+                    eager={false}
+                  />
+                </li>
+              ))}
+            </ul>
+          </section>
         )}
 
         {emo.length > 0 && (
-          <section class="shop-emo" aria-labelledby="shop-emo-h">
+          <section id="archivio-emozioni" class="shop-emo" aria-labelledby="shop-emo-h">
             <div class="shop-emo-head">
               <h2 id="shop-emo-h">Archivio Emozioni</h2>
               <p>2021{emoAvail > 0 ? ` · ${emoAvail} disponibili` : ''}</p>
@@ -377,20 +408,21 @@ const quoteMailto = `mailto:${SITE.email}?subject=${encodeURIComponent(
   .shop-head--banner {
     display: flex;
     align-items: center;
-    justify-content: center;
+    justify-content: flex-start;
     position: relative;
-    min-height: clamp(200px, 38vh, 360px);
+    min-height: clamp(160px, 30vh, 280px);
     overflow: hidden;
   }
   .shop-banner-title {
     position: relative;
     z-index: 2;
     margin: 0;
+    padding-left: clamp(2px, 1.5vw, 20px);
     font-family: var(--sans);
-    font-weight: 300;
-    font-size: clamp(76px, 20vw, 260px);
-    line-height: 0.9;
-    letter-spacing: -0.03em;
+    font-weight: 200;
+    font-size: clamp(52px, 12vw, 150px);
+    line-height: 0.95;
+    letter-spacing: -0.02em;
     color: var(--ink);
   }
   .shop-banner-art {
@@ -412,22 +444,22 @@ const quoteMailto = `mailto:${SITE.email}?subject=${encodeURIComponent(
   }
   .shop-art--pacco {
     width: clamp(64px, 9vw, 120px); aspect-ratio: 1;
-    left: 5%; top: 12%; color: var(--accent); opacity: 0.55;
+    right: 8%; top: 14%; color: var(--accent); opacity: 0.55;
     -webkit-mask-image: url('/viaggio/shop-pacco.webp'); mask-image: url('/viaggio/shop-pacco.webp');
   }
   .shop-art--sigillo {
     width: clamp(78px, 11vw, 150px); aspect-ratio: 1;
-    right: 6%; top: 8%; color: var(--ink-dim); opacity: 0.5;
+    right: 28%; top: 8%; color: var(--ink-dim); opacity: 0.5;
     -webkit-mask-image: url('/viaggio/sigillo-emblema.webp'); mask-image: url('/viaggio/sigillo-emblema.webp');
   }
   .shop-art--stella {
     width: clamp(46px, 6vw, 84px); aspect-ratio: 1;
-    right: 22%; bottom: 10%; color: var(--accent); opacity: 0.5;
+    right: 46%; bottom: 18%; color: var(--accent); opacity: 0.5;
     -webkit-mask-image: url('/viaggio/appeso-stella.webp'); mask-image: url('/viaggio/appeso-stella.webp');
   }
   .shop-art--creatura {
     width: clamp(86px, 12vw, 170px); aspect-ratio: 1.1;
-    left: 9%; bottom: 6%; color: var(--ink-dim); opacity: 0.42;
+    right: 14%; bottom: 8%; color: var(--ink-dim); opacity: 0.42;
     -webkit-mask-image: url('/viaggio/creatura-alata.webp'); mask-image: url('/viaggio/creatura-alata.webp');
   }
   @media (max-width: 560px) {
@@ -457,6 +489,28 @@ const quoteMailto = `mailto:${SITE.email}?subject=${encodeURIComponent(
     margin: 0 auto;
     padding: clamp(64px, 10vh, 112px) 24px clamp(72px, 10vh, 104px);
   }
+
+  /* 3 tasti di salto ai settori + intestazioni di settore */
+  .shop-jump {
+    display: flex; flex-wrap: wrap; gap: 12px;
+    margin: clamp(18px, 3vh, 30px) 0 clamp(30px, 5vh, 52px);
+  }
+  .shop-jump-btn {
+    font-family: var(--mono); font-size: 12px; letter-spacing: 0.08em;
+    text-transform: uppercase; color: var(--ink-dim); text-decoration: none;
+    border: 1px solid var(--line-strong); border-radius: 999px;
+    padding: 10px 18px; transition: color 0.2s, border-color 0.2s, background 0.2s;
+  }
+  .shop-jump-btn:hover, .shop-jump-btn:focus-visible {
+    color: var(--ink); border-color: var(--accent); background: rgba(31, 87, 159, 0.06);
+  }
+  .shop-cat { scroll-margin-top: 84px; margin-bottom: clamp(44px, 8vh, 84px); }
+  .shop-cat-head { margin: 0 0 clamp(18px, 3vh, 30px); }
+  .shop-cat-head h2 {
+    font-family: var(--sans); font-weight: 300; font-size: clamp(26px, 4vw, 42px);
+    letter-spacing: -0.01em; color: var(--ink); margin: 0;
+  }
+  .shop-emo { scroll-margin-top: 84px; }
 
   /* nota "in mostra dal vivo" nella testata */
   .shop-live { font-family: var(--sans); font-size: clamp(15px, 1.7vw, 18px); color: var(--ink-dim); margin-top: 16px; }
