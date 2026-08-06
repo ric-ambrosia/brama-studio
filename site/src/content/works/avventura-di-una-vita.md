@@ -12,7 +12,7 @@ model3d:
   animato: /models/clessidra_animato.glb
 collection: cinetica
 interaction: "Fermarsi davanti al quadro attiva il meccanismo. La clessidra al centro ruota finché c'è presenza, e per un breve tempo ancora."
-status: coming-soon
+status: sold
 price: 0
 stripeProductId: ""
 shippingClass: medium
