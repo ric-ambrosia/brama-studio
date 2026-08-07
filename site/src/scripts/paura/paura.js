@@ -75,11 +75,14 @@ export async function initPaura(root) {
   const isTouch = window.matchMedia('(pointer: coarse)').matches || window.innerWidth < 860;
   const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-  const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true, powerPreference: 'high-performance' });
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  // Su mobile lo scroll andava a scatti: due canvas WebGL con ombre soft (shadow
+  // map 2048), antialias e pixel ratio 2-3 saturano la GPU del telefono. Su touch
+  // togliamo ombre e antialias e abbassiamo la densita' pixel.
+  const renderer = new THREE.WebGLRenderer({ canvas, antialias: !isTouch, alpha: true, powerPreference: 'high-performance' });
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, isTouch ? 1.5 : 2));
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
   renderer.toneMappingExposure = 1.22; // più luminoso: i pezzi molto scuri (Clessidra) restavano piatti
-  renderer.shadowMap.enabled = true;      // ombre reali: è ciò che rende leggibile il movimento
+  renderer.shadowMap.enabled = !isTouch;  // ombre reali su desktop; su mobile pesano troppo
   renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
   const scene = new THREE.Scene();
@@ -102,7 +105,7 @@ export async function initPaura(root) {
   // ombre portate del meccanismo si muovono mentre gira.
   const key = new THREE.DirectionalLight(0xfff4e8, 3.2);
   key.position.set(3.2, 2.6, 2.2);
-  key.castShadow = true;
+  key.castShadow = !isTouch;
   key.shadow.mapSize.set(2048, 2048);
   key.shadow.bias = -0.0006;
   key.shadow.normalBias = 0.015;
@@ -207,14 +210,17 @@ export async function initPaura(root) {
       resize();
       window.addEventListener('resize', resize);
       new ResizeObserver(resize).observe(canvas);
+      let acc = 0; const minDt = isTouch ? 1 / 32 : 0; // ~30fps su mobile: scroll piu' fluido
       (function tick() {
         requestAnimationFrame(tick);
         if (!inView) return;
-        const dt = clock.getDelta();
+        acc += clock.getDelta();
+        if (acc < minDt) return;
         if (controls) controls.update();
-        else model.rotation.y += spin * dt;
-        if (mixer) mixer.update(dt);
+        else model.rotation.y += spin * acc;
+        if (mixer) mixer.update(acc);
         renderer.render(scene, camera);
+        acc = 0;
       })();
     } catch (e) {
       fail(e);
@@ -242,12 +248,20 @@ export async function initPaura(root) {
       window.addEventListener('resize', resize);
       new ResizeObserver(resize).observe(canvas);
       const spin = reduced ? 0 : 0.28;
+      // Pausa fuori vista + ~30fps: prima renderizzava sempre a 60fps anche fuori
+      // schermo, causa dello scroll a scatti su mobile.
+      let tInView = true;
+      new IntersectionObserver((es) => { tInView = es[0].isIntersecting; }, { rootMargin: '120px' }).observe(section);
+      let acc = 0; const minDt = 1 / 32;
       (function tick() {
         requestAnimationFrame(tick);
-        const dt = clock.getDelta();
-        model.rotation.y += spin * dt;
-        if (mixer) mixer.update(dt);
+        if (!tInView) return;
+        acc += clock.getDelta();
+        if (acc < minDt) return;
+        model.rotation.y += spin * acc;
+        if (mixer) mixer.update(acc);
         renderer.render(scene, camera);
+        acc = 0;
       })();
     } catch (e) {
       fail(e);

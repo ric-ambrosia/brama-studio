@@ -27,7 +27,7 @@
 .site-back:hover { color: var(--ink); border-color: var(--line-strong); background: rgba(240,244,255,0.04); }
 
 .site-sig { display: inline-flex; margin-right: auto; }
-.site-sig img { height: clamp(46px, 4.6vw, 58px); width: auto; filter: var(--sig-tint); display: block; }
+.site-sig img { height: clamp(46px, 5.4vw, 76px); width: auto; filter: var(--sig-tint); display: block; }
 
 .site-nav { display: flex; align-items: center; gap: clamp(15px, 1.8vw, 30px); }
 .site-nav a {
