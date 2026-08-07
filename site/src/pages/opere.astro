@@ -519,8 +519,13 @@ const jsonLd = {
     .pf-work-inner { position: relative; height: auto; min-height: 100svh; grid-template-columns: 1fr; row-gap: 28px; }
     .pf-work.media-right .pf-work-inner { grid-template-columns: 1fr; }
     .pf-work.media-right .pf-work-media, .pf-work.media-right .pf-work-info { order: initial; }
-    .pf-cover { grid-template-columns: 1fr; }
-    .pf-vertigine { height: 42vh; }
+    /* copertina: titolo grande in alto, immagine che riempie il resto (niente buco) */
+    .pf-cover { grid-template-columns: 1fr; grid-template-rows: auto 1fr; align-items: stretch; padding-top: 74px; }
+    .pf-cover-text { padding: clamp(16px, 3.5vh, 34px) 24px 0; }
+    .pf-title { font-size: clamp(76px, 23vw, 132px); line-height: 0.94; }
+    .pf-creature { width: clamp(78px, 20vw, 116px); right: 20px; bottom: auto; top: 2px; }
+    .pf-vertigine { height: auto; }
+    .pf-vertigine::after { background: linear-gradient(to top, var(--bg), transparent 24%); }
     .pf-work-media { height: 54vh; }
     .pf-emo-grid { grid-template-columns: repeat(2, 1fr); }
     /* i titoli di sezione non occupano piu' quasi uno schermo vuoto */

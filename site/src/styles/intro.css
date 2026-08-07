@@ -381,4 +381,7 @@ body.hp-open .hp-menu { transform: translateY(0); }
   .butterfly-glass { transform: scale(0.82); }
   .wing-slot.left  { transform: translateX(calc(var(--p) * -20vw)) rotate(calc(var(--p) * -9deg)); }
   .wing-slot.right { transform: translateX(calc(var(--p) *  20vw)) rotate(calc(var(--p) *  9deg)); }
+  /* logo home: centrato e piu' piccolo su telefono (prima enorme e a sinistra) */
+  .nav-fixed { left: 50%; right: auto; transform: translateX(-50%); }
+  .nav-sig { height: clamp(78px, 23vw, 104px); }
 }
