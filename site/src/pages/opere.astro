@@ -523,5 +523,7 @@ const jsonLd = {
     .pf-vertigine { height: 42vh; }
     .pf-work-media { height: 54vh; }
     .pf-emo-grid { grid-template-columns: repeat(2, 1fr); }
+    /* i titoli di sezione non occupano piu' quasi uno schermo vuoto */
+    .pf-chapter { min-height: auto; padding-top: clamp(64px, 13vh, 100px); padding-bottom: clamp(32px, 7vh, 60px); }
   }
 </style>

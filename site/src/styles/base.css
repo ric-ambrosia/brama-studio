@@ -164,6 +164,15 @@ body.menu-open .site-menu li:nth-child(6) a { transition-delay: 0.31s; }
   color: var(--ink-dim);
 }
 .menu-meta a:hover { color: var(--accent); }
+/* Su mobile il menu copre tutto lo schermo (niente pagina che sbircia sotto) */
+@media (max-width: 860px) {
+  .site-menu {
+    inset: 0;
+    padding-top: 104px;
+    overflow-y: auto;
+    background: rgba(5, 10, 26, 0.97);
+  }
+}
 
 main { min-height: 100svh; }
 

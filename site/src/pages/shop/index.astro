@@ -89,7 +89,7 @@ for (const item of catalog.works as {
 // Fallback immagine: le opere senza thumb nel catalogo immagini (es. le cinetiche
 // come "Avventura di una vita") usano l'immagine principale del contenuto, così la
 // card non resta senza foto.
-for (const e of [...gridItems, ...emo]) {
+for (const e of [...gridItems, ...cinetica, ...emo]) {
   if (!media.has(e.w.id) && e.w.data.images?.main) {
     media.set(e.w.id, { src: e.w.data.images.main, width: 0, height: 0 });
   }
