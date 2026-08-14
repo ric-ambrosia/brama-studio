@@ -1258,7 +1258,15 @@ a { color: inherit; text-decoration: none; }
     height: 100%;
     object-fit: cover;
   }
-  .masonry .tile .meta { padding: 8px 4px 0; }
+  .masonry .tile .meta { padding: 8px 4px 0; align-items: flex-start; }
+  /* Tile uniformi: riserva 2 righe di titolo, così le righe della griglia
+     restano allineate e non si creano gradini tra colonna sinistra e destra
+     quando un titolo va a capo (es. "Ti devo lasciare", "Pugno nel tempo"). */
+  .masonry .tile .meta .t { font-size: 18px; line-height: 1.16; min-height: 2.32em; }
+  .masonry .tile .meta .y { margin-top: 2px; }
+  /* contain-intrinsic-size realistico per la tile quadrata (era 480px): evita
+     il salto/disallineamento quando la tile entra nel viewport allo scroll. */
+  .masonry .tile { contain-intrinsic-size: auto 252px; }
   .section-head { justify-content: center; }
   .section-head .count { text-align: center; }
   /* compatta hero ↔ galleria su mobile */
