@@ -86,12 +86,15 @@
 .skip-link {
   position: fixed; top: 10px; left: 10px; z-index: 300;
   transform: translateY(-160%);
+  /* invisibile e non toccabile su ogni device; si mostra solo col focus da
+     tastiera (prima il solo transform lo nascondeva per ~12px e sbucava). */
+  opacity: 0; pointer-events: none;
   background: var(--accent); color: #fff;
   font-family: var(--mono); font-size: 13px;
   padding: 10px 16px; border-radius: 4px;
-  transition: transform 0.2s ease;
+  transition: transform 0.2s ease, opacity 0.2s ease;
 }
-.skip-link:focus { transform: none; }
+.skip-link:focus-visible { transform: none; opacity: 1; pointer-events: auto; }
 
 .menu-toggle {
   display: none;
