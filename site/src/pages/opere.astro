@@ -516,7 +516,10 @@ const jsonLd = {
   /* ---------- mobile: sezioni normali, tutto visibile ---------- */
   @media (max-width: 860px) {
     .pf-work { min-height: 0; }
-    .pf-work-inner { position: relative; height: auto; min-height: 100svh; grid-template-columns: 1fr; row-gap: 28px; }
+    /* Niente 100svh: forzava ogni opera a tutto schermo e la centratura
+       sparpagliava foto e titolo lasciando grandi vuoti. Ora altezza naturale,
+       contenuto impaccato in alto, titolo vicino alla foto, aria tra le opere. */
+    .pf-work-inner { position: relative; height: auto; min-height: 0; grid-template-columns: 1fr; row-gap: clamp(14px, 2vh, 22px); align-content: start; padding: clamp(44px, 8vh, 84px) 0; }
     .pf-work.media-right .pf-work-inner { grid-template-columns: 1fr; }
     .pf-work.media-right .pf-work-media, .pf-work.media-right .pf-work-info { order: initial; }
     /* copertina: titolo grande in alto, immagine che riempie il resto (niente buco) */
@@ -526,7 +529,13 @@ const jsonLd = {
     .pf-creature { width: clamp(78px, 20vw, 116px); right: 20px; bottom: auto; top: 2px; }
     .pf-vertigine { height: auto; }
     .pf-vertigine::after { background: linear-gradient(to top, var(--bg), transparent 24%); }
-    .pf-work-media { height: 54vh; }
+    /* Foto ad altezza naturale: il box fisso 54vh lasciava grandi vuoti attorno
+       alle opere orizzontali. La cornice (di norma assoluta per il parallasse,
+       disattivato su mobile) segue il flusso, così il titolo resta attaccato
+       alla sua immagine, senza tagli. */
+    .pf-work-media { height: auto; }
+    .pf-work-frame { position: static; }
+    .pf-work-img { height: auto; }
     .pf-emo-grid { grid-template-columns: repeat(2, 1fr); }
     /* i titoli di sezione non occupano piu' quasi uno schermo vuoto */
     .pf-chapter { min-height: auto; padding-top: clamp(64px, 13vh, 100px); padding-bottom: clamp(32px, 7vh, 60px); }
