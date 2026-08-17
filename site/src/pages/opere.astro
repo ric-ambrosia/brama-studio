@@ -522,13 +522,16 @@ const jsonLd = {
     .pf-work-inner { position: relative; height: auto; min-height: 0; grid-template-columns: 1fr; row-gap: clamp(14px, 2vh, 22px); align-content: start; padding: clamp(44px, 8vh, 84px) 0; }
     .pf-work.media-right .pf-work-inner { grid-template-columns: 1fr; }
     .pf-work.media-right .pf-work-media, .pf-work.media-right .pf-work-info { order: initial; }
-    /* copertina: titolo grande in alto, immagine che riempie il resto (niente buco) */
-    .pf-cover { grid-template-columns: 1fr; grid-template-rows: auto 1fr; align-items: stretch; padding-top: 74px; }
-    .pf-cover-text { padding: clamp(16px, 3.5vh, 34px) 24px 0; }
+    /* copertina su telefono: via la grande immagine (era uno spreco di spazio e
+       il titolo ci restava incollato; c'è già il disegnino della creatura). Resta
+       "Opere" + creatura in un blocco compatto, non a tutto schermo. */
+    .pf-cover-scene { height: auto; overflow: visible; }
+    .pf-cover { position: relative; grid-template-columns: 1fr; grid-template-rows: auto; align-items: start; padding: clamp(96px, 20vh, 160px) 0 clamp(16px, 3vh, 32px); }
+    .pf-cover-text { padding: clamp(30px, 6vh, 56px) 24px 0; }
     .pf-title { font-size: clamp(76px, 23vw, 132px); line-height: 0.94; }
-    .pf-creature { width: clamp(78px, 20vw, 116px); right: 20px; bottom: auto; top: 2px; }
-    .pf-vertigine { height: auto; }
-    .pf-vertigine::after { background: linear-gradient(to top, var(--bg), transparent 24%); }
+    .pf-creature { width: clamp(84px, 22vw, 124px); right: 20px; bottom: auto; top: 2px; }
+    .pf-vertigine { display: none; }
+    .pf-hint { position: relative; bottom: auto; left: auto; transform: none; width: max-content; margin: clamp(22px, 5vh, 44px) auto clamp(6px, 2vh, 18px); }
     /* Foto ad altezza naturale: il box fisso 54vh lasciava grandi vuoti attorno
        alle opere orizzontali. La cornice (di norma assoluta per il parallasse,
        disattivato su mobile) segue il flusso, così il titolo resta attaccato
